@@ -55,6 +55,7 @@ export default function RootLayout({
           fontMono.variable
         )}
       >
+        <NextTopLoader height={5} color="#E87931" />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
