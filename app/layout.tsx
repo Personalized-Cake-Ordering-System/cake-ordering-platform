@@ -55,7 +55,17 @@ export default function RootLayout({
           fontMono.variable
         )}
       >
-        <NextTopLoader height={5} color="#E87931" />
+        <NextTopLoader
+          height={5}
+          color={
+            typeof window !== "undefined" &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "#E87931"
+              : "#14b8a6"
+          }
+          shadow="0 0 10px #E87931, 0 0 5px #E87931"
+        />
+
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
