@@ -2,14 +2,24 @@
 
 import React from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MapPin, Star } from "lucide-react";
 import { IStore } from "../home/data";
+
 interface StoreCardProps {
   store: IStore;
 }
+
 export const StoreCard = ({ store }: StoreCardProps) => {
+  const router = useRouter();
+
+  const handleViewStore = () => {
+    // Navigate to store detail page with the store id
+    router.push(`/stores/${store.id}`);
+  };
+
   return (
     <Card className="overflow-hidden border-gray-200 dark:border-gray-800 shadow-md hover:shadow-lg transition-shadow duration-300">
       <CardContent className="p-0">
@@ -75,7 +85,7 @@ export const StoreCard = ({ store }: StoreCardProps) => {
             <Button
               size="sm"
               className="bg-custom-teal hover:bg-custom-pink text-white transition-colors duration-300"
-              onClick={() => {}}
+              onClick={handleViewStore}
             >
               XEM CỬA HÀNG
             </Button>

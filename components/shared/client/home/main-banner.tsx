@@ -190,11 +190,10 @@ const MainBanner = ({ slides = defaultSlides }: MainBannerProps) => {
               variant="ghost"
               size="icon"
               onClick={() => goToSlide(index)}
-              className={`w-2 h-2 md:w-3 md:h-3 p-0 rounded-full transition-colors duration-200 ${
-                index === current
+              className={`w-2 h-2 md:w-3 md:h-3 p-0 rounded-full transition-colors duration-200 ${index === current
                   ? "bg-custom-teal dark:bg-custom-teal scale-125"
                   : "bg-gray-300 dark:bg-gray-600 hover:bg-custom-pink dark:hover:bg-custom-pink"
-              }`}
+                }`}
               aria-label={`Go to slide ${index + 1}`}
             />
           ))}
