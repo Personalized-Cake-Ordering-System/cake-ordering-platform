@@ -96,9 +96,8 @@ const StoresPage = () => {
       <div className="container mx-auto px-4 py-6">
         <div className="flex flex-col md:flex-row gap-6">
           <div
-            className={`w-full md:w-64 lg:w-72 bg-white dark:bg-gray-900 p-4 rounded-xl shadow-md border border-gray-200 dark:border-gray-800 md:block ${
-              isFilterOpen ? "block" : "hidden"
-            }`}
+            className={`w-full md:w-64 lg:w-72 bg-white dark:bg-gray-900 p-4 rounded-xl shadow-md border border-gray-200 dark:border-gray-800 md:block ${isFilterOpen ? "block" : "hidden"
+              }`}
           >
             <StoreFilters cakeCategories={cakeCategories} />
 

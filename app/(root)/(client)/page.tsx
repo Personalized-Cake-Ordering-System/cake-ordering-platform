@@ -131,11 +131,10 @@ const HomePage = () => {
             ].map((category, index) => (
               <button
                 key={category}
-                className={`font-medium pb-2 whitespace-nowrap ${
-                  index === 0
-                    ? "text-custom-teal dark:text-custom-teal border-b-2 border-custom-teal dark:border-custom-teal"
-                    : "text-gray-700 dark:text-gray-400 hover:text-custom-pink dark:hover:text-custom-pink transition-colors duration-300"
-                }`}
+                className={`font-medium pb-2 whitespace-nowrap ${index === 0
+                  ? "text-custom-teal dark:text-custom-teal border-b-2 border-custom-teal dark:border-custom-teal"
+                  : "text-gray-700 dark:text-gray-400 hover:text-custom-pink dark:hover:text-custom-pink transition-colors duration-300"
+                  }`}
               >
                 {category}
               </button>
