@@ -2,6 +2,7 @@
 import { unstable_noStore as noStore, revalidatePath } from "next/cache";
 import {
   ApiListResponse,
+  ApiSingleResponse,
   fetchListData,
   fetchSingleData,
 } from "@/lib/api/api-handler/generic";
@@ -27,22 +28,37 @@ export const getBakeries = async (
   return result.data;
 };
 
-export const getBakeryById = async (id: string): Promise<IBakery | null> => {
-  try {
-    console.log(`Fetching bakery with ID: ${id}`);
+export const getBakeryById = async (
+  id: string
+): Promise<ApiSingleResponse<IBakery>> => {
+  noStore();
 
-    const response = await axios.get<{ payload: IBakery }>(
-      `${API_URL}/bakeries/${id}`
-    );
+  const result = await fetchSingleData<IBakery>(`/bakeries/${id}`);
 
-    console.log("Response data:", response.data);
-
-    return response.data.payload;
-  } catch (error) {
-    console.error("Error fetching bakery:", error);
-    return null;
+  if (!result.success) {
+    console.error(`Failed to fetch bakery with ID ${id}:`, result.error);
+    return { data: null, error: result.error };
   }
+
+  return result.data;
 };
+
+// export const getBakeryById = async (id: string): Promise<IBakery | null> => {
+//   try {
+//     console.log(`Fetching bakery with ID: ${id}`);
+
+//     const response = await axios.get<{ payload: IBakery }>(
+//       `${API_URL}/bakeries/${id}`
+//     );
+
+//     console.log("Response data:", response.data);
+
+//     return response.data.payload;
+//   } catch (error) {
+//     console.error("Error fetching bakery:", error);
+//     return null;
+//   }
+// };
 
 // "use server";
 // import { cache } from "react";
