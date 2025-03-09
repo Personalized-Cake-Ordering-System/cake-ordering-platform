@@ -4,11 +4,13 @@ import * as React from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Image as ImageIcon, FileText, ArrowRight, Star, Calendar, LucideIcon } from 'lucide-react';
+import { useTheme } from 'next-themes';
 
 // Types and Interfaces
 interface IconContainerProps {
     children: React.ReactNode;
     isHovered: boolean;
+    isDarkMode: boolean;
 }
 
 interface FeatureCardProps {
@@ -16,6 +18,7 @@ interface FeatureCardProps {
     title: string;
     description: string;
     index: number;
+    isDarkMode: boolean;
 }
 
 interface Feature {
@@ -32,20 +35,22 @@ const LoadingSpinner = () => (
         className="flex items-center justify-center h-full"
     >
         <div className="relative w-16 h-16">
-            <div className="absolute border-4 border-orange-200 rounded-full w-16 h-16"></div>
-            <div className="absolute border-4 border-orange-500 rounded-full w-16 h-16 border-t-transparent animate-spin"></div>
+            <div className="absolute border-4 border-orange-200 dark:border-orange-800 rounded-full w-16 h-16"></div>
+            <div className="absolute border-4 border-orange-500 dark:border-orange-400 rounded-full w-16 h-16 border-t-transparent animate-spin"></div>
         </div>
     </motion.div>
 );
 
 // Icon Container Component
-const IconContainer: React.FC<IconContainerProps> = ({ children, isHovered }) => (
+const IconContainer: React.FC<IconContainerProps> = ({ children, isHovered, isDarkMode }) => (
     <motion.div
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
         className={`p-4 rounded-2xl shadow-lg transition-all duration-300 ${isHovered
-            ? 'bg-gradient-to-br from-orange-400 to-orange-500'
-            : 'bg-gradient-to-br from-orange-100 to-orange-50'
+                ? 'bg-gradient-to-br from-orange-400 to-orange-500 dark:from-orange-600 dark:to-orange-700'
+                : isDarkMode
+                    ? 'bg-gradient-to-br from-gray-800 to-gray-700'
+                    : 'bg-gradient-to-br from-orange-100 to-orange-50'
             }`}
     >
         {children}
@@ -53,7 +58,7 @@ const IconContainer: React.FC<IconContainerProps> = ({ children, isHovered }) =>
 );
 
 // Feature Card Component
-const FeatureCard: React.FC<FeatureCardProps> = ({ icon: Icon, title, description, index }) => {
+const FeatureCard: React.FC<FeatureCardProps> = ({ icon: Icon, title, description, index, isDarkMode }) => {
     const [isHovered, setIsHovered] = React.useState(false);
 
     return (
@@ -61,23 +66,30 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ icon: Icon, title, descriptio
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: index * 0.1 }}
-            className="group relative flex items-start gap-6 p-6 rounded-2xl hover:bg-white/70 transition-all duration-300"
+            className={`group relative flex items-start gap-6 p-6 rounded-2xl transition-all duration-300 ${isDarkMode
+                    ? 'hover:bg-gray-800/70'
+                    : 'hover:bg-white/70'
+                }`}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
-            <IconContainer isHovered={isHovered}>
-                <Icon className={`w-6 h-6 transition-colors duration-300 ${isHovered ? 'text-white' : 'text-orange-500'
+            <IconContainer isHovered={isHovered} isDarkMode={isDarkMode}>
+                <Icon className={`w-6 h-6 transition-colors duration-300 ${isHovered
+                        ? 'text-white'
+                        : isDarkMode
+                            ? 'text-orange-400'
+                            : 'text-orange-500'
                     }`} />
             </IconContainer>
             <div className="flex-1">
                 <motion.h4
-                    className="font-bold text-xl mb-2 text-gray-800"
+                    className={`font-bold text-xl mb-2 ${isDarkMode ? 'text-white' : 'text-gray-800'}`}
                     initial={{ opacity: 0.8 }}
                     whileHover={{ opacity: 1 }}
                 >
                     {title}
                 </motion.h4>
-                <p className="text-gray-600 leading-relaxed">{description}</p>
+                <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'} leading-relaxed`}>{description}</p>
                 <motion.div
                     initial={{ width: 0 }}
                     whileHover={{ width: '100%' }}
@@ -89,6 +101,16 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ icon: Icon, title, descriptio
 };
 
 const EleganceSection: React.FC = () => {
+    const { theme, setTheme } = useTheme();
+    const [mounted, setMounted] = React.useState(false);
+
+    // After mounting, we can safely show the UI
+    React.useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    const isDarkMode = mounted && theme === 'dark';
+
     const features: Feature[] = [
         {
             icon: ImageIcon,
@@ -112,22 +134,33 @@ const EleganceSection: React.FC = () => {
         }
     ];
 
+    if (!mounted) return <LoadingSpinner />;
+
     return (
         <React.Suspense fallback={<LoadingSpinner />}>
-            <section className="relative bg-gradient-to-br from-white via-orange-50 to-purple-50 py-32 overflow-hidden">
+            <section className={`relative ${isDarkMode
+                    ? 'bg-gradient-to-br from-gray-900 via-purple-950 to-gray-900'
+                    : 'bg-gradient-to-br from-white via-orange-50 to-purple-50'
+                } py-32 overflow-hidden transition-colors duration-300`}>
                 {/* Animated Background Elements */}
                 <motion.div
                     initial={{ opacity: 0, scale: 0 }}
-                    animate={{ opacity: 0.2, scale: 1 }}
+                    animate={{ opacity: isDarkMode ? 0.15 : 0.2, scale: 1 }}
                     transition={{ duration: 1.5 }}
-                    className="absolute top-0 left-0 w-[800px] h-[800px] bg-gradient-to-br from-orange-200 to-orange-300 rounded-full filter blur-3xl"
+                    className={`absolute top-0 left-0 w-[800px] h-[800px] ${isDarkMode
+                            ? 'bg-gradient-to-br from-orange-800 to-orange-900'
+                            : 'bg-gradient-to-br from-orange-200 to-orange-300'
+                        } rounded-full filter blur-3xl`}
                     style={{ transform: 'translate(-50%, -50%)' }}
                 />
                 <motion.div
                     initial={{ opacity: 0, scale: 0 }}
-                    animate={{ opacity: 0.15, scale: 1 }}
+                    animate={{ opacity: isDarkMode ? 0.1 : 0.15, scale: 1 }}
                     transition={{ duration: 1.5, delay: 0.3 }}
-                    className="absolute bottom-0 right-0 w-[1000px] h-[1000px] bg-gradient-to-br from-purple-200 to-pink-200 rounded-full filter blur-3xl"
+                    className={`absolute bottom-0 right-0 w-[1000px] h-[1000px] ${isDarkMode
+                            ? 'bg-gradient-to-br from-purple-900 to-pink-900'
+                            : 'bg-gradient-to-br from-purple-200 to-pink-200'
+                        } rounded-full filter blur-3xl`}
                     style={{ transform: 'translate(50%, 50%)' }}
                 />
 
@@ -142,13 +175,19 @@ const EleganceSection: React.FC = () => {
                         >
                             <div>
                                 <motion.span
-                                    className="inline-block text-orange-500 font-medium mb-4 px-4 py-1 bg-orange-100 rounded-full"
+                                    className={`inline-block ${isDarkMode
+                                            ? 'text-orange-400 bg-orange-950'
+                                            : 'text-orange-500 bg-orange-100'
+                                        } font-medium mb-4 px-4 py-1 rounded-full`}
                                     whileHover={{ scale: 1.05 }}
                                 >
                                     Elegance Personified
                                 </motion.span>
                                 <h2 className="text-6xl font-black mb-6 leading-tight">
-                                    <span className="bg-gradient-to-r from-purple-900 via-orange-600 to-pink-600 bg-clip-text text-transparent">
+                                    <span className={`bg-gradient-to-r ${isDarkMode
+                                            ? 'from-purple-400 via-orange-400 to-pink-400'
+                                            : 'from-purple-900 via-orange-600 to-pink-600'
+                                        } bg-clip-text text-transparent`}>
                                         Celebrating
                                         <br />
                                         Sweet Moments
@@ -156,7 +195,10 @@ const EleganceSection: React.FC = () => {
                                 </h2>
                             </div>
 
-                            <div className="space-y-6 backdrop-blur-sm bg-white/40 rounded-3xl p-8 shadow-xl">
+                            <div className={`space-y-6 backdrop-blur-sm ${isDarkMode
+                                    ? 'bg-gray-900/60'
+                                    : 'bg-white/40'
+                                } rounded-3xl p-8 shadow-xl`}>
                                 {features.map((feature, index) => (
                                     <FeatureCard
                                         key={index}
@@ -164,6 +206,7 @@ const EleganceSection: React.FC = () => {
                                         icon={feature.icon}
                                         title={feature.title}
                                         description={feature.description}
+                                        isDarkMode={isDarkMode}
                                     />
                                 ))}
                             </div>
@@ -175,12 +218,15 @@ const EleganceSection: React.FC = () => {
                                 <motion.button
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
-                                    className="px-8 py-4 bg-gradient-to-r from-purple-900 via-orange-600 to-pink-600 text-white rounded-full font-medium text-lg flex items-center gap-2 shadow-lg hover:shadow-xl"
+                                    className={`px-8 py-4 bg-gradient-to-r ${isDarkMode
+                                            ? 'from-purple-700 via-orange-600 to-pink-700'
+                                            : 'from-purple-900 via-orange-600 to-pink-600'
+                                        } text-white rounded-full font-medium text-lg flex items-center gap-2 shadow-lg hover:shadow-xl`}
                                 >
                                     Start Creating
                                     <ArrowRight className="w-5 h-5" />
                                 </motion.button>
-                                <div className="text-gray-500 font-medium">
+                                <div className={`${isDarkMode ? 'text-gray-300' : 'text-gray-500'} font-medium`}>
                                     Join 2,000+ happy customers
                                 </div>
                             </motion.div>
@@ -194,7 +240,10 @@ const EleganceSection: React.FC = () => {
                             className="relative h-[700px] rounded-3xl overflow-hidden shadow-2xl group"
                         >
                             <motion.div
-                                className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent z-10"
+                                className={`absolute inset-0 bg-gradient-to-t ${isDarkMode
+                                        ? 'from-black/70 via-black/30 to-transparent'
+                                        : 'from-black/50 via-black/20 to-transparent'
+                                    } z-10`}
                                 whileHover={{ opacity: 0.8 }}
                             />
                             <Image
@@ -209,7 +258,10 @@ const EleganceSection: React.FC = () => {
                                     initial={{ opacity: 0, y: 20 }}
                                     whileInView={{ opacity: 1, y: 0 }}
                                     transition={{ delay: 0.3 }}
-                                    className="bg-white/10 backdrop-blur-md rounded-2xl p-6"
+                                    className={`${isDarkMode
+                                            ? 'bg-gray-900/30'
+                                            : 'bg-white/10'
+                                        } backdrop-blur-md rounded-2xl p-6`}
                                 >
                                     <h3 className="text-white text-2xl font-bold mb-2">
                                         Crafted with Passion
