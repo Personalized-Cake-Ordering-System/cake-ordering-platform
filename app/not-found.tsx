@@ -5,11 +5,11 @@ import { Button } from "@/components/ui/button";
 import gif from "@/public/images/gif/dribbble_1.gif";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 // import { useRouter } from "next/navigation";
-import { useRouter } from 'nextjs-toploader/app';
+import { useRouter } from "nextjs-toploader/app";
 
 export default function NotFound() {
   const router = useRouter();
-  const bgUrl = '/images/gif/bg.jpg'; 
+  const bgUrl = "/images/gif/bg.jpg";
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4 md:p-8 dark:bg-gray-900">
@@ -18,7 +18,7 @@ export default function NotFound() {
           <CardTitle className="relative text-center">
             <div className="relative">
               <div className="absolute inset-0 bg-white/50 dark:bg-gray-900/50 z-0"></div>
-              <h1 
+              <h1
                 className="text-8xl font-montserrat font-black bg-no-repeat bg-center bg-cover text-transparent bg-clip-text relative z-10"
                 style={{ backgroundImage: `url(${bgUrl})` }}
               >
