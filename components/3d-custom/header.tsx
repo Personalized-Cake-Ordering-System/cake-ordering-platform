@@ -7,7 +7,8 @@ import { useGLTF } from '@react-three/drei';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { ShoppingCart, Star, ChevronRight } from 'lucide-react';
+import { ShoppingCart, Star, ChevronRight, Moon, Sun } from 'lucide-react';
+import { useTheme } from 'next-themes';
 
 function Model({ onClick, rotating }: { onClick: () => void; rotating: boolean }) {
     const { scene } = useGLTF('/cake5.glb');
@@ -30,70 +31,65 @@ function Model({ onClick, rotating }: { onClick: () => void; rotating: boolean }
 export default function HeaderDashboard() {
     const [rotating, setRotating] = React.useState(false);
     const [activeProduct, setActiveProduct] = React.useState<number | string | null>(null);
+    const { theme, setTheme } = useTheme();
+    const [mounted, setMounted] = React.useState(false);
 
-    console.log(activeProduct)
+    // After mounting, we can safely show the theme toggle
+    React.useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    const toggleTheme = () => {
+        setTheme(theme === 'dark' ? 'light' : 'dark');
+    };
 
     const products = [
         {
             name: 'ONI MASK',
             price: 59.99,
-            bg: 'bg-gradient-to-br from-red-50 to-red-100',
+            bg: 'bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950 dark:to-red-900',
             image: '/imagecake.jpg',
             description: 'Traditional Japanese-inspired design'
         },
         {
             name: 'PINK DROP',
             price: 89.99,
-            bg: 'bg-gradient-to-br from-pink-50 to-pink-100',
+            bg: 'bg-gradient-to-br from-pink-50 to-pink-100 dark:from-pink-950 dark:to-pink-900',
             image: '/imagecake1.jpeg',
             description: 'Elegant pink masterpiece'
         },
         {
             name: 'THANK YOU',
             price: 69.99,
-            bg: 'bg-gradient-to-br from-blue-50 to-blue-100',
+            bg: 'bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900',
             image: '/imagecake2.jpeg',
             description: 'Perfect for showing gratitude'
         },
         {
             name: 'YELLOW & BLACK',
             price: 79.99,
-            bg: 'bg-gradient-to-br from-yellow-50 to-yellow-100',
+            bg: 'bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-950 dark:to-yellow-900',
             image: '/imagecake3.jpg',
             description: 'Bold and modern design'
         }
     ];
 
     return (
-        <div className="relative min-h-screen bg-gradient-to-b from-pink-50 to-pink-100">
-            {/* Navigation */}
-            <motion.nav
-                initial={{ y: -100 }}
-                animate={{ y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="fixed top-0 w-full z-50 p-6 backdrop-blur-md bg-white/70"
-            >
-                <div className="max-w-7xl mx-auto flex justify-between items-center">
-                    <div className="text-3xl font-black bg-gradient-to-r from-purple-900 to-pink-600 text-transparent bg-clip-text">
-                        Cake Custom
-                    </div>
-                    <div className="flex gap-12">
-                        <a href="#team" className="text-purple-900 hover:text-purple-700 transition-colors">Team</a>
-                        <Link href="/Model3DCustom" className="text-purple-900 hover:text-purple-700 transition-colors">
-                            Customizer Cake
-                        </Link>
-                        <a href="#about" className="text-purple-900 hover:text-purple-700 transition-colors">About</a>
-                    </div>
-                    <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="bg-purple-900 text-white px-6 py-3 rounded-full flex items-center gap-2 hover:bg-purple-800 transition-colors"
-                    >
-                        <ShoppingCart size={20} />
-                        <span>Cart (1)</span>
-                    </motion.button>
-                </div>
-            </motion.nav>
+        <div className="relative min-h-screen bg-gradient-to-b from-pink-50 to-pink-100 dark:from-gray-900 dark:to-purple-900 transition-colors duration-300">
+            {/* Theme Toggle Button */}
+            {mounted && (
+                <motion.button
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="fixed top-6 right-6 z-50 bg-white dark:bg-gray-800 p-3 rounded-full shadow-lg"
+                    onClick={toggleTheme}
+                    aria-label="Toggle theme"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                >
+                    {theme === 'dark' ? <Sun className="text-yellow-400" size={24} /> : <Moon className="text-purple-900" size={24} />}
+                </motion.button>
+            )}
 
             {/* Hero Section */}
             <div className="relative min-h-screen flex items-center pt-24">
@@ -101,7 +97,7 @@ export default function HeaderDashboard() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 0.1 }}
                     transition={{ duration: 1 }}
-                    className="absolute inset-0 text-[220px] font-black text-purple-200 pointer-events-none tracking-tighter"
+                    className="absolute inset-0 text-[220px] font-black text-purple-200 dark:text-purple-900 pointer-events-none tracking-tighter"
                 >
                     Customizer Cake
                 </motion.div>
@@ -113,13 +109,13 @@ export default function HeaderDashboard() {
                     transition={{ duration: 0.8 }}
                     className="w-1/2 pl-24 z-10"
                 >
-                    <h1 className="text-7xl font-black text-purple-900 mb-6 leading-tight">
+                    <h1 className="text-7xl font-black text-purple-900 dark:text-white mb-6 leading-tight">
                         Design Your
-                        <span className="block bg-gradient-to-r from-purple-900 to-pink-600 text-transparent bg-clip-text">
+                        <span className="block bg-gradient-to-r from-purple-900 to-pink-600 dark:from-purple-400 dark:to-pink-400 text-transparent bg-clip-text">
                             Dream Cake
                         </span>
                     </h1>
-                    <p className="text-2xl mb-12 text-gray-700 leading-relaxed">
+                    <p className="text-2xl mb-12 text-gray-700 dark:text-gray-300 leading-relaxed">
                         Not just a cake, your cake. Design a masterpiece that as unique as your imagination.
                     </p>
                     <Link href="/Model3DCustom">
@@ -144,7 +140,7 @@ export default function HeaderDashboard() {
                                 polar={[-Math.PI / 3, Math.PI / 3]}
                                 azimuth={[-Math.PI / 1.4, Math.PI / 2]}
                             >
-                                <Stage environment="sunset" intensity={0.8}>
+                                <Stage environment={theme === 'dark' ? 'night' : 'sunset'} intensity={0.8}>
                                     <Model onClick={() => setRotating(!rotating)} rotating={rotating} />
                                 </Stage>
                             </PresentationControls>
@@ -155,7 +151,7 @@ export default function HeaderDashboard() {
             </div>
 
             {/* Latest Drop Section */}
-            <section className="bg-white py-32">
+            <section className="bg-white dark:bg-gray-800 py-32 transition-colors duration-300">
                 <motion.div
                     initial={{ y: 50, opacity: 0 }}
                     whileInView={{ y: 0, opacity: 1 }}
@@ -163,11 +159,11 @@ export default function HeaderDashboard() {
                     className="max-w-7xl mx-auto px-8"
                 >
                     <h2 className="text-7xl font-black text-center mb-6">
-                        <span className="bg-gradient-to-r from-purple-900 to-pink-600 text-transparent bg-clip-text">
+                        <span className="bg-gradient-to-r from-purple-900 to-pink-600 dark:from-purple-400 dark:to-pink-400 text-transparent bg-clip-text">
                             POPULAR CAKES
                         </span>
                     </h2>
-                    <p className="text-2xl text-center mb-20 text-gray-600">
+                    <p className="text-2xl text-center mb-20 text-gray-600 dark:text-gray-300">
                         Discover our most beloved creations
                     </p>
 
@@ -184,13 +180,13 @@ export default function HeaderDashboard() {
                                 onMouseLeave={() => setActiveProduct(null)}
                             >
                                 <div className="flex justify-between mb-4">
-                                    <span className="text-2xl font-bold">${product.price}</span>
+                                    <span className="text-2xl font-bold dark:text-white">${product.price}</span>
                                     <span className="flex items-center gap-1">
                                         <Star className="text-yellow-400 fill-yellow-400" size={20} />
-                                        <span className="font-medium">4.8</span>
+                                        <span className="font-medium dark:text-white">4.8</span>
                                     </span>
                                 </div>
-                                <div className="relative h-80 bg-white rounded-2xl mb-6 shadow-inner overflow-hidden group">
+                                <div className="relative h-80 bg-white dark:bg-gray-700 rounded-2xl mb-6 shadow-inner overflow-hidden group">
                                     <Image
                                         src={product.image}
                                         alt={product.name}
@@ -200,12 +196,12 @@ export default function HeaderDashboard() {
                                         priority={true}
                                     />
                                 </div>
-                                <h3 className="text-center font-bold text-xl mb-2">{product.name}</h3>
-                                <p className="text-center text-gray-600 mb-6">{product.description}</p>
+                                <h3 className="text-center font-bold text-xl mb-2 dark:text-white">{product.name}</h3>
+                                <p className="text-center text-gray-600 dark:text-gray-300 mb-6">{product.description}</p>
                                 <motion.button
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
-                                    className="w-full py-4 bg-purple-900 text-white rounded-xl hover:bg-purple-800 transition-colors flex items-center justify-center gap-2"
+                                    className="w-full py-4 bg-purple-900 dark:bg-purple-700 text-white rounded-xl hover:bg-purple-800 dark:hover:bg-purple-600 transition-colors flex items-center justify-center gap-2"
                                 >
                                     <ShoppingCart size={20} />
                                     Add to Cart
@@ -215,7 +211,6 @@ export default function HeaderDashboard() {
                     </div>
                 </motion.div>
             </section>
-
         </div>
     );
 }
