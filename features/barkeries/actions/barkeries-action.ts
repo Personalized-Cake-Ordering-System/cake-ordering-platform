@@ -2,6 +2,7 @@
 import { unstable_noStore as noStore, revalidatePath } from "next/cache";
 import {
   ApiListResponse,
+  apiRequest,
   ApiSingleResponse,
   fetchListData,
   fetchSingleData,
@@ -9,9 +10,7 @@ import {
 import { SearchParams } from "@/types/table";
 import { IBakery } from "../types/barkeries-type";
 import axios from "axios";
-
-const API_URL =
-  "https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api";
+import { axiosAuth } from "@/lib/api/api-interceptor/api";
 
 export const getBakeries = async (
   searchParams: SearchParams
@@ -41,6 +40,20 @@ export const getBakeryById = async (
   }
 
   return result.data;
+};
+
+// create - update - delete
+export const createBakery = async (data: any) => {
+  noStore();
+
+  const result = await apiRequest(() => axiosAuth.post("/bakery", data));
+
+  if (!result.success) {
+    return { success: false, error: result.error };
+  }
+
+  revalidatePath("/stores");
+  return { success: true, data: undefined };
 };
 
 // export const getBakeryById = async (id: string): Promise<IBakery | null> => {
