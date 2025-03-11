@@ -260,13 +260,13 @@ const CartPage = () => {
               </div>
 
               <motion.div
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                whileHover={{ scale: 1.05, rotate: 1 }}
+                whileTap={{ scale: 0.95 }}
                 className="mt-6"
               >
                 <Button
                   size="lg"
-                  className="w-full"
+                  className="w-full bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 hover:from-blue-500 hover:via-purple-500 hover:to-pink-500 text-white font-bold shadow-lg transition-all duration-300"
                   disabled={items.length === 0}
                   asChild
                 >
