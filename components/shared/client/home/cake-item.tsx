@@ -3,11 +3,11 @@ import { Heart, ShoppingCart } from "lucide-react";
 import Image from "next/image";
 
 export interface CakeItemProps {
-  discount?: number;
+  discount?: any;
   imageUrl: string;
   title: string;
   store: string;
-  price: number;
+  price: any;
 }
 
 export const CakeItem: React.FC<CakeItemProps> = ({
