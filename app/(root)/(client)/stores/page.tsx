@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, Filter, Search } from "lucide-react";
@@ -12,11 +12,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { stores } from "@/components/shared/client/home/data";
-import { StoreCard } from "@/components/shared/client/stores/store-card";
 import { StoreFilters } from "@/components/shared/client/stores/store-filter";
 import { StoreFilterTags } from "@/components/shared/client/stores/store-filter-tag";
 import { useStoreFilters } from "@/hooks/use-store-filter";
+import { getBakeries } from "@/features/barkeries/actions/barkeries-action";
+import { IBakery } from "@/features/barkeries/types/barkeries-type";
+import { StoreCard } from "@/components/shared/client/stores/store-card";
+import { SearchParams } from "@/types/table"; // Importing the correct type
 
 // Danh sách các loại bánh cho filter
 const cakeCategories = [
@@ -39,6 +41,72 @@ const StoresPage = () => {
     setSortBy,
     setSearchQuery,
   } = useStoreFilters();
+
+  const [bakeries, setBakeries] = useState<IBakery[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({
+    currentPage: 0,
+    totalPages: 1,
+  });
+  console.log("sert" + bakeries);
+
+  useEffect(() => {
+    const fetchBakeries = async () => {
+      setLoading(true);
+      try {
+        // Create a SearchParams object with the correct type
+        const searchParams: Record<string, string | string[]> = {
+          "page-index": pagination.currentPage.toString(),
+          "page-size": "10",
+        };
+
+        // Add optional parameters only if they exist
+        if (filters.searchQuery) {
+          searchParams["search-term"] = filters.searchQuery;
+        }
+
+        if (filters.sortBy) {
+          searchParams["sort-by"] = filters.sortBy;
+        }
+
+        // Cast the searchParams to SearchParams type
+        const response = await getBakeries(searchParams as SearchParams);
+
+        console.log('====================================');
+        console.log("resssss" + JSON.stringify(response));
+        console.log('====================================');
+
+        // Handle the response based on the actual structure
+        if (response && response.data && Array.isArray(response.data)) {
+          setBakeries(response.data);
+          console.log('====================================');
+          console.log(response.data + "bebebebe");
+          console.log('====================================');
+          setPagination({
+            currentPage: parseInt(searchParams["page-index"] as string || "0"),
+            totalPages: response.pageCount || 1,
+          });
+        } else {
+          setError("Failed to load bakeries");
+        }
+      } catch (err) {
+        setError("An error occurred while fetching bakeries");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBakeries();
+  }, [filters.searchQuery, filters.sortBy, pagination.currentPage]);
+
+  const handlePageChange = (newPage: number) => {
+    setPagination(prev => ({
+      ...prev,
+      currentPage: newPage,
+    }));
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 to-white dark:from-gray-950 dark:to-gray-900">
@@ -113,47 +181,68 @@ const StoresPage = () => {
 
           <div className="flex-1">
             <StoreFilterTags />
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {stores.map((store) => (
-                <StoreCard key={store.id} store={store} />
-              ))}
-            </div>
+
+            {loading ? (
+              <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-custom-teal"></div>
+              </div>
+            ) : error ? (
+              <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg text-red-600 dark:text-red-400">
+                {error}
+              </div>
+            ) : bakeries.length === 0 ? (
+              <div className="bg-gray-50 dark:bg-gray-900/50 p-8 rounded-lg text-center">
+                <h3 className="text-lg font-medium text-gray-600 dark:text-gray-400">
+                  Không tìm thấy cửa hàng nào
+                </h3>
+                <p className="mt-2 text-gray-500 dark:text-gray-500">
+                  Vui lòng thử lại với bộ lọc khác
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {bakeries.map((bakery) => (
+                  <StoreCard key={bakery.id} bakery={bakery} />
+                ))}
+              </div>
+            )}
 
             {/* Pagination */}
-            <div className="mt-8 flex justify-center">
-              <div className="flex space-x-1">
-                <Button
-                  variant="outline"
-                  className="w-10 h-10 p-0 border-gray-300 dark:border-gray-700"
-                >
-                  <ChevronDown className="h-4 w-4 rotate-90" />
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-10 h-10 p-0 border-gray-300 dark:border-gray-700 bg-custom-teal text-white"
-                >
-                  1
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-10 h-10 p-0 border-gray-300 dark:border-gray-700"
-                >
-                  2
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-10 h-10 p-0 border-gray-300 dark:border-gray-700"
-                >
-                  3
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-10 h-10 p-0 border-gray-300 dark:border-gray-700"
-                >
-                  <ChevronDown className="h-4 w-4 -rotate-90" />
-                </Button>
+            {!loading && bakeries.length > 0 && (
+              <div className="mt-8 flex justify-center">
+                <div className="flex space-x-1">
+                  <Button
+                    variant="outline"
+                    className="w-10 h-10 p-0 border-gray-300 dark:border-gray-700"
+                    onClick={() => handlePageChange(Math.max(0, pagination.currentPage - 1))}
+                    disabled={pagination.currentPage === 0}
+                  >
+                    <ChevronDown className="h-4 w-4 rotate-90" />
+                  </Button>
+
+                  {Array.from({ length: pagination.totalPages }, (_, i) => (
+                    <Button
+                      key={i}
+                      variant="outline"
+                      className={`w-10 h-10 p-0 border-gray-300 dark:border-gray-700 ${pagination.currentPage === i ? "bg-custom-teal text-white" : ""
+                        }`}
+                      onClick={() => handlePageChange(i)}
+                    >
+                      {i + 1}
+                    </Button>
+                  ))}
+
+                  <Button
+                    variant="outline"
+                    className="w-10 h-10 p-0 border-gray-300 dark:border-gray-700"
+                    onClick={() => handlePageChange(Math.min(pagination.totalPages - 1, pagination.currentPage + 1))}
+                    disabled={pagination.currentPage === pagination.totalPages - 1}
+                  >
+                    <ChevronDown className="h-4 w-4 -rotate-90" />
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
