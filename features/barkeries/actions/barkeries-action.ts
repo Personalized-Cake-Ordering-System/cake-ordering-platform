@@ -13,7 +13,7 @@ import axios from "axios";
 import { axiosAuth } from "@/lib/api/api-interceptor/api";
 
 export const getBakeries = async (
-  searchParams: SearchParams
+  searchParams?: SearchParams
 ): Promise<ApiListResponse<IBakery>> => {
   noStore();
 
