@@ -73,9 +73,6 @@ const checkoutSchema = z.object({
     .string()
     .min(10, { message: 'Phone number should be at least 10 digits' }),
   address: z.string().min(5, { message: 'Address is required' }),
-  city: z.string().min(2, { message: 'City is required' }),
-  state: z.string().min(2, { message: 'State is required' }),
-  zipCode: z.string().min(5, { message: 'ZIP code is required' }),
 
   // Payment details
   cardName: z.string().min(2, { message: 'Name on card is required' }),
@@ -139,9 +136,6 @@ const CheckoutPage = () => {
       email: '',
       phone: '',
       address: '',
-      city: '',
-      state: '',
-      zipCode: '',
       cardName: '',
       cardNumber: '',
       expMonth: '',
@@ -242,7 +236,6 @@ const CheckoutPage = () => {
                   <br />
                   {form.getValues('address')}
                   <br />
-                  {form.getValues('city')}, {form.getValues('state')} {form.getValues('zipCode')}
                 </p>
               </div>
               <div>
@@ -364,50 +357,6 @@ const CheckoutPage = () => {
                       </FormItem>
                     )}
                   />
-
-                  <FormField
-                    control={form.control}
-                    name="city"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>City</FormLabel>
-                        <FormControl>
-                          <Input placeholder="New York" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="flex gap-4">
-                    <FormField
-                      control={form.control}
-                      name="state"
-                      render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <FormLabel>State</FormLabel>
-                          <FormControl>
-                            <Input placeholder="NY" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="zipCode"
-                      render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <FormLabel>ZIP Code</FormLabel>
-                          <FormControl>
-                            <Input placeholder="10001" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
                 </div>
 
                 <Separator className="my-6" />
@@ -441,7 +390,7 @@ const CheckoutPage = () => {
                               <div className="flex items-start mb-1">
                                 <RadioGroupItem value="standard" id="standard" className="mt-1 mr-2" />
                                 <div>
-                                  <span className="font-medium">Standard Delivery</span>
+                                  <span className="font-medium">Urban Delivery</span>
                                   <p className="text-sm text-muted-foreground mt-1">
                                     Delivery within 3-5 business days
                                   </p>
@@ -468,7 +417,7 @@ const CheckoutPage = () => {
                               <div className="flex items-start mb-1">
                                 <RadioGroupItem value="express" id="express" className="mt-1 mr-2" />
                                 <div>
-                                  <span className="font-medium">Express Delivery</span>
+                                  <span className="font-medium">Suburban Delivery</span>
                                   <p className="text-sm text-muted-foreground mt-1">
                                     Delivery within 1-2 business days
                                   </p>
@@ -484,29 +433,10 @@ const CheckoutPage = () => {
                   )}
                 />
 
-                <div className="mt-6">
-                  <FormField
-                    control={form.control}
-                    name="specialInstructions"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Special Instructions (Optional)</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Special delivery instructions or notes for the bakery..."
-                            className="resize-none"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
               </Card>
 
               {/* Payment Information */}
-              <motion.div
+              {/* <motion.div
                 variants={itemVariants}
               >
                 <Card className="p-6">
@@ -663,7 +593,7 @@ const CheckoutPage = () => {
                     />
                   </div>
                 </Card>
-              </motion.div>
+              </motion.div> */}
 
               {/* Submit section */}
               <motion.div
