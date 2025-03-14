@@ -1,0 +1,140 @@
+{
+  "status_code": 200,
+  "errors": [],
+  "meta_data": {
+    "total_items_count": 6,
+    "page_size": 10,
+    "total_pages_count": 1,
+    "page_index": 0,
+    "has_next": false,
+    "has_previous": false
+  },
+  "payload": [
+    {
+      "bakery_name": "Bakery_Test",
+      "email": "bakerytest@gmail.com",
+      "password": "0987654321",
+      "phone": "0967815129",
+      "address": "Test address",
+      "owner_name": "Tester",
+      "avatar_file_id": "af95a8ca-0a10-42f4-8639-527dd451114d",
+      "avatar_file": {
+        "file_name": "85c15445-9ecd-4196-a554-30747fe4c01b.jpeg",
+        "file_url": "https://firebasestorage.googleapis.com/v0/b/digital-dynamo-cb555.appspot.com/o/assets%2Fimages%2F85c15445-9ecd-4196-a554-30747fe4c01b.jpeg?alt=media&token=a45db463-60a7-4a9b-a86b-946c28824bc5",
+        "id": "af95a8ca-0a10-42f4-8639-527dd451114d",
+        "created_at": "2025-03-09T21:08:59.183685",
+        "created_by": "dc8249e5-7ed1-455d-99b5-66f8087e9236",
+        "updated_at": null,
+        "updated_by": null,
+        "is_deleted": false
+      },
+      "identity_card_number": "023456789098",
+      "front_card_file_id": "5aeb17f2-792b-4385-bcb1-9f396d23d0f4",
+      "front_card_file": {
+        "file_name": "e9dbccaf-5f20-4cfa-826f-6bdab2d706b0.jpg",
+        "file_url": "https://firebasestorage.googleapis.com/v0/b/digital-dynamo-cb555.appspot.com/o/assets%2Fimages%2Fe9dbccaf-5f20-4cfa-826f-6bdab2d706b0.jpg?alt=media&token=9580c616-7657-4e93-90f2-a93ed06ff4f1",
+        "id": "5aeb17f2-792b-4385-bcb1-9f396d23d0f4",
+        "created_at": "2025-03-09T20:38:29.444066",
+        "created_by": "dc8249e5-7ed1-455d-99b5-66f8087e9236",
+        "updated_at": null,
+        "updated_by": null,
+        "is_deleted": false
+      },
+      "back_card_file_id": "7741f3ed-9451-4d99-86f6-55291c0736f3",
+      "back_card_file": {
+        "file_name": "9644e380-b351-40e0-91dd-fa144dadb5a3.jpg",
+        "file_url": "https://firebasestorage.googleapis.com/v0/b/digital-dynamo-cb555.appspot.com/o/assets%2Fimages%2F9644e380-b351-40e0-91dd-fa144dadb5a3.jpg?alt=media&token=b66d79a4-a687-4d2e-a2e0-62b6ec4828d9",
+        "id": "7741f3ed-9451-4d99-86f6-55291c0736f3",
+        "created_at": "2025-03-09T20:38:09.015512",
+        "created_by": "dc8249e5-7ed1-455d-99b5-66f8087e9236",
+        "updated_at": null,
+        "updated_by": null,
+        "is_deleted": false
+      },
+      "tax_code": "1234567890097",
+      "status": "CONFIRMED",
+      "confirmed_at": "2025-03-09T23:05:21.354477",
+      "shop_image_files": [
+        {
+          "file_name": "0e19d56b-adc8-4705-8651-26259a8a4f05.jpg",
+          "file_url": "https://firebasestorage.googleapis.com/v0/b/digital-dynamo-cb555.appspot.com/o/assets%2Fimages%2F0e19d56b-adc8-4705-8651-26259a8a4f05.jpg?alt=media&token=6804db36-0dfd-4e7a-bc9e-0ea64cbaaee1",
+          "id": "ead671aa-8425-4d90-8266-ead29106a904",
+          "created_at": "2025-03-09T22:55:07.878116",
+          "created_by": "00000000-0000-0000-0000-000000000000",
+          "updated_at": null,
+          "updated_by": null,
+          "is_deleted": false
+        }
+      ],
+      "id": "fc339eb0-e5c6-442f-9b61-080b7118b808",
+      "created_at": "2025-03-09T23:03:15.624164",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2025-03-11T09:16:21.995363",
+      "updated_by": "11f56ffc-6e29-4528-8e05-dadbc618dd5a",
+      "is_deleted": false
+    },
+    {
+      "bakery_name": "Pan&Cake",
+      "email": "pancakevietnam@gmail.com",
+      "password": "0987654321",
+      "phone": "0967815129",
+      "address": "227 Nguyễn Công Trứ, Phường Nguyễn Thái Bình, Quận 1, Hồ Chí Minh",
+      "owner_name": "Pan & Cake",
+      "avatar_file_id": "af95a8ca-0a10-42f4-8639-527dd451114d",
+      "avatar_file": {
+        "file_name": "85c15445-9ecd-4196-a554-30747fe4c01b.jpeg",
+        "file_url": "https://firebasestorage.googleapis.com/v0/b/digital-dynamo-cb555.appspot.com/o/assets%2Fimages%2F85c15445-9ecd-4196-a554-30747fe4c01b.jpeg?alt=media&token=a45db463-60a7-4a9b-a86b-946c28824bc5",
+        "id": "af95a8ca-0a10-42f4-8639-527dd451114d",
+        "created_at": "2025-03-09T21:08:59.183685",
+        "created_by": "dc8249e5-7ed1-455d-99b5-66f8087e9236",
+        "updated_at": null,
+        "updated_by": null,
+        "is_deleted": false
+      },
+      "identity_card_number": "123456789098",
+      "front_card_file_id": "5aeb17f2-792b-4385-bcb1-9f396d23d0f4",
+      "front_card_file": {
+        "file_name": "e9dbccaf-5f20-4cfa-826f-6bdab2d706b0.jpg",
+        "file_url": "https://firebasestorage.googleapis.com/v0/b/digital-dynamo-cb555.appspot.com/o/assets%2Fimages%2Fe9dbccaf-5f20-4cfa-826f-6bdab2d706b0.jpg?alt=media&token=9580c616-7657-4e93-90f2-a93ed06ff4f1",
+        "id": "5aeb17f2-792b-4385-bcb1-9f396d23d0f4",
+        "created_at": "2025-03-09T20:38:29.444066",
+        "created_by": "dc8249e5-7ed1-455d-99b5-66f8087e9236",
+        "updated_at": null,
+        "updated_by": null,
+        "is_deleted": false
+      },
+      "back_card_file_id": "7741f3ed-9451-4d99-86f6-55291c0736f3",
+      "back_card_file": {
+        "file_name": "9644e380-b351-40e0-91dd-fa144dadb5a3.jpg",
+        "file_url": "https://firebasestorage.googleapis.com/v0/b/digital-dynamo-cb555.appspot.com/o/assets%2Fimages%2F9644e380-b351-40e0-91dd-fa144dadb5a3.jpg?alt=media&token=b66d79a4-a687-4d2e-a2e0-62b6ec4828d9",
+        "id": "7741f3ed-9451-4d99-86f6-55291c0736f3",
+        "created_at": "2025-03-09T20:38:09.015512",
+        "created_by": "dc8249e5-7ed1-455d-99b5-66f8087e9236",
+        "updated_at": null,
+        "updated_by": null,
+        "is_deleted": false
+      },
+      "tax_code": "3011243639000",
+      "status": "CONFIRMED",
+      "confirmed_at": "2025-03-11T09:11:01.020691",
+      "shop_image_files": [
+        {
+          "file_name": "e38dd04e-db65-4ae5-a557-31d3b446e67f.jpg",
+          "file_url": "https://firebasestorage.googleapis.com/v0/b/digital-dynamo-cb555.appspot.com/o/assets%2Fimages%2Fe38dd04e-db65-4ae5-a557-31d3b446e67f.jpg?alt=media&token=b8468d15-2734-4ddb-befd-1bf0aae336f6",
+          "id": "8290e3d6-19a1-4201-9f06-ce057183d494",
+          "created_at": "2025-03-09T21:09:28.485354",
+          "created_by": "dc8249e5-7ed1-455d-99b5-66f8087e9236",
+          "updated_at": null,
+          "updated_by": null,
+          "is_deleted": false
+        }
+      ],
+      "id": "ea9decf4-1337-4b16-82cf-e817f25a3a49",
+      "created_at": "2025-03-09T21:12:21.750863",
+      "created_by": "dc8249e5-7ed1-455d-99b5-66f8087e9236",
+      "updated_at": "2025-03-11T09:14:33.100399",
+      "updated_by": "11f56ffc-6e29-4528-8e05-dadbc618dd5a",
+      "is_deleted": false
+    }
+  ]
+}
