@@ -16,13 +16,24 @@ export const getBakeries = async (
   searchParams?: SearchParams
 ): Promise<ApiListResponse<IBakery>> => {
   noStore();
+  const safeParams = searchParams ? { ...searchParams } : undefined;
 
-  const result = await fetchListData<IBakery>("/bakeries", searchParams);
+  const result = await fetchListData<IBakery>("/bakeries", safeParams);
 
   if (!result.success) {
     console.error("Failed to fetch list IBarkery:", result.error);
-    return { data: [], pageCount: 0, error: result.error };
+    return {
+      status_code: 400,
+      errors: [result.error],
+      data: {
+        data: [],
+        pageCount: 0,
+        total_items_count: 0,
+      },
+      success: false,
+    };
   }
+  console.log("Bakery data:", result);
 
   return result.data;
 };
