@@ -336,6 +336,12 @@ function StoreDetailPage({ bakery }: { bakery: any }) {
         <TabsContent value="wedding" className="p-4 text-center text-gray-500">
           Wedding cakes collection coming soon
         </TabsContent>
+        <TabsContent value="cupcakes" className="p-4 text-center text-gray-500">
+          Cupcakes collection coming soon
+        </TabsContent>
+        <TabsContent value="cookies" className="p-4 text-center text-gray-500">
+          Cookies collection coming soon
+        </TabsContent>
       </Tabs>
     </div>
   );

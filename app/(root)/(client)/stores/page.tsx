@@ -1,17 +1,28 @@
-import StoreSection from "@/components/stores/store-section";
+import StoresBody from "@/components/store/store-body";
 import { getBakeries } from "@/features/barkeries/actions/barkeries-action";
 import { SearchParams } from "@/types/table";
-import React from "react";
 
 export interface IndexPageProps {
   searchParams: SearchParams;
 }
+
 const StoresPage = async ({ searchParams }: IndexPageProps) => {
+  // const safeParams: SearchParams = {};
+
+  // if (searchParams) {
+  //   for (const [key, value] of Object.entries(searchParams)) {
+  //     safeParams[key] = value;
+  //   }
+  // }
+
+  // const barkeriesResponse = await getBakeries();
+
   const [barkeriesPromise] = await Promise.all([getBakeries(searchParams)]);
+  console.log("Bakeries Promise Result:", barkeriesPromise);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 to-white dark:from-gray-950 dark:to-gray-900">
-      <StoreSection barkeriesPromise={barkeriesPromise} />
+      <StoresBody barkeriesPromise={barkeriesPromise} />
     </div>
   );
 };

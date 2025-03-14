@@ -1,36 +1,56 @@
 "use client";
 
-import React from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { Input } from "@/components/ui/input";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   ChevronLeft,
   ChevronRight,
-  Heart,
-  ShoppingCart,
-  Store,
+  Store
 } from "lucide-react";
 
+import { CakeItem } from "@/components/shared/client/home/cake-item";
+import { CategoryItem } from "@/components/shared/client/home/category-item";
 import {
   categoryData,
   popularProducts,
-  IStore,
-  stores,
 } from "@/components/shared/client/home/data";
-import { StoreItem } from "@/components/shared/client/home/store-item";
-import { CakeItem } from "@/components/shared/client/home/cake-item";
-import { CategoryItem } from "@/components/shared/client/home/category-item";
 import MainBanner from "@/components/shared/client/home/main-banner";
 import { StoreHighlightCard } from "@/components/shared/client/home/store-highlight-card";
+import { StoreItem } from "@/components/shared/client/home/store-item";
+import { IBakery } from "@/features/barkeries/types/barkeries-type";
 
 const HomePage = () => {
-  const featuredStores = stores.filter((store) => store.isFeatured).slice(0, 8);
-  const handleViewStore = (store: IStore) => {
+  const [bakeries, setBakeries] = useState<IBakery[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchBakeries = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/bakeries');
+        const data = await response.json();
+
+        if (data.payload && Array.isArray(data.payload)) {
+          // Filter confirmed bakeries
+          const confirmedBakeries = data.payload.filter((bakery: any) => bakery.status === "CONFIRMED");
+          setBakeries(confirmedBakeries);
+        }
+      } catch (error) {
+        console.error("Error fetching bakeries:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBakeries();
+  }, []);
+
+  const featuredBakeries = bakeries.slice(0, 8);
+
+  const handleViewStore = (store: IBakery) => {
     console.log("View store:", store.id);
   };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 to-white dark:from-gray-950 dark:to-gray-900">
       <main className="flex-1 container mx-auto px-4 py-6">
@@ -40,21 +60,33 @@ const HomePage = () => {
           </div>
 
           <div className="space-y-6 flex flex-col h-full">
-            <StoreHighlightCard
-              store={{
-                ...featuredStores[0],
-              }}
-              bgColor="bg-custom-pink/30"
-              textColor="text-custom-teal"
-            />
+            {featuredBakeries.length >= 1 && (
+              <StoreHighlightCard
+                store={{
+                  id: featuredBakeries[0].id,
+                  name: featuredBakeries[0].bakery_name,
+                  rating: 4.8,
+                  imageUrl: featuredBakeries[0].avatar_file?.file_url || "",
+                  isFeatured: true
+                }}
+                bgColor="bg-custom-pink/30"
+                textColor="text-custom-teal"
+              />
+            )}
 
-            <StoreHighlightCard
-              store={{
-                ...featuredStores[1],
-              }}
-              bgColor="bg-custom-teal/30"
-              textColor="text-custom-pink"
-            />
+            {featuredBakeries.length >= 2 && (
+              <StoreHighlightCard
+                store={{
+                  id: featuredBakeries[1].id,
+                  name: featuredBakeries[1].bakery_name,
+                  rating: 4.7,
+                  imageUrl: featuredBakeries[1].avatar_file?.file_url || "",
+                  isFeatured: true
+                }}
+                bgColor="bg-custom-teal/30"
+                textColor="text-custom-pink"
+              />
+            )}
           </div>
         </div>
 
@@ -74,19 +106,30 @@ const HomePage = () => {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-            {featuredStores.map((store) => (
-              <StoreItem
-                key={store.id}
-                icon={
-                  <div className="bg-custom-pink/30 dark:bg-custom-pink/30 p-3 rounded-full">
-                    <Store className="h-6 w-6 text-custom-teal dark:text-custom-teal" />
-                  </div>
-                }
-                name={store.name}
-                rating={store.rating}
-                speciality={store.name}
-              />
-            ))}
+            {loading ? (
+              // Loading skeleton
+              Array(8).fill(0).map((_, index) => (
+                <div key={index} className="animate-pulse flex flex-col items-center p-3">
+                  <div className="bg-gray-200 dark:bg-gray-700 rounded-full h-16 w-16"></div>
+                  <div className="bg-gray-200 dark:bg-gray-700 h-4 w-24 mt-4"></div>
+                  <div className="bg-gray-200 dark:bg-gray-700 h-3 w-16 mt-2"></div>
+                </div>
+              ))
+            ) : (
+              featuredBakeries.map((bakery) => (
+                <StoreItem
+                  key={bakery.id}
+                  icon={
+                    <div className="bg-custom-pink/30 dark:bg-custom-pink/30 p-3 rounded-full">
+                      <Store className="h-6 w-6 text-custom-teal dark:text-custom-teal" />
+                    </div>
+                  }
+                  name={bakery.bakery_name}
+                  rating={4.5}
+                  speciality={bakery.bakery_name}
+                />
+              ))
+            )}
           </div>
         </div>
 
@@ -143,14 +186,14 @@ const HomePage = () => {
 
           {/* Product Grid */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-            {popularProducts.map((product) => (
+            {bakeries.map((product) => (
               <CakeItem
                 key={product.id}
-                discount={product.discount}
-                imageUrl={product.imageUrl}
-                title={product.title}
-                store={product.store}
-                price={product.price}
+                discount={product.password}
+                imageUrl={product.avatar_file.file_url}
+                title={product.bakery_name}
+                store={product.bakery_name}
+                price={product.identity_card_number}
               />
             ))}
           </div>
