@@ -14,6 +14,21 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
+// Add type for the cake item
+interface CakeConfig {
+  price: number;
+  size: string;
+  sponge: string;
+  filling: string;
+  imageUrl?: string | null;
+}
+
+interface CartItem {
+  id: string;
+  quantity: number;
+  config: CakeConfig;
+}
+
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -48,7 +63,7 @@ const itemVariants = {
 const CartPage = () => {
   const { items, removeFromCart, updateQuantity } = useCart();
   const [showCakeModal, setShowCakeModal] = React.useState(false);
-  const [selectedCake, setSelectedCake] = React.useState(null);
+  const [selectedCake, setSelectedCake] = React.useState<CartItem | null>(null);
 
   const handleQuantityChange = (id: string, change: number) => {
     const item = items.find(i => i.id === id);

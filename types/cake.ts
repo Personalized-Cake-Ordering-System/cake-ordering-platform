@@ -13,4 +13,5 @@ export type CakeConfig = {
     messageType: 'none' | 'piped' | 'edible';
     plaqueColor: string;
     uploadedImage: string | null;
+    imageUrl: string | null;
 } 

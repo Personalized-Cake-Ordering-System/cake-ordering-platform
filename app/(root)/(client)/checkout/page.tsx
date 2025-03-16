@@ -47,6 +47,8 @@ const checkoutSchema = z.object({
   fullName: z.string().min(2, { message: 'Full name is required' }),
   email: z.string().email({ message: 'Please enter a valid email address' }),
   phone: z.string().min(10, { message: 'Phone number should be at least 10 digits' }),
+  province: z.string().min(2, { message: 'Province is required' }),
+  district: z.string().min(2, { message: 'District is required' }),
   address: z.string().min(5, { message: 'Address is required' }),
   deliveryMethod: z.enum(['standard', 'express']),
   specialInstructions: z.string().optional(),
@@ -75,17 +77,18 @@ const itemVariants = {
 
 type CheckoutFormValues = z.infer<typeof checkoutSchema>;
 
+type CakeConfig = {
+  size: string;
+  sponge: string;
+  filling: string;
+  price: number;
+  imageUrl?: string;
+};
+
 interface CartItem {
   id: string;
   quantity: number;
-  config: {
-    size: string;
-    sponge: string;
-    filling: string;
-    price: number;
-    imageUrl?: string;
-    // other cake configuration options
-  };
+  config: CakeConfig;
 }
 
 const CheckoutPage = () => {
@@ -110,6 +113,8 @@ const CheckoutPage = () => {
       fullName: '',
       email: '',
       phone: '',
+      province: '',
+      district: '',
       address: '',
       deliveryMethod: 'standard',
       specialInstructions: '',
@@ -327,10 +332,38 @@ const CheckoutPage = () => {
 
                   <FormField
                     control={form.control}
+                    name="province"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Province</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter province" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="district"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>District</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter district" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
                     name="address"
                     render={({ field }) => (
                       <FormItem className="md:col-span-2">
-                        <FormLabel>Address</FormLabel>
+                        <FormLabel>Street Address</FormLabel>
                         <FormControl>
                           <Input placeholder="123 Main St" {...field} />
                         </FormControl>

@@ -221,6 +221,7 @@ const getInitialCakeConfig = (): CakeConfig => {
             messageType: 'none',
             plaqueColor: 'white',
             uploadedImage: null,
+            imageUrl: null,
         };
     }
 
@@ -250,6 +251,7 @@ const getInitialCakeConfig = (): CakeConfig => {
         messageType: 'none',
         plaqueColor: 'white',
         uploadedImage: null,
+        imageUrl: null,
     };
 };
 
@@ -297,6 +299,7 @@ const CakeCustomizer = () => {
             messageType: 'none' as 'none' | 'piped' | 'edible',
             plaqueColor: 'white',
             uploadedImage: null,
+            imageUrl: null,
         };
         setCakeConfig(defaultConfig);
         localStorage.setItem('cakeConfig', JSON.stringify(defaultConfig));
