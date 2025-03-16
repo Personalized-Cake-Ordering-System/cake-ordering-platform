@@ -14,13 +14,21 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-// Add type for the cake item
+// Update the CakeConfig interface to include all customization options
 interface CakeConfig {
   price: number;
   size: string;
   sponge: string;
   filling: string;
+  outerIcing: string;
   imageUrl?: string | null;
+  candles: string | null;
+  message?: string;
+  messageType?: 'none' | 'piped' | 'edible';
+  plaqueColor?: string;
+  goo: string | null;
+  extras: string[];
+  board: string;
 }
 
 interface CartItem {
@@ -159,7 +167,95 @@ const CartPage = () => {
                               className="object-cover transition-transform hover:scale-105"
                             />
                           ) : (
-                            <div className="absolute inset-0 bg-gradient-to-br from-pink-200 to-purple-200" />
+                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                              {/* Cake base */}
+                              <div className="relative w-3/4 aspect-[4/3]">
+                                {/* Left side (sponge layers) */}
+                                <div className="absolute bottom-0 left-0 w-1/2 h-full">
+                                  {/* Sponge layers with goo */}
+                                  {[...Array(5)].map((_, i) => (
+                                    <React.Fragment key={i}>
+                                      <div className={`h-[20%] ${item.config.sponge === 'vanilla' ? 'bg-amber-50' :
+                                        item.config.sponge === 'chocolate' ? 'bg-brown-900' :
+                                          item.config.sponge === 'red-velvet' ? 'bg-red-900' :
+                                            item.config.sponge === 'funfetti' ? 'bg-gradient-to-r from-pink-200 via-blue-200 to-purple-200' :
+                                              'bg-amber-50'
+                                        }`} />
+                                      {item.config.goo && (
+                                        <div className={`h-[2px] ${item.config.goo === 'raspberry-jam' ? 'bg-rose-300' :
+                                          item.config.goo === 'salted-caramel' ? 'bg-amber-300' :
+                                            'bg-rose-300'
+                                          }`} />
+                                      )}
+                                    </React.Fragment>
+                                  ))}
+                                </div>
+
+                                {/* Right side (outer icing) */}
+                                <div className={`absolute bottom-0 right-0 w-1/2 h-full ${item.config.outerIcing === 'white-vanilla' ? 'bg-amber-50' :
+                                  item.config.outerIcing === 'pink-vanilla' ? 'bg-pink-200' :
+                                    item.config.outerIcing === 'blue-vanilla' ? 'bg-blue-200' :
+                                      item.config.outerIcing === 'yellow-vanilla' ? 'bg-yellow-200' :
+                                        'bg-pink-200'
+                                  } rounded-tr-lg`} />
+
+                                {/* Message plaque if exists */}
+                                {item.config.message && item.config.messageType === 'piped' && (
+                                  <div className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2
+                                    w-16 h-16 rounded-full flex items-center justify-center ${item.config.plaqueColor === 'white' ? 'bg-white' :
+                                      item.config.plaqueColor === 'pink' ? 'bg-pink-100' :
+                                        item.config.plaqueColor === 'blue' ? 'bg-blue-100' :
+                                          'bg-white'
+                                    }`}>
+                                    <span className="text-[8px] text-center text-gray-600">
+                                      {item.config.message}
+                                    </span>
+                                  </div>
+                                )}
+
+                                {/* Candles */}
+                                {item.config.candles && (
+                                  <div className="absolute -top-4 w-full flex justify-around">
+                                    {[...Array(6)].map((_, i) => (
+                                      <div key={i} className="flex flex-col items-center">
+                                        {/* Flame */}
+                                        <div className="w-2 h-3 bg-amber-400 rounded-full mb-1 animate-flicker" />
+                                        {/* Candle */}
+                                        <div className={`w-1 h-8 ${item.config.candles === 'pink-candles' ? 'bg-pink-300' :
+                                          item.config.candles === 'blue-candles' ? 'bg-blue-300' :
+                                            'bg-gray-100'
+                                          } rounded-full`} />
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+
+                                {/* Extras */}
+                                {item.config.extras && item.config.extras.length > 0 && (
+                                  <div className="absolute inset-x-0 top-1/2 flex justify-center">
+                                    {item.config.extras.map((extra, index) => (
+                                      <div
+                                        key={index}
+                                        className={`absolute w-2 h-2 rounded-full ${extra === 'cookie-dough' ? 'bg-amber-200' :
+                                          extra === 'oreo-crumbs' ? 'bg-gray-900' :
+                                            extra === 'biscoff-crumbs' ? 'bg-amber-400' :
+                                              'bg-gray-300'
+                                          }`}
+                                        style={{
+                                          top: `${Math.sin(index * (Math.PI / 3)) * 30}%`,
+                                          left: `${50 + Math.cos(index * (Math.PI / 3)) * 30}%`
+                                        }}
+                                      />
+                                    ))}
+                                  </div>
+                                )}
+
+                                {/* Size indicator */}
+                                <div className="absolute bottom-2 right-2 text-xs font-bold">
+                                  {item.config.size}
+                                </div>
+                              </div>
+                            </div>
                           )}
                         </motion.div>
                         <div className="flex flex-col sm:flex-1 justify-between">
@@ -325,7 +421,95 @@ const CartPage = () => {
                   className="object-cover rounded-md"
                 />
               ) : (
-                <div className="absolute inset-0 bg-gradient-to-br from-pink-200 to-purple-200 rounded-md" />
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-white rounded-md">
+                  {/* Cake base */}
+                  <div className="relative w-3/4 aspect-[4/3]">
+                    {/* Left side (sponge layers) */}
+                    <div className="absolute bottom-0 left-0 w-1/2 h-full">
+                      {/* Sponge layers with goo */}
+                      {[...Array(5)].map((_, i) => (
+                        <React.Fragment key={i}>
+                          <div className={`h-[20%] ${selectedCake.config.sponge === 'vanilla' ? 'bg-amber-50' :
+                            selectedCake.config.sponge === 'chocolate' ? 'bg-brown-900' :
+                              selectedCake.config.sponge === 'red-velvet' ? 'bg-red-900' :
+                                selectedCake.config.sponge === 'funfetti' ? 'bg-gradient-to-r from-pink-200 via-blue-200 to-purple-200' :
+                                  'bg-amber-50'
+                            }`} />
+                          {selectedCake.config.goo && (
+                            <div className={`h-[2px] ${selectedCake.config.goo === 'raspberry-jam' ? 'bg-rose-300' :
+                              selectedCake.config.goo === 'salted-caramel' ? 'bg-amber-300' :
+                                'bg-rose-300'
+                              }`} />
+                          )}
+                        </React.Fragment>
+                      ))}
+                    </div>
+
+                    {/* Right side (outer icing) */}
+                    <div className={`absolute bottom-0 right-0 w-1/2 h-full ${selectedCake.config.outerIcing === 'white-vanilla' ? 'bg-amber-50' :
+                      selectedCake.config.outerIcing === 'pink-vanilla' ? 'bg-pink-200' :
+                        selectedCake.config.outerIcing === 'blue-vanilla' ? 'bg-blue-200' :
+                          selectedCake.config.outerIcing === 'yellow-vanilla' ? 'bg-yellow-200' :
+                            'bg-pink-200'
+                      } rounded-tr-lg`} />
+
+                    {/* Message plaque if exists */}
+                    {selectedCake.config.message && selectedCake.config.messageType === 'piped' && (
+                      <div className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2
+                        w-24 h-24 rounded-full flex items-center justify-center ${selectedCake.config.plaqueColor === 'white' ? 'bg-white' :
+                          selectedCake.config.plaqueColor === 'pink' ? 'bg-pink-100' :
+                            selectedCake.config.plaqueColor === 'blue' ? 'bg-blue-100' :
+                              'bg-white'
+                        } shadow-md`}>
+                        <span className="text-sm text-center text-gray-600 p-2">
+                          {selectedCake.config.message}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Candles */}
+                    {selectedCake.config.candles && (
+                      <div className="absolute -top-4 w-full flex justify-around">
+                        {[...Array(6)].map((_, i) => (
+                          <div key={i} className="flex flex-col items-center">
+                            {/* Flame */}
+                            <div className="w-2 h-3 bg-amber-400 rounded-full mb-1 animate-flicker" />
+                            {/* Candle */}
+                            <div className={`w-1 h-8 ${selectedCake.config.candles === 'pink-candles' ? 'bg-pink-300' :
+                              selectedCake.config.candles === 'blue-candles' ? 'bg-blue-300' :
+                                'bg-gray-100'
+                              } rounded-full`} />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Extras */}
+                    {selectedCake.config.extras && selectedCake.config.extras.length > 0 && (
+                      <div className="absolute inset-x-0 top-1/2 flex justify-center">
+                        {selectedCake.config.extras.map((extra, index) => (
+                          <div
+                            key={index}
+                            className={`absolute w-2 h-2 rounded-full ${extra === 'cookie-dough' ? 'bg-amber-200' :
+                              extra === 'oreo-crumbs' ? 'bg-gray-900' :
+                                extra === 'biscoff-crumbs' ? 'bg-amber-400' :
+                                  'bg-gray-300'
+                              }`}
+                            style={{
+                              top: `${Math.sin(index * (Math.PI / 3)) * 30}%`,
+                              left: `${50 + Math.cos(index * (Math.PI / 3)) * 30}%`
+                            }}
+                          />
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Size indicator */}
+                    <div className="absolute bottom-2 right-2 text-lg font-bold">
+                      {selectedCake.config.size}
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
             <div className="space-y-4">
@@ -334,7 +518,11 @@ const CartPage = () => {
                 <p className="text-sm text-muted-foreground">
                   Size: {selectedCake.config.size}<br />
                   Sponge: {selectedCake.config.sponge}<br />
-                  Filling: {selectedCake.config.filling}
+                  Filling: {selectedCake.config.filling}<br />
+                  Outer Icing: {selectedCake.config.outerIcing}<br />
+                  {selectedCake.config.candles && `Candles: ${selectedCake.config.candles}`}<br />
+                  {selectedCake.config.goo && `Goo Layer: ${selectedCake.config.goo}`}<br />
+                  {selectedCake.config.extras.length > 0 && `Extras: ${selectedCake.config.extras.join(', ')}`}
                 </p>
               </div>
               <div>
