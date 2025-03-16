@@ -30,19 +30,32 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     });
 
     useEffect(() => {
-        localStorage.setItem('cart', JSON.stringify(items));
+        try {
+            localStorage.setItem('cart', JSON.stringify(items));
+        } catch (error) {
+            // Handle localStorage quota exceeded error
+            if (error instanceof Error) {
+                console.warn('Failed to save cart to localStorage:', error.message);
+            }
+            // Optionally, you could try to clear some space or implement a fallback storage strategy
+        }
     }, [items]);
 
     const addToCart = (config: CakeConfig) => {
-        setItems(prev => [
-            ...prev,
-            {
-                id: `cake-${Date.now()}`,
-                config,
-                quantity: 1,
-                timestamp: Date.now()
-            }
-        ]);
+        try {
+            setItems(prev => [
+                ...prev,
+                {
+                    id: `cake-${Date.now()}`,
+                    config,
+                    quantity: 1,
+                    timestamp: Date.now()
+                }
+            ]);
+        } catch (error) {
+            console.warn('Failed to add item to cart:', error);
+            // Optionally show a user-friendly error message
+        }
     };
 
     const removeFromCart = (id: string) => {
