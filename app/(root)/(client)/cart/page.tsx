@@ -19,17 +19,29 @@ const containerVariants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.1
+      staggerChildren: 0.15,
+      delayChildren: 0.2
     }
   }
 };
 
 const itemVariants = {
-  hidden: { y: 20, opacity: 0 },
+  hidden: { y: 40, opacity: 0, scale: 0.9 },
   visible: {
     y: 0,
     opacity: 1,
-    transition: { type: 'spring', stiffness: 100 }
+    scale: 1,
+    transition: {
+      type: 'spring',
+      stiffness: 100,
+      damping: 12
+    }
+  },
+  exit: {
+    y: -20,
+    opacity: 0,
+    scale: 0.9,
+    transition: { duration: 0.3 }
   }
 };
 
@@ -48,19 +60,13 @@ const CartPage = () => {
   const handleRemoveItem = (id: string) => {
     const element = document.getElementById(`cart-item-${id}`);
     if (element) {
-      element.style.height = `${element.offsetHeight}px`;
-      element.style.overflow = 'hidden';
-
-      setTimeout(() => {
-        element.style.height = '0';
-        element.style.opacity = '0';
-        element.style.margin = '0';
-        element.style.padding = '0';
-      }, 10);
+      element.style.transition = 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+      element.style.transform = 'translateX(100px)';
+      element.style.opacity = '0';
 
       setTimeout(() => {
         removeFromCart(id);
-      }, 300);
+      }, 500);
     } else {
       removeFromCart(id);
     }
@@ -91,9 +97,13 @@ const CartPage = () => {
           {items.length === 0 ? (
             <motion.div
               className="flex flex-col items-center justify-center p-12 bg-muted/30 rounded-lg text-center"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3 }}
+              initial={{ opacity: 0, scale: 0.8, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{
+                duration: 0.5,
+                type: "spring",
+                bounce: 0.3
+              }}
             >
               <ShoppingBag className="w-16 h-16 text-muted-foreground mb-4" />
               <h2 className="text-2xl font-medium mb-2">Your cart is empty</h2>
@@ -115,10 +125,12 @@ const CartPage = () => {
                     layout
                     className="group"
                   >
-                    <Card className="overflow-hidden border-muted/50 hover:border-primary/30 transition-all duration-300">
+                    <Card className="overflow-hidden border-muted/50 hover:border-primary/30 transition-all duration-500 hover:shadow-lg hover:shadow-primary/5">
                       <div className="flex flex-col sm:flex-row p-4 gap-4">
-                        <div
+                        <motion.div
                           className="relative w-full sm:w-1/4 h-40 sm:h-auto rounded-md overflow-hidden bg-muted/30 cursor-pointer"
+                          whileHover={{ scale: 1.05 }}
+                          transition={{ type: "spring", stiffness: 300, damping: 20 }}
                           onClick={() => {
                             setSelectedCake(item);
                             setShowCakeModal(true);
@@ -134,7 +146,7 @@ const CartPage = () => {
                           ) : (
                             <div className="absolute inset-0 bg-gradient-to-br from-pink-200 to-purple-200" />
                           )}
-                        </div>
+                        </motion.div>
                         <div className="flex flex-col sm:flex-1 justify-between">
                           <div>
                             <div className="flex items-start justify-between">
@@ -208,9 +220,14 @@ const CartPage = () => {
         {/* Order summary */}
         <motion.div
           className="w-full md:w-1/3"
-          initial={{ opacity: 0, x: 20 }}
+          initial={{ opacity: 0, x: 50 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{
+            type: "spring",
+            stiffness: 100,
+            damping: 20,
+            delay: 0.4
+          }}
         >
           <Card className="sticky top-24 border-muted/50">
             <div className="p-6">
@@ -236,13 +253,16 @@ const CartPage = () => {
               </div>
 
               <motion.div
-                whileHover={{ scale: 1.05, rotate: 1 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={{
+                  scale: 1.02,
+                  transition: { type: "spring", stiffness: 400, damping: 10 }
+                }}
+                whileTap={{ scale: 0.98 }}
                 className="mt-6"
               >
                 <Button
                   size="lg"
-                  className="w-full bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 hover:from-blue-500 hover:via-purple-500 hover:to-pink-500 text-white font-bold shadow-lg transition-all duration-300"
+                  className="w-full bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 hover:from-blue-500 hover:via-purple-500 hover:to-pink-500 text-white font-bold shadow-lg transition-all duration-500 hover:shadow-xl hover:shadow-primary/20"
                   disabled={items.length === 0}
                   asChild
                 >
