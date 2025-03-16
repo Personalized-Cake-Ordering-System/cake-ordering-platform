@@ -191,7 +191,7 @@ const CartPage = () => {
                       </div>
                       <div className="px-4 pb-4">
                         <Button variant="link" className="h-auto p-0 flex items-center text-primary" asChild>
-                          <Link href="/customizeCake">
+                          <Link href={`/customizeCake?editId=${item.id}`}>
                             Edit custom cake
                             <ChevronRight className="w-4 h-4 ml-1" />
                           </Link>

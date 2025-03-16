@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '@/contexts/CartContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { CakeConfig } from '@/types/cake';
 
 // Define type for the selected part
@@ -254,11 +254,26 @@ const getInitialCakeConfig = (): CakeConfig => {
 };
 
 const CakeCustomizer = () => {
+    const { addToCart, items, editCartItem } = useCart();
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const editId = searchParams.get('editId');
+
     // Update state definitions with proper types
     const [selectedPart, setSelectedPart] = useState<SelectedPart>(null);
     const [cakeConfig, setCakeConfig] = useState<CakeConfig>(getInitialCakeConfig());
     const [showJson, setShowJson] = useState(false);
     const [isZoomed, setIsZoomed] = useState(false);
+
+    // Update the initial state to load existing item if editing
+    useEffect(() => {
+        if (editId) {
+            const itemToEdit = items.find(item => item.id === editId);
+            if (itemToEdit) {
+                setCakeConfig(itemToEdit.config);
+            }
+        }
+    }, [editId, items]);
 
     // Add useEffect to save config whenever it changes
     useEffect(() => {
@@ -1154,14 +1169,14 @@ const CakeCustomizer = () => {
         );
     };
 
-    // Add these new hooks
-    const { addToCart } = useCart();
-    const router = useRouter();
-
-    // Add this function to handle adding to cart
+    // Update the handleAddToCart function
     const handleAddToCart = () => {
-        addToCart(cakeConfig);
-        router.push('/cart'); // Navigate to cart page
+        if (editId) {
+            editCartItem(editId, cakeConfig);
+        } else {
+            addToCart(cakeConfig);
+        }
+        router.push('/cart');
     };
 
     return (
@@ -1342,7 +1357,7 @@ const CakeCustomizer = () => {
                                 onClick={handleAddToCart}
                                 className="w-full bg-gradient-to-r from-pink-600 to-purple-600 text-white py-4 text-lg font-bold rounded-xl hover:from-pink-700 hover:to-purple-700 transition-all"
                             >
-                                ADD TO CART
+                                {editId ? 'UPDATE CART' : 'ADD TO CART'}
                             </motion.button>
                         </motion.div>
                     </div>
