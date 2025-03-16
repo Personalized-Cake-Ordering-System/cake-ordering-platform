@@ -4,6 +4,8 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Trash2, Plus, Minus, ChevronRight, ShoppingBag } from 'lucide-react';
+import { useCart } from '@/contexts/CartContext';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -11,37 +13,6 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-
-// Mock data for cart items
-const cartItems = [
-  {
-    id: 1,
-    name: 'Birthday Chocolate Cake',
-    description: 'Rich chocolate cake with buttercream frosting and sprinkles',
-    price: 45.99,
-    quantity: 1,
-    image: '/imagecake.jpg',
-    customized: true,
-  },
-  {
-    id: 2,
-    name: 'Vanilla Celebration Cake',
-    description: 'Light vanilla cake with strawberry filling and white chocolate ganache',
-    price: 38.50,
-    quantity: 2,
-    image: '/imagecake2.jpeg',
-    customized: false,
-  },
-  {
-    id: 3,
-    name: 'Red Velvet Deluxe',
-    description: 'Classic red velvet cake with cream cheese frosting and chocolate shavings',
-    price: 52.75,
-    quantity: 1,
-    image: '/imagecake1.jpeg',
-    customized: true,
-  },
-];
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -63,41 +34,39 @@ const itemVariants = {
 };
 
 const CartPage = () => {
-  const [items, setItems] = React.useState(cartItems);
+  const { items, removeFromCart, updateQuantity } = useCart();
+  const [showCakeModal, setShowCakeModal] = React.useState(false);
+  const [selectedCake, setSelectedCake] = React.useState(null);
 
-  const handleQuantityChange = (id: number, change: number) => {
-    setItems(prev =>
-      prev.map(item =>
-        item.id === id
-          ? { ...item, quantity: Math.max(1, item.quantity + change) }
-          : item
-      )
-    );
+  const handleQuantityChange = (id: string, change: number) => {
+    const item = items.find(i => i.id === id);
+    if (item) {
+      updateQuantity(id, Math.max(1, item.quantity + change));
+    }
   };
 
-  const handleRemoveItem = (id: number) => {
-    setItems(prev => {
-      const newItems = prev.filter(item => item.id !== id);
+  const handleRemoveItem = (id: string) => {
+    const element = document.getElementById(`cart-item-${id}`);
+    if (element) {
+      element.style.height = `${element.offsetHeight}px`;
+      element.style.overflow = 'hidden';
 
-      // Add animation effect
-      const element = document.getElementById(`cart-item-${id}`);
-      if (element) {
-        element.style.height = `${element.offsetHeight}px`;
-        element.style.overflow = 'hidden';
+      setTimeout(() => {
+        element.style.height = '0';
+        element.style.opacity = '0';
+        element.style.margin = '0';
+        element.style.padding = '0';
+      }, 10);
 
-        setTimeout(() => {
-          element.style.height = '0';
-          element.style.opacity = '0';
-          element.style.margin = '0';
-          element.style.padding = '0';
-        }, 10);
-      }
-
-      return newItems;
-    });
+      setTimeout(() => {
+        removeFromCart(id);
+      }, 300);
+    } else {
+      removeFromCart(id);
+    }
   };
 
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const subtotal = items.reduce((sum, item) => sum + item.config.price * item.quantity, 0);
   const tax = subtotal * 0.08; // 8% tax
   const delivery = 5.99;
   const total = subtotal + tax + delivery;
@@ -130,8 +99,8 @@ const CartPage = () => {
               <h2 className="text-2xl font-medium mb-2">Your cart is empty</h2>
               <p className="text-muted-foreground mb-6">Looks like you haven't added any cakes to your cart yet.</p>
               <Button asChild>
-                <Link href="/cakes">
-                  Browse Cakes
+                <Link href="/customizeCake">
+                  Customize a Cake
                 </Link>
               </Button>
             </motion.div>
@@ -148,23 +117,28 @@ const CartPage = () => {
                   >
                     <Card className="overflow-hidden border-muted/50 hover:border-primary/30 transition-all duration-300">
                       <div className="flex flex-col sm:flex-row p-4 gap-4">
-                        <div className="relative w-full sm:w-1/4 h-40 sm:h-auto rounded-md overflow-hidden bg-muted/30">
-                          <Image
-                            src={item.image}
-                            alt={item.name}
-                            fill
-                            className="object-cover"
-                          />
-                          {item.customized && (
-                            <Badge className="absolute top-2 right-2 bg-primary text-primary-foreground">
-                              Customized
-                            </Badge>
+                        <div
+                          className="relative w-full sm:w-1/4 h-40 sm:h-auto rounded-md overflow-hidden bg-muted/30 cursor-pointer"
+                          onClick={() => {
+                            setSelectedCake(item);
+                            setShowCakeModal(true);
+                          }}
+                        >
+                          {item.config.imageUrl ? (
+                            <Image
+                              src={item.config.imageUrl}
+                              alt={`Custom ${item.config.size} Cake`}
+                              fill
+                              className="object-cover transition-transform hover:scale-105"
+                            />
+                          ) : (
+                            <div className="absolute inset-0 bg-gradient-to-br from-pink-200 to-purple-200" />
                           )}
                         </div>
                         <div className="flex flex-col sm:flex-1 justify-between">
                           <div>
                             <div className="flex items-start justify-between">
-                              <h3 className="text-xl font-medium">{item.name}</h3>
+                              <h3 className="text-xl font-medium">Custom {item.config.size} Cake</h3>
                               <motion.button
                                 whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.95 }}
@@ -183,7 +157,9 @@ const CartPage = () => {
                                 </TooltipProvider>
                               </motion.button>
                             </div>
-                            <p className="text-muted-foreground mt-1 mb-4 text-sm">{item.description}</p>
+                            <p className="text-muted-foreground mt-1 mb-4 text-sm">
+                              {item.config.sponge} sponge with {item.config.filling} filling
+                            </p>
                           </div>
                           <div className="flex justify-between items-center">
                             <div className="flex items-center space-x-1 border rounded-md">
@@ -207,20 +183,20 @@ const CartPage = () => {
                               </motion.button>
                             </div>
                             <div className="text-right">
-                              <div className="text-lg font-bold">${(item.price * item.quantity).toFixed(2)}</div>
-                              <div className="text-sm text-muted-foreground">${item.price.toFixed(2)} each</div>
+                              <div className="text-lg font-bold">${(item.config.price * item.quantity).toFixed(2)}</div>
+                              <div className="text-sm text-muted-foreground">${item.config.price.toFixed(2)} each</div>
                             </div>
                           </div>
                         </div>
                       </div>
-                      {item.customized && (
-                        <div className="px-4 pb-4">
-                          <Button variant="link" className="h-auto p-0 flex items-center text-primary">
+                      <div className="px-4 pb-4">
+                        <Button variant="link" className="h-auto p-0 flex items-center text-primary" asChild>
+                          <Link href="/customizeCake">
                             Edit custom cake
                             <ChevronRight className="w-4 h-4 ml-1" />
-                          </Button>
-                        </div>
-                      )}
+                          </Link>
+                        </Button>
+                      </div>
                     </Card>
                   </motion.div>
                 ))}
@@ -276,7 +252,7 @@ const CartPage = () => {
 
               <div className="flex justify-center mt-4">
                 <Button variant="link" className="text-sm" asChild>
-                  <Link href="/stores">Continue Shopping</Link>
+                  <Link href="/customizeCake">Continue Shopping</Link>
                 </Button>
               </div>
 
@@ -298,6 +274,46 @@ const CartPage = () => {
           </Card>
         </motion.div>
       </div>
+
+      {showCakeModal && selectedCake && (
+        <Dialog open={showCakeModal} onOpenChange={setShowCakeModal}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Custom {selectedCake.config.size} Cake Details</DialogTitle>
+            </DialogHeader>
+            <div className="relative w-full h-64">
+              {selectedCake.config.imageUrl ? (
+                <Image
+                  src={selectedCake.config.imageUrl}
+                  alt={`Custom ${selectedCake.config.size} Cake`}
+                  fill
+                  className="object-cover rounded-md"
+                />
+              ) : (
+                <div className="absolute inset-0 bg-gradient-to-br from-pink-200 to-purple-200 rounded-md" />
+              )}
+            </div>
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-medium">Specifications:</h4>
+                <p className="text-sm text-muted-foreground">
+                  Size: {selectedCake.config.size}<br />
+                  Sponge: {selectedCake.config.sponge}<br />
+                  Filling: {selectedCake.config.filling}
+                </p>
+              </div>
+              <div>
+                <h4 className="font-medium">Price:</h4>
+                <p className="text-sm text-muted-foreground">
+                  ${selectedCake.config.price} each<br />
+                  Quantity: {selectedCake.quantity}<br />
+                  Total: ${(selectedCake.config.price * selectedCake.quantity).toFixed(2)}
+                </p>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };

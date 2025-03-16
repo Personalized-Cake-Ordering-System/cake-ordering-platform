@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -13,24 +13,9 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { motion, AnimatePresence } from 'framer-motion';
-
-// Define types for the cake configuration
-type CakeConfig = {
-    size: string;
-    price: number;
-    sponge: string;
-    outerIcing: string;
-    filling: string;
-    topping: null;
-    message: string;
-    candles: string | null;
-    board: string;
-    goo: string | null;
-    extras: string[];
-    messageType: 'none' | 'piped' | 'edible';
-    plaqueColor: string;
-    uploadedImage: string | null;
-}
+import { useCart } from '@/contexts/CartContext';
+import { useRouter } from 'next/navigation';
+import { CakeConfig } from '@/types/cake';
 
 // Define type for the selected part
 type SelectedPart = 'cake' | 'outer-icing' | 'filling' | 'message' | 'candles' | 'board' | 'extras' | null;
@@ -217,10 +202,40 @@ const plaqueColors: PlaqueColor[] = [
     { id: 'blue', name: 'BLUE CHOCOLATE', color: 'bg-blue-200' }
 ];
 
-const CakeCustomizer = () => {
-    // Update state definitions with proper types
-    const [selectedPart, setSelectedPart] = useState<SelectedPart>(null);
-    const [cakeConfig, setCakeConfig] = useState<CakeConfig>({
+// Add this function at the top of the file, outside the component
+const getInitialCakeConfig = (): CakeConfig => {
+    if (typeof window === 'undefined') {
+        // Return default config when running on server
+        return {
+            size: '8"',
+            price: 95.99,
+            sponge: 'vanilla',
+            outerIcing: 'pink-vanilla',
+            filling: 'white-vanilla',
+            topping: null,
+            message: '',
+            candles: null,
+            board: 'white',
+            goo: null,
+            extras: [],
+            messageType: 'none',
+            plaqueColor: 'white',
+            uploadedImage: null,
+        };
+    }
+
+    // Try to get saved config from localStorage
+    const savedConfig = localStorage.getItem('cakeConfig');
+    if (savedConfig) {
+        try {
+            return JSON.parse(savedConfig);
+        } catch (error) {
+            console.error('Error parsing saved cake config:', error);
+        }
+    }
+
+    // Return default config if no saved config exists
+    return {
         size: '8"',
         price: 95.99,
         sponge: 'vanilla',
@@ -235,9 +250,42 @@ const CakeCustomizer = () => {
         messageType: 'none',
         plaqueColor: 'white',
         uploadedImage: null,
-    });
+    };
+};
+
+const CakeCustomizer = () => {
+    // Update state definitions with proper types
+    const [selectedPart, setSelectedPart] = useState<SelectedPart>(null);
+    const [cakeConfig, setCakeConfig] = useState<CakeConfig>(getInitialCakeConfig());
     const [showJson, setShowJson] = useState(false);
     const [isZoomed, setIsZoomed] = useState(false);
+
+    // Add useEffect to save config whenever it changes
+    useEffect(() => {
+        localStorage.setItem('cakeConfig', JSON.stringify(cakeConfig));
+    }, [cakeConfig]);
+
+    // Add a function to reset the configuration
+    const handleResetConfig = () => {
+        const defaultConfig: CakeConfig = {
+            size: '8"',
+            price: 95.99,
+            sponge: 'vanilla',
+            outerIcing: 'pink-vanilla',
+            filling: 'white-vanilla',
+            topping: null,
+            message: '',
+            candles: null,
+            board: 'white',
+            goo: null,
+            extras: [],
+            messageType: 'none' as 'none' | 'piped' | 'edible',
+            plaqueColor: 'white',
+            uploadedImage: null,
+        };
+        setCakeConfig(defaultConfig);
+        localStorage.setItem('cakeConfig', JSON.stringify(defaultConfig));
+    };
 
     // Options for customization
     const icingOptions = [
@@ -932,17 +980,24 @@ const CakeCustomizer = () => {
 
             case 'board':
                 return (
-                    <div>
-                        <h3 className="font-bold mb-2">CAKE BOARD (Colours Depending on Stock Levels)</h3>
-                        <div className="grid grid-cols-3 gap-2">
+                    <div className="space-y-6">
+                        <h3 className="font-bold mb-4">CAKE BOARD</h3>
+                        <p className="text-sm text-gray-500 mb-4">Select your preferred board color (subject to availability)</p>
+                        <div className="grid grid-cols-3 gap-4">
                             {boardOptions.map(option => (
-                                <div key={option.id} className="flex flex-col items-center">
+                                <motion.div
+                                    key={option.id}
+                                    whileHover={{ scale: 1.05 }}
+                                    className="flex flex-col items-center"
+                                >
                                     <button
-                                        className={`w-12 h-12 ${option.color} ${option.border || ''} ${cakeConfig.board === option.id ? 'ring-2 ring-pink-500' : 'ring-1 ring-gray-200'} rounded`}
                                         onClick={() => handleOptionSelect('board', option.id)}
+                                        className={`w-20 h-20 ${option.color} ${option.border || ''} 
+                                            ${cakeConfig.board === option.id ? 'ring-2 ring-pink-500' : 'ring-1 ring-gray-200'} 
+                                            rounded-lg shadow-sm hover:shadow-md transition-all`}
                                     />
-                                    <p className="text-xs text-center mt-1">{option.name}</p>
-                                </div>
+                                    <p className="text-sm font-medium text-center mt-2">{option.name}</p>
+                                </motion.div>
                             ))}
                         </div>
                     </div>
@@ -1099,103 +1154,201 @@ const CakeCustomizer = () => {
         );
     };
 
+    // Add these new hooks
+    const { addToCart } = useCart();
+    const router = useRouter();
+
+    // Add this function to handle adding to cart
+    const handleAddToCart = () => {
+        addToCart(cakeConfig);
+        router.push('/cart'); // Navigate to cart page
+    };
+
     return (
-        <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
-            <div className="flex flex-col md:flex-row w-full max-w-7xl mx-auto gap-8 p-6">
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50"
+        >
+            <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="flex flex-col md:flex-row w-full max-w-7xl mx-auto gap-8 p-6"
+            >
                 {/* Left side - Cake Preview */}
-                <div className="flex-1 sticky top-6 h-fit">
-                    <div className="relative aspect-square w-full max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-8">
-                        {renderCake()}
-                        <div className="absolute bottom-4 left-4 text-sm font-bold text-gray-500">
-                            #Personalized-Cake-Ordering-System
-                        </div>
-                    </div>
-                </div>
+                <motion.div
+                    layout
+                    className="flex-1 sticky top-6 h-fit"
+                >
+                    <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                        className="relative aspect-square w-full max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-8"
+                    >
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={selectedPart || 'default'}
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.8 }}
+                                transition={{ duration: 0.3 }}
+                            >
+                                {renderCake()}
+                            </motion.div>
+                        </AnimatePresence>
+                    </motion.div>
+                </motion.div>
 
                 {/* Right side - Configuration Panel */}
-                <div className="w-full md:w-[400px]">
+                <motion.div
+                    initial={{ x: 20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                    className="w-full md:w-[400px]"
+                >
                     <div className="bg-white rounded-2xl shadow-xl">
-                        <div className="p-6 border-b border-gray-100">
-                            <h1 className="text-4xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
-                                BESPOKE CAKE
-                            </h1>
-                            <div className="text-2xl font-bold text-gray-900">
-                                £{cakeConfig.price.toFixed(2)}
+                        <motion.div
+                            whileHover={{ scale: 1.02 }}
+                            className="p-6 border-b border-gray-100"
+                        >
+                            <div className="flex justify-between items-center">
+                                <motion.h1
+                                    initial={{ y: -20 }}
+                                    animate={{ y: 0 }}
+                                    className="text-4xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent"
+                                >
+                                    BESPOKE CAKE
+                                </motion.h1>
+                                <motion.button
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.9 }}
+                                    onClick={handleResetConfig}
+                                    className="p-2 rounded-full hover:bg-gray-100"
+                                    title="Reset Design"
+                                >
+                                    <svg
+                                        className="w-5 h-5 text-gray-500"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                        />
+                                    </svg>
+                                </motion.button>
                             </div>
-                        </div>
+                            <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                className="text-2xl font-bold text-gray-900"
+                            >
+                                £{cakeConfig.price.toFixed(2)}
+                            </motion.div>
+                        </motion.div>
 
                         <div className="max-h-[60vh] overflow-y-auto custom-scrollbar">
                             <div className="p-6">
-                                {!selectedPart ? (
-                                    // Main menu with updated styling
-                                    <div className="space-y-4">
-                                        <MenuItem
-                                            icon="🍰"
-                                            title="CAKE"
-                                            subtitle={`${cakeConfig.size}`}
-                                            onClick={() => setSelectedPart('cake')}
-                                            gradient="from-pink-500 to-rose-500"
-                                        />
-                                        <MenuItem
-                                            icon="🧁"
-                                            title="DECORATION"
-                                            subtitle="CHOCOLATE BUTTERCREAM"
-                                            onClick={() => setSelectedPart('outer-icing')}
-                                            gradient="from-purple-500 to-indigo-500"
-                                        />
-                                        <MenuItem
-                                            icon="✍️"
-                                            title="PIPING & PRINTING"
-                                            subtitle={cakeConfig.message || "PIPED MESSAGE + WHITE CHOCOLATE PLAQUE"}
-                                            onClick={() => setSelectedPart('message')}
-                                            gradient="from-blue-500 to-cyan-500"
-                                        />
-                                        <MenuItem
-                                            icon="🕯️"
-                                            title="FINISHING TOUCHES"
-                                            subtitle="6x PINK CANDLES + WHITE CHOCOLATE PLAQUE"
-                                            onClick={() => setSelectedPart('candles')}
-                                            gradient="from-teal-500 to-emerald-500"
-                                        />
-                                        <MenuItem
-                                            icon="🍪"
-                                            title="MAKE IT EXTRA"
-                                            subtitle={cakeConfig.extras.length > 0
-                                                ? `${cakeConfig.extras.length} extras added`
-                                                : "Add special toppings"}
-                                            onClick={() => setSelectedPart('extras')}
-                                            gradient="from-yellow-500 to-orange-500"
-                                        />
-                                    </div>
-                                ) : (
-                                    // Customization panel
-                                    <div>
-                                        <div className="flex items-center gap-2 mb-6">
-                                            <button
-                                                onClick={() => setSelectedPart(null)}
-                                                className="p-2 hover:bg-pink-50 rounded-full transition-colors"
-                                            >
-                                                <ArrowLeft className="w-6 h-6 text-pink-600" />
-                                            </button>
-                                            <h2 className="text-xl font-bold text-gray-900">
-                                                {selectedPart.toUpperCase()}
-                                            </h2>
-                                        </div>
-                                        {renderCustomizationPanel()}
-                                    </div>
-                                )}
+                                <AnimatePresence mode="wait">
+                                    {!selectedPart ? (
+                                        // Main menu with animations
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -20 }}
+                                            className="space-y-4"
+                                        >
+                                            <MenuItem
+                                                icon="🍰"
+                                                title="CAKE"
+                                                subtitle={`${cakeConfig.size}`}
+                                                onClick={() => setSelectedPart('cake')}
+                                                gradient="from-pink-500 to-rose-500"
+                                            />
+                                            <MenuItem
+                                                icon="🧁"
+                                                title="DECORATION"
+                                                subtitle="CHOCOLATE BUTTERCREAM"
+                                                onClick={() => setSelectedPart('outer-icing')}
+                                                gradient="from-purple-500 to-indigo-500"
+                                            />
+                                            <MenuItem
+                                                icon="✍️"
+                                                title="PIPING & PRINTING"
+                                                subtitle={cakeConfig.message || "PIPED MESSAGE + WHITE CHOCOLATE PLAQUE"}
+                                                onClick={() => setSelectedPart('message')}
+                                                gradient="from-blue-500 to-cyan-500"
+                                            />
+                                            <MenuItem
+                                                icon="🕯️"
+                                                title="FINISHING TOUCHES"
+                                                subtitle="6x PINK CANDLES + WHITE CHOCOLATE PLAQUE"
+                                                onClick={() => setSelectedPart('candles')}
+                                                gradient="from-teal-500 to-emerald-500"
+                                            />
+                                            <MenuItem
+                                                icon="📝"
+                                                title="CAKE BOARD"
+                                                subtitle={`${boardOptions.find(b => b.id === cakeConfig.board)?.name || 'Select board color'}`}
+                                                onClick={() => setSelectedPart('board')}
+                                                gradient="from-green-500 to-teal-500"
+                                            />
+                                            <MenuItem
+                                                icon="🍪"
+                                                title="MAKE IT EXTRA"
+                                                subtitle={cakeConfig.extras.length > 0
+                                                    ? `${cakeConfig.extras.length} extras added`
+                                                    : "Add special toppings"}
+                                                onClick={() => setSelectedPart('extras')}
+                                                gradient="from-yellow-500 to-orange-500"
+                                            />
+                                        </motion.div>
+                                    ) : (
+                                        // Customization panel with animations
+                                        <motion.div
+                                            initial={{ opacity: 0, x: 20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -20 }}
+                                        >
+                                            <div className="flex items-center gap-2 mb-6">
+                                                <button
+                                                    onClick={() => setSelectedPart(null)}
+                                                    className="p-2 hover:bg-pink-50 rounded-full transition-colors"
+                                                >
+                                                    <ArrowLeft className="w-6 h-6 text-pink-600" />
+                                                </button>
+                                                <h2 className="text-xl font-bold text-gray-900">
+                                                    {selectedPart.toUpperCase()}
+                                                </h2>
+                                            </div>
+                                            {renderCustomizationPanel()}
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </div>
                         </div>
 
-                        <div className="p-4 border-t border-gray-100">
-                            <button className="w-full bg-gradient-to-r from-pink-600 to-purple-600 text-white py-4 text-lg font-bold rounded-xl hover:from-pink-700 hover:to-purple-700 transition-all transform hover:scale-[1.02]">
+                        <motion.div
+                            whileHover={{ scale: 1.02 }}
+                            className="p-4 border-t border-gray-100"
+                        >
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={handleAddToCart}
+                                className="w-full bg-gradient-to-r from-pink-600 to-purple-600 text-white py-4 text-lg font-bold rounded-xl hover:from-pink-700 hover:to-purple-700 transition-all"
+                            >
                                 ADD TO CART
-                            </button>
-                        </div>
+                            </motion.button>
+                        </motion.div>
                     </div>
-                </div>
-            </div>
-        </div>
+                </motion.div>
+            </motion.div>
+        </motion.div>
     );
 };
 
@@ -1239,21 +1392,44 @@ const MenuItem = ({
     gradient: string;
 }) => {
     return (
-        <button
+        <motion.button
+            whileHover={{ scale: 1.02, backgroundColor: 'rgb(249, 250, 251)' }}
+            whileTap={{ scale: 0.98 }}
             onClick={onClick}
-            className={`w-full flex items-center gap-4 p-4 rounded-xl hover:bg-gray-50 transition-all transform hover:scale-[1.02] hover:shadow-md`}
+            className={`w-full flex items-center gap-4 p-4 rounded-xl transition-all`}
         >
-            <span className="text-2xl">{icon}</span>
+            <motion.span
+                whileHover={{ rotate: [0, -10, 10, -10, 0] }}
+                transition={{ duration: 0.5 }}
+                className="text-2xl"
+            >
+                {icon}
+            </motion.span>
             <div className="flex-1 text-left">
-                <div className={`font-bold bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>
+                <motion.div
+                    className={`font-bold bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}
+                >
                     {title}
-                </div>
-                <div className="text-sm text-gray-600">{subtitle}</div>
+                </motion.div>
+                <motion.div
+                    initial={{ opacity: 0.5 }}
+                    animate={{ opacity: 1 }}
+                    className="text-sm text-gray-600"
+                >
+                    {subtitle}
+                </motion.div>
             </div>
-            <svg className="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <motion.svg
+                whileHover={{ x: 5 }}
+                className="w-5 h-5 text-gray-400"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+            >
                 <path d="M9 18l6-6-6-6" />
-            </svg>
-        </button>
+            </motion.svg>
+        </motion.button>
     );
 };
 
