@@ -142,7 +142,7 @@ const MultiCakes = () => {
         </h1>
         <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-8">
           Discover our handcrafted collection of beautiful cakes for every occasion.
-          From birthdays to weddings, we've got the perfect sweet treat for your celebration.
+          From birthdays to weddings, weve got the perfect sweet treat for your celebration.
         </p>
         <div className="flex flex-wrap justify-center gap-4">
           <Button size="lg" className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">

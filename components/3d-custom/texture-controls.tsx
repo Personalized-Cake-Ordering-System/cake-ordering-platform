@@ -31,7 +31,6 @@ export function TextureControls() {
     const handleTextureSelect = (texturePath: string) => {
         setTextureForPart(selectedPart, {
             texture: texturePath,
-            scale: 1,
             rotation: 0,
             repeat: 1
         });
@@ -90,18 +89,7 @@ export function TextureControls() {
                                 <Maximize className="w-4 h-4" />
                                 Scale
                             </label>
-                            <input
-                                type="range"
-                                min={0.1}
-                                max={5}
-                                step={0.1}
-                                value={currentTexture.scale}
-                                onChange={(e) => setTextureForPart(selectedPart, {
-                                    ...currentTexture,
-                                    scale: parseFloat(e.target.value)
-                                })}
-                                className="w-full"
-                            />
+                           
                         </div>
 
                         <div className="space-y-2">

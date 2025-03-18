@@ -3,7 +3,7 @@ import { getBakeries } from "@/features/barkeries/actions/barkeries-action";
 import { SearchParams } from "@/types/table";
 
 export interface IndexPageProps {
-  searchParams: SearchParams;
+  searchParams: Promise<SearchParams>;
 }
 
 const StoresPage = async ({ searchParams }: IndexPageProps) => {
@@ -17,7 +17,7 @@ const StoresPage = async ({ searchParams }: IndexPageProps) => {
 
   // const barkeriesResponse = await getBakeries();
 
-  const [barkeriesPromise] = await Promise.all([getBakeries(searchParams)]);
+  const [barkeriesPromise] = await Promise.all([getBakeries((await searchParams))]);
   console.log("Bakeries Promise Result:", barkeriesPromise);
 
   return (

@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Award, Clock, Heart, MessageCircle, ShoppingCart, Star, Users, Calendar } from 'lucide-react';
 
-export default function StoreHeader({ bakery }) {
+export default function StoreHeader({ bakery }: { bakery: any }) {
   return (
     <div className="relative rounded-xl overflow-hidden bg-gradient-to-r from-custom-pink to-custom-teal shadow-lg">
       {/* Decorative background elements */}
@@ -65,7 +65,7 @@ export default function StoreHeader({ bakery }) {
 }
 
 // Helper component for store metrics
-function StoreMetric({ icon, label, value }) {
+function StoreMetric({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="flex items-center gap-2 bg-gray-100 dark:bg-white/10 p-3 rounded-lg backdrop-blur-sm">
       <div className="text-gray-700 dark:text-white/90">

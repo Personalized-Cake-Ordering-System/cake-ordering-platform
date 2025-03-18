@@ -234,7 +234,7 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryApiResponse 
 
   return (
     <div className="space-y-6">
-      <StoreHeader bakery={storeData} />
+      <StoreHeader bakery={bakery} />
       <HeaderDashboard />
       
       <Tabs defaultValue="all" className="w-full" value={activeTab} onValueChange={setActiveTab}>

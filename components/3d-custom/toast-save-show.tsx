@@ -80,14 +80,7 @@ export const ToastContainer: React.FC = () => {
         setToasts(prev => prev.filter(toast => toast.id !== id));
     };
 
-    // Expose the showToast method globally
-    React.useEffect(() => {
-        window.showToast = showToast;
 
-        return () => {
-            delete window.showToast;
-        };
-    }, []);
 
     return (
         <div className="toast-container">
