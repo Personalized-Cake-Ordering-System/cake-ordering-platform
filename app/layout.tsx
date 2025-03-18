@@ -12,6 +12,7 @@ import { QueryProvider } from "@/providers/query-provider";
 
 import NextTopLoader from "nextjs-toploader";
 import { cn } from "@/lib/utils";
+import { CartProvider } from '@/contexts/CartContext';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -59,7 +60,7 @@ export default function RootLayout({
           height={5}
           color={
             typeof window !== "undefined" &&
-            window.matchMedia("(prefers-color-scheme: dark)").matches
+              window.matchMedia("(prefers-color-scheme: dark)").matches
               ? "#E87931"
               : "#14b8a6"
           }
@@ -75,7 +76,9 @@ export default function RootLayout({
           <SessionProviders>
             <QueryProvider>
               <ModalProvider />
-              {children}
+              <CartProvider>
+                {children}
+              </CartProvider>
               <Toaster />
             </QueryProvider>
           </SessionProviders>
