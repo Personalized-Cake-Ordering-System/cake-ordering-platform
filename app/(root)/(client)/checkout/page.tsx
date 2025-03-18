@@ -1,30 +1,23 @@
 'use client'
-import * as React from 'react';
-import { motion } from 'framer-motion';
-import { ArrowLeft, CreditCard, MapPin, PackageCheck, Check, AlertCircle, ChevronDown, ChevronUp, ShieldCheck, Lock } from 'lucide-react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useCart } from '@/contexts/CartContext';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { zodResolver } from '@hookform/resolvers/zod';
+import { motion } from 'framer-motion';
+import { AlertCircle, ArrowLeft, Check, ChevronDown, ChevronUp, MapPin, PackageCheck, ShieldCheck } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import * as React from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
+import { Province, vietnamProvinces } from '@/app/data/vietnam-provinces';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import {
   Form,
   FormControl,
@@ -33,13 +26,33 @@ import {
   FormLabel,
   FormMessage
 } from '@/components/ui/form';
-import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from '@/components/ui/separator';
 import { useRouter } from 'next/navigation';
+
+// Add these new types
+type GeocodingResponse = {
+  results: Array<{
+    formatted_address: string;
+    geometry: {
+      location: {
+        lat: number;
+        lng: number;
+      }
+    }
+  }>;
+  status: string;
+};
 
 // Form schema for checkout validation
 const checkoutSchema = z.object({
@@ -47,11 +60,14 @@ const checkoutSchema = z.object({
   fullName: z.string().min(2, { message: 'Full name is required' }),
   email: z.string().email({ message: 'Please enter a valid email address' }),
   phone: z.string().min(10, { message: 'Phone number should be at least 10 digits' }),
-  province: z.string().min(2, { message: 'Province is required' }),
-  district: z.string().min(2, { message: 'District is required' }),
-  address: z.string().min(5, { message: 'Address is required' }),
+  province: z.string().min(2, { message: 'Tỉnh/Thành phố không được để trống' }),
+  district: z.string().min(2, { message: 'Quận/Huyện không được để trống' }),
+  address: z.string().min(5, { message: 'Địa chỉ không được để trống' }),
   deliveryMethod: z.enum(['standard', 'express']),
   specialInstructions: z.string().optional(),
+  formatted_address: z.string().optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
 });
 
 // Animation variants
@@ -97,6 +113,8 @@ const CheckoutPage = () => {
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [isComplete, setIsComplete] = React.useState(false);
   const [isOrderSummaryOpen, setIsOrderSummaryOpen] = React.useState(false);
+  const [selectedProvince, setSelectedProvince] = React.useState<string>('');
+  const [availableDistricts, setAvailableDistricts] = React.useState<Array<{ name: string; code: string }>>([]);
 
   const { items } = useCart();
 
@@ -105,6 +123,25 @@ const CheckoutPage = () => {
   const tax = subtotal * 0.08; // 8% tax
   const standardDelivery = 5.99;
   const expressDelivery = 12.99;
+
+  // Handle province change
+  const handleProvinceChange = (provinceCode: string) => {
+    const province = vietnamProvinces.find((p: Province) => p.code === provinceCode);
+    if (province) {
+      setSelectedProvince(provinceCode);
+      setAvailableDistricts(province.districts);
+      form.setValue('province', province.name);
+      form.setValue('district', '');
+    }
+  };
+
+  // Handle district change
+  const handleDistrictChange = (districtCode: string) => {
+    const district = availableDistricts.find(d => d.code === districtCode);
+    if (district) {
+      form.setValue('district', district.name);
+    }
+  };
 
   // Form setup
   const form = useForm<CheckoutFormValues>({
@@ -128,24 +165,88 @@ const CheckoutPage = () => {
   const deliveryFee = deliveryMethod === 'express' ? expressDelivery : standardDelivery;
   const total = subtotal + tax + deliveryFee;
 
+  // Add new function to handle geocoding
+  const geocodeAddress = async (address: string) => {
+    try {
+      const encodedAddress = encodeURIComponent(address);
+      const response = await fetch(
+        `https://rsapi.goong.io/geocode?address=${encodedAddress}&api_key=2R2HQynx7ypczZZcxS1w7uuJaxXIGoeXymvGGx0u`
+      );
+      const data: GeocodingResponse = await response.json();
+
+      if (data.status === 'OK' && data.results.length > 0) {
+        const result = data.results[0];
+        return {
+          formatted_address: result.formatted_address,
+          location: result.geometry.location
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error('Geocoding error:', error);
+      return null;
+    }
+  };
+
+  // Update the onSubmit function
   const onSubmit = async (data: CheckoutFormValues) => {
-    console.log('Form submitted:', data);
     setIsProcessing(true);
 
     try {
-      // Generate a unique order ID
-      const orderId = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      // Construct full address
+      const fullAddress = `${data.address}, ${data.district}, ${data.province}`;
+      const geocodeResult = await geocodeAddress(fullAddress);
 
-      // Create the URL with all necessary parameters
-      const searchParams = new URLSearchParams({
-        orderId,
-        address: data.address,
-        subtotal: subtotal.toString(),
-        deliveryMethod: data.deliveryMethod,
-      });
+      if (geocodeResult) {
+        // Generate a unique order ID
+        const orderId = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-      // Navigate to QR page
-      router.push(`/qrPage?${searchParams.toString()}`);
+        // Log the geocoding response
+        console.log('Geocoding Response:', {
+          fullAddress,
+          formattedAddress: geocodeResult.formatted_address,
+          coordinates: geocodeResult.location
+        });
+
+        // Create order details object
+        const orderDetails = {
+          orderId,
+          address: fullAddress,
+          lat: geocodeResult.location.lat,
+          lng: geocodeResult.location.lng,
+          subtotal: subtotal,
+          deliveryMethod: data.deliveryMethod,
+          customerName: data.fullName,
+          customerEmail: data.email,
+          customerPhone: data.phone,
+          orderDate: new Date().toISOString()
+        };
+
+        // Log the complete order details
+        console.log('Order Details:', orderDetails);
+
+        // Create the URL parameters
+        const searchParams = new URLSearchParams({
+          orderId: orderDetails.orderId,
+          address: orderDetails.address,
+          lat: orderDetails.lat.toString(),
+          lng: orderDetails.lng.toString(),
+          subtotal: orderDetails.subtotal.toString(),
+          deliveryMethod: orderDetails.deliveryMethod,
+          customerName: orderDetails.customerName,
+          customerEmail: orderDetails.customerEmail,
+          customerPhone: orderDetails.customerPhone
+        });
+
+        // Log the final URL parameters
+        console.log('URL Parameters:', searchParams.toString());
+
+        // Navigate to QR page
+        router.push(`/qrPage?${searchParams.toString()}`);
+      } else {
+        console.error('Failed to geocode address:', fullAddress);
+        setIsProcessing(false);
+      }
     } catch (error) {
       console.error('Error processing order:', error);
       setIsProcessing(false);
@@ -287,7 +388,7 @@ const CheckoutPage = () => {
                   <h2 className="text-xl font-bold">Delivery Information</h2>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <FormField
                     control={form.control}
                     name="fullName"
@@ -334,11 +435,51 @@ const CheckoutPage = () => {
                     control={form.control}
                     name="province"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Province</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter province" {...field} />
-                        </FormControl>
+                      <FormItem className="relative">
+                        <FormLabel className="text-base font-semibold mb-2">Tỉnh/Thành phố</FormLabel>
+                        <Select
+                          onValueChange={handleProvinceChange}
+                          defaultValue={selectedProvince}
+                        >
+                          <FormControl>
+                            <SelectTrigger
+                              className="w-full min-h-[3.5rem] px-4 bg-background border-2 transition-all duration-200 
+                              ease-in-out hover:border-primary focus:border-primary rounded-xl shadow-sm
+                              hover:shadow-md focus:shadow-md"
+                            >
+                              <SelectValue
+                                placeholder="Chọn tỉnh/thành phố"
+                                className="text-base placeholder:text-muted-foreground/70"
+                              />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent
+                            className="max-h-[300px] overflow-y-auto rounded-xl border-2 shadow-lg bg-background/95 
+                            backdrop-blur-lg p-2"
+                          >
+                            <div className="sticky top-0 bg-background/95 backdrop-blur-lg p-3 border-b mb-2">
+                              <div className="text-sm font-semibold text-foreground flex items-center">
+                                <MapPin className="w-4 h-4 mr-2 text-primary" />
+                                Chọn tỉnh/thành phố
+                              </div>
+                            </div>
+                            {vietnamProvinces.map((province: Province) => (
+                              <SelectItem
+                                key={province.code}
+                                value={province.code}
+                                className="cursor-pointer transition-all duration-150 rounded-lg my-1 px-3 py-2.5
+                                hover:bg-primary/10 focus:bg-primary/10 data-[state=checked]:bg-primary/20"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="font-medium">{province.name}</span>
+                                  <Badge variant="outline" className="ml-2 bg-background/50">
+                                    {province.districts.length} quận/huyện
+                                  </Badge>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -348,11 +489,55 @@ const CheckoutPage = () => {
                     control={form.control}
                     name="district"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>District</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter district" {...field} />
-                        </FormControl>
+                      <FormItem className="relative">
+                        <FormLabel className="text-base font-semibold mb-2">Quận/Huyện</FormLabel>
+                        <Select
+                          onValueChange={handleDistrictChange}
+                          defaultValue={field.value}
+                          disabled={!selectedProvince}
+                        >
+                          <FormControl>
+                            <SelectTrigger
+                              className={`w-full min-h-[3.5rem] px-4 bg-background border-2 transition-all duration-200 
+                              ease-in-out rounded-xl shadow-sm ${!selectedProvince
+                                  ? 'opacity-50 cursor-not-allowed border-muted'
+                                  : 'hover:border-primary focus:border-primary hover:shadow-md focus:shadow-md'
+                                }`}
+                            >
+                              <SelectValue
+                                placeholder={
+                                  !selectedProvince
+                                    ? "Vui lòng chọn tỉnh/thành phố trước"
+                                    : "Chọn quận/huyện"
+                                }
+                                className="text-base placeholder:text-muted-foreground/70"
+                              />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent
+                            className="max-h-[300px] overflow-y-auto rounded-xl border-2 shadow-lg bg-background/95 
+                            backdrop-blur-lg p-2"
+                          >
+                            <div className="sticky top-0 bg-background/95 backdrop-blur-lg p-3 border-b mb-2">
+                              <div className="text-sm font-semibold text-foreground flex items-center">
+                                <MapPin className="w-4 h-4 mr-2 text-primary" />
+                                Chọn quận/huyện
+                              </div>
+                            </div>
+                            {availableDistricts.map((district) => (
+                              <SelectItem
+                                key={district.code}
+                                value={district.code}
+                                className="cursor-pointer transition-all duration-150 rounded-lg my-1 px-3 py-2.5
+                                hover:bg-primary/10 focus:bg-primary/10 data-[state=checked]:bg-primary/20"
+                              >
+                                <div className="flex items-center">
+                                  <span className="font-medium">{district.name}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -362,10 +547,10 @@ const CheckoutPage = () => {
                     control={form.control}
                     name="address"
                     render={({ field }) => (
-                      <FormItem className="md:col-span-2">
-                        <FormLabel>Street Address</FormLabel>
+                      <FormItem>
+                        <FormLabel>Địa chỉ</FormLabel>
                         <FormControl>
-                          <Input placeholder="123 Main St" {...field} />
+                          <Input placeholder="Số nhà, tên đường" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

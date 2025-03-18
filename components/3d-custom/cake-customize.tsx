@@ -1,21 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Check, Save, Download } from 'lucide-react';
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog";
-import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '@/contexts/CartContext';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { CakeConfig } from '@/types/cake';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ArrowLeft, Check, Download } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
 
 // Define type for the selected part
 type SelectedPart = 'cake' | 'outer-icing' | 'filling' | 'message' | 'candles' | 'board' | 'extras' | null;
@@ -202,7 +193,6 @@ const plaqueColors: PlaqueColor[] = [
     { id: 'blue', name: 'BLUE CHOCOLATE', color: 'bg-blue-200' }
 ];
 
-// Add this function at the top of the file, outside the component
 const getInitialCakeConfig = (): CakeConfig => {
     if (typeof window === 'undefined') {
         // Return default config when running on server
@@ -538,7 +528,7 @@ const CakeCustomizer = () => {
 
                         {/* Candles with improved styling and animations */}
                         {showCandles && (
-                            <div className="absolute w-full flex justify-center -top-16">
+                            <div className="absolute w-full flex justify-center -top-2">
                                 {Array(6).fill(0).map((_, i) => (
                                     <motion.div
                                         key={i}
