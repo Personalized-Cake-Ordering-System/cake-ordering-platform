@@ -199,7 +199,7 @@ const CheckoutPage = () => {
 
       if (geocodeResult) {
         // Generate a unique order ID
-        const orderId = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const orderId = `ORD`;
 
         // Log the geocoding response
         console.log('Geocoding Response:', {
@@ -287,8 +287,8 @@ const CheckoutPage = () => {
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.5 }}
         >
-          Thank you for your order! Your confirmation number is <span className="font-medium">CK-{Math.floor(Math.random() * 10000000)}</span>.
-          We've sent an email with your order details and tracking information.
+          Thank you for your order! Your confirmation number is <span className="font-medium">CK</span>.
+          Weve sent an email with your order details and tracking information.
         </motion.p>
 
         <motion.div
@@ -306,7 +306,7 @@ const CheckoutPage = () => {
             <div className="text-center mb-6">
               <p className="font-medium">Estimated Delivery Date:</p>
               <p className="text-2xl font-bold mb-2">
-                {new Date(Date.now() + (deliveryMethod === 'express' ? 2 : 4) * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                {/* {new Date(Date.now() + (deliveryMethod === 'express' ? 2 : 4) * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} */}
               </p>
               <Badge variant={deliveryMethod === 'express' ? 'default' : 'outline'}>
                 {deliveryMethod === 'express' ? 'Express Delivery' : 'Standard Delivery'}
@@ -804,7 +804,7 @@ const CheckoutPage = () => {
                   <PackageCheck className="h-5 w-5 mr-2 text-muted-foreground" />
                   <p className="text-sm">
                     <span className="font-medium">Estimated Delivery:</span>{' '}
-                    {new Date(Date.now() + (deliveryMethod === 'express' ? 2 : 4) * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                    {/* {new Date(Date.now() + (deliveryMethod === 'express' ? 2 : 4) * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} */}
                   </p>
                 </div>
               </div>

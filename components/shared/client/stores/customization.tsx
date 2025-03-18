@@ -113,7 +113,7 @@ export const useCustomizationStore = create<CustomizationStore>((set) => ({
         const position = state.clickPosition || config.position || { x: 0, y: 1.5, z: 0 };
 
         // Create a new unique ID for the text using part name and timestamp
-        const textId = `${part}-${Date.now()}`;
+        const textId = `${part}`;
 
         return {
             texts: {

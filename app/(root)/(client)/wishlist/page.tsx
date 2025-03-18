@@ -45,7 +45,7 @@ const WishlistPage = () => {
                     className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
                 >
                     {items.map((item) => (
-                        <motion.div key={item.id} variants={item}>
+                        <motion.div key={item.id} >
                             <Card className="overflow-hidden">
                                 <div className="aspect-square relative">
                                     <Image

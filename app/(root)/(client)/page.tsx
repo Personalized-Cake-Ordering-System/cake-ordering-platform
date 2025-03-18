@@ -1,12 +1,5 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Store
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Store } from "lucide-react";
 
 import { CakeItem } from "@/components/shared/client/home/cake-item";
 import { CategoryItem } from "@/components/shared/client/home/category-item";
@@ -18,38 +11,12 @@ import MainBanner from "@/components/shared/client/home/main-banner";
 import { StoreHighlightCard } from "@/components/shared/client/home/store-highlight-card";
 import { StoreItem } from "@/components/shared/client/home/store-item";
 import { IBakery } from "@/features/barkeries/types/barkeries-type";
+import { getBakeries } from "@/features/barkeries/actions/barkeries-action";
 
-const HomePage = () => {
-  const [bakeries, setBakeries] = useState<IBakery[]>([]);
-  const [loading, setLoading] = useState(true);
+const HomePage = async () => {
+  const bakeries = await getBakeries();
 
-  useEffect(() => {
-    const fetchBakeries = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch('/api/bakeries');
-        const data = await response.json();
-
-        if (data.payload && Array.isArray(data.payload)) {
-          // Filter confirmed bakeries
-          const confirmedBakeries = data.payload.filter((bakery: any) => bakery.status === "CONFIRMED");
-          setBakeries(confirmedBakeries);
-        }
-      } catch (error) {
-        console.error("Error fetching bakeries:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchBakeries();
-  }, []);
-
-  const featuredBakeries = bakeries.slice(0, 8);
-
-  const handleViewStore = (store: IBakery) => {
-    console.log("View store:", store.id);
-  };
+  const featuredBakeries = bakeries.data?.data?.slice(0, 8);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 to-white dark:from-gray-950 dark:to-gray-900">
@@ -60,28 +27,28 @@ const HomePage = () => {
           </div>
 
           <div className="space-y-6 flex flex-col h-full">
-            {featuredBakeries.length >= 1 && (
+            {featuredBakeries!.length >= 1 && (
               <StoreHighlightCard
                 store={{
-                  id: featuredBakeries[0].id,
-                  name: featuredBakeries[0].bakery_name,
+                  id: featuredBakeries![0].id,
+                  name: featuredBakeries![0].bakery_name,
                   rating: 4.8,
-                  imageUrl: featuredBakeries[0].avatar_file?.file_url || "",
-                  isFeatured: true
+                  imageUrl: featuredBakeries![0].avatar_file?.file_url || "",
+                  isFeatured: true,
                 }}
                 bgColor="bg-custom-pink/30"
                 textColor="text-custom-teal"
               />
             )}
 
-            {featuredBakeries.length >= 2 && (
+            {featuredBakeries!.length >= 2 && (
               <StoreHighlightCard
                 store={{
-                  id: featuredBakeries[1].id,
-                  name: featuredBakeries[1].bakery_name,
+                  id: featuredBakeries![1].id,
+                  name: featuredBakeries![1].bakery_name,
                   rating: 4.7,
-                  imageUrl: featuredBakeries[1].avatar_file?.file_url || "",
-                  isFeatured: true
+                  imageUrl: featuredBakeries![1].avatar_file?.file_url || "",
+                  isFeatured: true,
                 }}
                 bgColor="bg-custom-teal/30"
                 textColor="text-custom-pink"
@@ -106,19 +73,9 @@ const HomePage = () => {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-            {loading ? (
-              // Loading skeleton
-              Array(8).fill(0).map((_, index) => (
-                <div key={index} className="animate-pulse flex flex-col items-center p-3">
-                  <div className="bg-gray-200 dark:bg-gray-700 rounded-full h-16 w-16"></div>
-                  <div className="bg-gray-200 dark:bg-gray-700 h-4 w-24 mt-4"></div>
-                  <div className="bg-gray-200 dark:bg-gray-700 h-3 w-16 mt-2"></div>
-                </div>
-              ))
-            ) : (
-              featuredBakeries.map((bakery) => (
-                <StoreItem
-                  key={bakery.id}
+            {featuredBakeries!.map((bakery) => (
+              <StoreItem
+                key={bakery.id}
                   icon={
                     <div className="bg-custom-pink/30 dark:bg-custom-pink/30 p-3 rounded-full">
                       <Store className="h-6 w-6 text-custom-teal dark:text-custom-teal" />
@@ -129,7 +86,7 @@ const HomePage = () => {
                   speciality={bakery.bakery_name}
                 />
               ))
-            )}
+            }
           </div>
         </div>
 
@@ -174,10 +131,11 @@ const HomePage = () => {
             ].map((category, index) => (
               <button
                 key={category}
-                className={`font-medium pb-2 whitespace-nowrap ${index === 0
-                  ? "text-custom-teal dark:text-custom-teal border-b-2 border-custom-teal dark:border-custom-teal"
-                  : "text-gray-700 dark:text-gray-400 hover:text-custom-pink dark:hover:text-custom-pink transition-colors duration-300"
-                  }`}
+                className={`font-medium pb-2 whitespace-nowrap ${
+                  index === 0
+                    ? "text-custom-teal dark:text-custom-teal border-b-2 border-custom-teal dark:border-custom-teal"
+                    : "text-gray-700 dark:text-gray-400 hover:text-custom-pink dark:hover:text-custom-pink transition-colors duration-300"
+                }`}
               >
                 {category}
               </button>
@@ -186,7 +144,7 @@ const HomePage = () => {
 
           {/* Product Grid */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-            {bakeries.map((product) => (
+            {bakeries.data?.data?.map((product) => (
               <CakeItem
                 key={product.id}
                 discount={product.password}

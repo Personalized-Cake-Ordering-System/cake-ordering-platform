@@ -44,16 +44,16 @@ interface BakeryData {
   banner?: string;
 }
 
-export default async function BakeryPage({ params }: { params: { storeId: string } }) {
+export default async function BakeryPage({ params }: { params: Promise<{ storeId: string }> }) {
   // Fetch bakery data server-side
-  const apiResponse = await getBakeryById(params.storeId);
+  const apiResponse = await getBakeryById((await params).storeId);
   
   // Extract the bakery data from the API response and provide a type assertion
   const bakeryData = (apiResponse.data || {}) as BakeryData;
 
   // Map the API response to the expected format
   const mappedBakeryData: BakeryApiResponse = {
-    id: bakeryData.id || params.storeId,
+    id: bakeryData.id || (await params).storeId,
     bakery_name: bakeryData.bakery_name || bakeryData.name || 'Bakery',
     email: bakeryData.email || '',
     phone: bakeryData.phone || '',
@@ -71,7 +71,7 @@ export default async function BakeryPage({ params }: { params: { storeId: string
   const breadcrumbItems = [
     { label: 'Dashboard', href: '/dashboard', isLast: false },
     { label: 'Bakeries', href: '/dashboard/bakeries', isLast: false },
-    { label: 'Bakery Details', href: `/dashboard/bakeries/${params.storeId}`, isLast: true },
+    { label: 'Bakery Details', href: `/dashboard/bakeries/${(await params).storeId}`, isLast: true },
   ];
 
   return (

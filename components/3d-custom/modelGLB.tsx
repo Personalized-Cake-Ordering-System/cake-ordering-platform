@@ -211,7 +211,6 @@ export function ModelGLB({ modelPath = '/cake3.glb' }) {
                     color={config.color}
                     anchorX="center"
                     anchorY="middle"
-                    depthTest={true}
                     renderOrder={10}
                 >
                     {config.content}

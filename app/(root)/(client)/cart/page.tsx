@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Trash2, Plus, Minus, ChevronRight, ShoppingBag } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-
+  
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -130,7 +130,7 @@ const CartPage = () => {
             >
               <ShoppingBag className="w-16 h-16 text-muted-foreground mb-4" />
               <h2 className="text-2xl font-medium mb-2">Your cart is empty</h2>
-              <p className="text-muted-foreground mb-6">Looks like you haven't added any cakes to your cart yet.</p>
+              <p className="text-muted-foreground mb-6">Looks like you havent added any cakes to your cart yet.</p>
               <Button asChild>
                 <Link href="/customizeCake">
                   Customize a Cake

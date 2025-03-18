@@ -171,9 +171,9 @@ const CakeDetail = () => {
   const [isInWishlistState, setIsInWishlistState] = useState(false);
 
   // Add useEffect to check initial wishlist state
-  useEffect(() => {
-    setIsInWishlistState(isInWishlist(cakeData.id));
-  }, [cakeData.id]);
+  // useEffect(() => {
+  //   setIsInWishlistState(isInWishlist(cakeData.id));
+  // }, []);
 
   // Add wishlist toggle handler
   const handleWishlistToggle = () => {
@@ -249,8 +249,6 @@ const CakeDetail = () => {
           variant="ghost"
           onClick={() => router.back()}
           className="flex items-center text-gray-600 hover:text-pink-500 transition-colors duration-300"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
         >
           <ChevronLeft className="mr-2 h-4 w-4" />
           Back to Cakes
@@ -718,7 +716,7 @@ const CakeDetail = () => {
                       <AccordionItem value="return">
                         <AccordionTrigger>Return Policy</AccordionTrigger>
                         <AccordionContent>
-                          <p>Due to the perishable nature of our products, we cannot accept returns. If you're not completely satisfied with your order, please contact us within 24 hours of receipt.</p>
+                          <p>Due to the perishable nature of our products, we cannot accept returns. If youre not completely satisfied with your order, please contact us within 24 hours of receipt.</p>
                         </AccordionContent>
                       </AccordionItem>
                     </Accordion>
