@@ -10,7 +10,7 @@ const shellVariants = cva(
         sidebar: "w-full",
         centerd: "mx-auto mb-16 mt-20 max-w-md justify-center",
         markdown: "container max-w-3xl gap-0 py-8 md:py-10 lg:py-10",
-      },
+      } as const,
     },
     defaultVariants: {
       variant: "default",

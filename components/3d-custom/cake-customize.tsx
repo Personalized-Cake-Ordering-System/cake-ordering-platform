@@ -6,6 +6,7 @@ import { CakeConfig } from '@/types/cake';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft, Check, Download } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 import React, { useEffect, useState } from 'react';
 
 // Define type for the selected part
@@ -480,10 +481,12 @@ const CakeCustomizer = () => {
                                 }`}
                             >
                                 {cakeConfig.messageType === 'edible' && cakeConfig.uploadedImage ? (
-                                    <img
+                                    <Image
                                         src={cakeConfig.uploadedImage}
                                         alt="Uploaded design"
                                         className="w-full h-full object-contain rounded-full"
+                                        width={200}
+                                        height={200}
                                     />
                                 ) : (
                                     <div className="text-center text-pink-400 italic p-8">
@@ -912,10 +915,12 @@ const CakeCustomizer = () => {
                                     >
                                         {cakeConfig.uploadedImage ? (
                                             <div className="relative w-full aspect-square">
-                                                <img
+                                                <Image
                                                     src={cakeConfig.uploadedImage}
                                                     alt="Uploaded"
                                                     className="w-full h-full object-contain"
+                                                    width={200}
+                                                    height={200}
                                                 />
                                                 <button
                                                     onClick={(e) => {
