@@ -14,4 +14,6 @@ export type CakeConfig = {
     plaqueColor: string;
     uploadedImage: string | null;
     imageUrl: string | null;
+    // numberOfCandles: number;
+    // candleColor: string;
 } 
