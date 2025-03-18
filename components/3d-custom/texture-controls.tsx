@@ -2,6 +2,7 @@
 import * as React from 'react';
 import { Sliders, Move, Repeat, Maximize, X } from 'lucide-react';
 import { useCustomizationStore } from '../shared/client/stores/customization';
+import Image from 'next/image';
 
 interface TextureOption {
     id: string;
@@ -67,10 +68,12 @@ export function TextureControls() {
                                     : 'hover:ring-2 hover:ring-blue-400'}`}
                         >
                             <div className="aspect-square w-full">
-                                <img
+                                <Image
                                     src={texture.path}
                                     alt={texture.name}
                                     className="w-full h-full object-cover"
+                                    width={200}
+                                    height={200}
                                 />
                             </div>
                             <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-2">

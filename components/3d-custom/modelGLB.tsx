@@ -66,7 +66,7 @@ export function ModelGLB({ modelPath = '/cake3.glb' }) {
             });
             setInitialLoad(false);
         }
-    }, [scene, initialLoad, setColorForPart, customizedParts]);
+    }, [scene, initialLoad, setColorForPart, customizedParts, originalMaterials]);
 
     // Implement rotation animation using useFrame
     useFrame((_, delta) => {
@@ -111,7 +111,7 @@ export function ModelGLB({ modelPath = '/cake3.glb' }) {
         return () => {
             loadedTextures.forEach(texture => texture.dispose());
         };
-    }, [textures]);
+    }, [textures, loadedTextures]);
 
     // Update materials with colors and textures
     React.useEffect(() => {
@@ -166,7 +166,7 @@ export function ModelGLB({ modelPath = '/cake3.glb' }) {
                 }
             }
         });
-    }, [colors, selectedPart, hovered, originalMaterials, textures, loadedTextures, roughness, metalness]);
+    }, [colors, selectedPart, hovered, originalMaterials, textures, loadedTextures, roughness, metalness, scene]);
 
     return (
         <group

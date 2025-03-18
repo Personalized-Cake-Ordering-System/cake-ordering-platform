@@ -6,7 +6,6 @@ import { ModelGLB } from '@/components/3d-custom/modelGLB';
 import { Controls } from '@/components/3d-custom/controls';
 import { TextureControls } from '@/components/3d-custom/texture-controls';
 import TextControls from '@/components/3d-custom/text-controls';
-import ToppingControls from '@/components/3d-custom/topping-controls';
 import { ToastContainer } from '@/components/3d-custom/toast-save-show';
 
 
@@ -17,7 +16,6 @@ export default function Model3DCustom() {
                 <Controls />
                 <TextureControls />
                 <TextControls />
-                <ToppingControls />
             </div>
             <div className="w-3/4">
                 <Canvas
