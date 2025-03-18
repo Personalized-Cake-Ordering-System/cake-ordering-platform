@@ -1,19 +1,18 @@
 'use client'
-import * as React from 'react';
-import { motion } from 'framer-motion';
-import Link from 'next/link';
-import Image from 'next/image';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
-  CardTitle,
-  CardDescription
+  CardTitle
 } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Heart, ShoppingCart, EyeIcon, Tag } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { EyeIcon, Heart, ShoppingCart } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import * as React from 'react';
 
 // Sample data - replace with actual data from your API
 const cakeCategories = [

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -31,6 +31,9 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { ModelGLB } from '@/components/3d-custom/modelGLB';
+import { useInView } from 'react-intersection-observer';
+import { useWishlist } from '@/app/store/useWishlist';
+import { toast } from 'sonner';
 
 const cakeData = {
   id: '1',
@@ -123,6 +126,22 @@ const reviews = [
   },
 ];
 
+// Add these animation variants before the CakeDetail component
+const fadeIn = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 }
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
 const CakeDetail = () => {
   const params = useParams();
   const router = useRouter();
@@ -135,6 +154,44 @@ const CakeDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [is3DMode, setIs3DMode] = useState(false);
+
+  // Add these refs for scroll animations
+  const [benefitsRef, benefitsInView] = useInView({
+    triggerOnce: true,
+    threshold: 0.2
+  });
+
+  const [relatedRef, relatedInView] = useInView({
+    triggerOnce: true,
+    threshold: 0.2
+  });
+
+  // Add wishlist state
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  const [isInWishlistState, setIsInWishlistState] = useState(false);
+
+  // Add useEffect to check initial wishlist state
+  useEffect(() => {
+    setIsInWishlistState(isInWishlist(cakeData.id));
+  }, [cakeData.id]);
+
+  // Add wishlist toggle handler
+  const handleWishlistToggle = () => {
+    if (isInWishlistState) {
+      removeFromWishlist(cakeData.id);
+      setIsInWishlistState(false);
+      toast.success('Removed from wishlist');
+    } else {
+      addToWishlist({
+        id: cakeData.id,
+        name: cakeData.name,
+        price: cakeData.discountPrice || cakeData.price,
+        image: cakeData.mainImage,
+      });
+      setIsInWishlistState(true);
+      toast.success('Added to wishlist');
+    }
+  };
 
   // Calculate total price
   const getBasePrice = () => {
@@ -181,24 +238,36 @@ const CakeDetail = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-12">
-      {/* Back Button */}
-      <div className="mb-6">
+      {/* Back Button with hover effect */}
+      <motion.div
+        className="mb-6"
+        initial={{ x: -20, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
         <Button
           variant="ghost"
           onClick={() => router.back()}
-          className="flex items-center text-gray-600 hover:text-pink-500"
+          className="flex items-center text-gray-600 hover:text-pink-500 transition-colors duration-300"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
         >
           <ChevronLeft className="mr-2 h-4 w-4" />
           Back to Cakes
         </Button>
-      </div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12">
+      {/* Update the main grid layout */}
+      <motion.div
+        className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12"
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+      >
         {/* Left Column - Images & 3D View */}
         <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5 }}
+          variants={fadeIn}
+          className="relative"
         >
           <div className="sticky top-24">
             <div className="flex justify-end mb-4">
@@ -257,12 +326,16 @@ const CakeDetail = () => {
 
             {/* Thumbnail Images */}
             {!is3DMode && (
-              <div className="grid grid-cols-4 gap-3">
+              <motion.div
+                className="grid grid-cols-4 gap-3"
+                variants={staggerContainer}
+              >
                 {cakeData.images.map((image, index) => (
                   <motion.div
                     key={index}
-                    whileHover={{ scale: 1.05 }}
+                    whileHover={{ scale: 1.05, y: -5 }}
                     whileTap={{ scale: 0.95 }}
+                    transition={{ type: "spring", stiffness: 300 }}
                     onClick={() => setSelectedImage(index)}
                     className={`aspect-square rounded-lg overflow-hidden cursor-pointer border-2 ${selectedImage === index
                       ? 'border-pink-500 ring-2 ring-pink-200'
@@ -279,20 +352,20 @@ const CakeDetail = () => {
                     />
                   </motion.div>
                 ))}
-              </div>
+              </motion.div>
             )}
           </div>
         </motion.div>
 
-        {/* Right Column - Details & Customization */}
+        {/* Right Column - Add stagger animations to sections */}
         <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
           className="flex flex-col"
         >
           {/* Product Title Section */}
-          <div className="mb-6">
+          <motion.div variants={fadeIn} className="mb-6">
             <div className="flex flex-wrap items-center gap-3 mb-2">
               <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900 dark:text-purple-200">
                 {cakeData.category}
@@ -343,14 +416,17 @@ const CakeDetail = () => {
                 <span className="text-3xl font-bold text-pink-600">${cakeData.price}</span>
               )}
             </div>
-          </div>
+          </motion.div>
 
           <Separator className="mb-8" />
 
-          {/* Customization Section */}
-          <div className="space-y-8">
+          {/* Customization Section - Add hover effects */}
+          <motion.div variants={fadeIn} className="space-y-8">
             {/* Size Selection */}
-            <div>
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
               <h3 className="text-lg font-medium mb-3">Select Size</h3>
               <RadioGroup
                 value={selectedSize}
@@ -379,10 +455,13 @@ const CakeDetail = () => {
                   </div>
                 ))}
               </RadioGroup>
-            </div>
+            </motion.div>
 
             {/* Flavor Selection */}
-            <div>
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
               <h3 className="text-lg font-medium mb-3">Select Flavor</h3>
               <RadioGroup
                 value={selectedFlavor}
@@ -417,10 +496,13 @@ const CakeDetail = () => {
                   </div>
                 ))}
               </RadioGroup>
-            </div>
+            </motion.div>
 
             {/* Toppings Selection */}
-            <div>
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
               <h3 className="text-lg font-medium mb-3">Additional Toppings (Optional)</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {cakeData.toppings.map((topping) => (
@@ -445,10 +527,13 @@ const CakeDetail = () => {
                   </motion.div>
                 ))}
               </div>
-            </div>
+            </motion.div>
 
             {/* Quantity Selector */}
-            <div>
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
               <h3 className="text-lg font-medium mb-3">Quantity</h3>
               <div className="flex items-center space-x-3">
                 <Button
@@ -470,10 +555,14 @@ const CakeDetail = () => {
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
-            </div>
+            </motion.div>
 
             {/* Total Price */}
-            <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 300 }}
+              className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg"
+            >
               <div className="flex justify-between items-center mb-1">
                 <span className="text-gray-600 dark:text-gray-300">Base price:</span>
                 <span>${getBasePrice().toFixed(2)}</span>
@@ -499,10 +588,14 @@ const CakeDetail = () => {
                 <span className="text-lg font-bold">Total:</span>
                 <span className="text-xl font-bold text-pink-600">${totalPrice.toFixed(2)}</span>
               </div>
-            </div>
+            </motion.div>
 
             {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4">
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 300 }}
+              className="flex flex-col sm:flex-row gap-4"
+            >
               <Button
                 className="flex-1 bg-pink-600 hover:bg-pink-700 text-white h-12 text-base"
                 size="lg"
@@ -515,9 +608,11 @@ const CakeDetail = () => {
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-12 w-12 border-pink-200 text-pink-600 hover:bg-pink-50 dark:hover:bg-pink-950/30"
+                  onClick={handleWishlistToggle}
+                  className={`h-12 w-12 border-pink-200 hover:bg-pink-50 dark:hover:bg-pink-950/30 ${isInWishlistState ? 'bg-pink-50 text-pink-600' : 'text-gray-400'
+                    }`}
                 >
-                  <Heart className="h-5 w-5" />
+                  <Heart className={`h-5 w-5 ${isInWishlistState ? 'fill-current' : ''}`} />
                 </Button>
 
                 <Button
@@ -528,16 +623,20 @@ const CakeDetail = () => {
                   <Share2 className="h-5 w-5" />
                 </Button>
               </div>
-            </div>
+            </motion.div>
 
             {/* Delivery Notice */}
-            <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-300">
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 300 }}
+              className="flex items-center space-x-2 text-gray-600 dark:text-gray-300"
+            >
               <Clock className="h-5 w-5 text-green-500" />
               <span>Order now for delivery within {cakeData.deliveryInfo.standard}</span>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </motion.div>
-      </div>
+      </motion.div>
 
       {/* Tabs Section */}
       <div className="mt-16">
@@ -800,70 +899,89 @@ const CakeDetail = () => {
         </Tabs>
       </div>
 
-      {/* Related Products */}
-      <div className="mt-16">
-        <h2 className="text-2xl font-bold mb-6">You May Also Like</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {cakeData.relatedCakes.map((cake) => (
-            <Link key={cake.id} href={`/cakes/${cake.id}`}>
-              <Card className="h-full hover:shadow-lg transition-shadow">
-                <div className="aspect-square relative overflow-hidden rounded-t-lg">
-                  <Image
-                    src={cake.image}
-                    alt={cake.name}
-                    fill
-                    className="object-cover transition-transform hover:scale-105 duration-300"
-                  />
-                </div>
-                <CardContent className="p-4">
-                  <h3 className="font-medium text-lg mb-2">{cake.name}</h3>
-                  <div className="flex justify-between items-center">
-                    <span className="font-bold text-pink-600">${cake.price}</span>
-                    <Button size="sm" variant="ghost" className="text-gray-500 p-1">
-                      <ShoppingCart className="h-5 w-5" />
-                    </Button>
+      {/* Benefits Section - Add scroll animations */}
+      <motion.div
+        ref={benefitsRef}
+        initial="hidden"
+        animate={benefitsInView ? "visible" : "hidden"}
+        variants={staggerContainer}
+        className="mt-16 mb-8"
+      >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[
+            { icon: Truck, title: "Fast Delivery", color: "pink" },
+            { icon: CalendarHeart, title: "Made Fresh Daily", color: "blue" },
+            { icon: CircleDollarSign, title: "100% Money Back", color: "purple" }
+          ].map((benefit, index) => (
+            <motion.div
+              key={index}
+              variants={fadeIn}
+              whileHover={{ scale: 1.05, y: -5 }}
+              className="transform transition-all duration-300"
+            >
+              <Card className={`bg-${benefit.color}-50 dark:bg-${benefit.color}-950/20 border-0 
+                hover:shadow-xl hover:bg-${benefit.color}-100 dark:hover:bg-${benefit.color}-950/30`}>
+                <CardContent className="p-6 flex flex-col items-center text-center">
+                  <div className="h-10 w-10 text-${benefit.color}-600 mb-4">
+                    <benefit.icon className="h-full w-full" />
                   </div>
+                  <h3 className="font-semibold text-lg mb-2">{benefit.title}</h3>
+                  <p className="text-gray-600 dark:text-gray-300">
+                    {benefit.title === "Fast Delivery" ? `Same-day delivery available for orders placed before 12pm` :
+                      benefit.title === "Made Fresh Daily" ? "Our cakes are baked fresh every morning for best quality" :
+                        "Not satisfied? We offer full refunds on damaged products"}
+                  </p>
                 </CardContent>
               </Card>
-            </Link>
+            </motion.div>
           ))}
         </div>
-      </div>
+      </motion.div>
 
-      {/* Benefits Section */}
-      <div className="mt-16 mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="bg-pink-50 dark:bg-pink-950/20 border-0">
-            <CardContent className="p-6 flex flex-col items-center text-center">
-              <Truck className="h-10 w-10 text-pink-600 mb-4" />
-              <h3 className="font-semibold text-lg mb-2">Fast Delivery</h3>
-              <p className="text-gray-600 dark:text-gray-300">
-                Same-day delivery available for orders placed before 12pm
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-blue-50 dark:bg-blue-950/20 border-0">
-            <CardContent className="p-6 flex flex-col items-center text-center">
-              <CalendarHeart className="h-10 w-10 text-blue-600 mb-4" />
-              <h3 className="font-semibold text-lg mb-2">Made Fresh Daily</h3>
-              <p className="text-gray-600 dark:text-gray-300">
-                Our cakes are baked fresh every morning for best quality
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-purple-50 dark:bg-purple-950/20 border-0">
-            <CardContent className="p-6 flex flex-col items-center text-center">
-              <CircleDollarSign className="h-10 w-10 text-purple-600 mb-4" />
-              <h3 className="font-semibold text-lg mb-2">100% Money Back</h3>
-              <p className="text-gray-600 dark:text-gray-300">
-                Not satisfied? We offer full refunds on damaged products
-              </p>
-            </CardContent>
-          </Card>
+      {/* Related Products - Add scroll animations */}
+      <motion.div
+        ref={relatedRef}
+        initial="hidden"
+        animate={relatedInView ? "visible" : "hidden"}
+        variants={staggerContainer}
+        className="mt-16"
+      >
+        <motion.h2 variants={fadeIn} className="text-2xl font-bold mb-6">
+          You May Also Like
+        </motion.h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {cakeData.relatedCakes.map((cake, index) => (
+            <motion.div
+              key={cake.id}
+              variants={fadeIn}
+              whileHover={{ scale: 1.05, y: -5 }}
+              className="transform transition-all duration-300"
+            >
+              <Link href={`/cakes/${cake.id}`}>
+                <Card className="h-full hover:shadow-lg transition-shadow">
+                  <div className="aspect-square relative overflow-hidden rounded-t-lg">
+                    <Image
+                      src={cake.image}
+                      alt={cake.name}
+                      fill
+                      className="object-cover transition-transform hover:scale-105 duration-300"
+                    />
+                  </div>
+                  <CardContent className="p-4">
+                    <h3 className="font-medium text-lg mb-2">{cake.name}</h3>
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-pink-600">${cake.price}</span>
+                      <Button size="sm" variant="ghost" className="text-gray-500 p-1">
+                        <ShoppingCart className="h-5 w-5" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            </motion.div>
+          ))}
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };
