@@ -344,7 +344,7 @@ const CheckoutPage = () => {
 
   return (
     <motion.div
-      className="container mx-auto px-4 py-8 max-w-7xl bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg shadow-lg"
+      className="container mx-auto px-4 py-8 max-w-7xl"
       initial="hidden"
       animate="visible"
       variants={pageVariants}
@@ -356,24 +356,24 @@ const CheckoutPage = () => {
             Back to Cart
           </Link>
         </Button>
-        <h1 className="text-3xl font-bold text-center text-primary">Checkout</h1>
+        <h1 className="text-3xl font-bold">Checkout</h1>
       </motion.div>
 
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Main checkout form */}
         <motion.div
           variants={itemVariants}
-          className="w-full lg:w-2/3 bg-white p-6 rounded-lg shadow-md"
+          className="w-full lg:w-2/3"
         >
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               {/* Delivery Information */}
-              <Card className="p-6 bg-gradient-to-r from-green-100 to-blue-100 rounded-lg">
+              <Card className="p-6">
                 <div className="flex items-center mb-6">
                   <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-white mr-3">
                     1
                   </div>
-                  <h2 className="text-xl font-bold text-primary">Delivery Information</h2>
+                  <h2 className="text-xl font-bold">Delivery Information</h2>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -384,7 +384,7 @@ const CheckoutPage = () => {
                       <FormItem>
                         <FormLabel>Full Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="John Doe" {...field} className="border-primary focus:ring-primary" />
+                          <Input placeholder="John Doe" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -398,7 +398,7 @@ const CheckoutPage = () => {
                       <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="your@email.com" {...field} className="border-primary focus:ring-primary" />
+                          <Input type="email" placeholder="your@email.com" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -412,7 +412,7 @@ const CheckoutPage = () => {
                       <FormItem>
                         <FormLabel>Phone Number</FormLabel>
                         <FormControl>
-                          <Input placeholder="(123) 456-7890" {...field} className="border-primary focus:ring-primary" />
+                          <Input placeholder="(123) 456-7890" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -538,7 +538,7 @@ const CheckoutPage = () => {
                       <FormItem>
                         <FormLabel>Địa chỉ</FormLabel>
                         <FormControl>
-                          <Input placeholder="Số nhà, tên đường" {...field} className="border-primary focus:ring-primary" />
+                          <Input placeholder="Số nhà, tên đường" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -630,7 +630,7 @@ const CheckoutPage = () => {
                 <Button
                   type="submit"
                   size="lg"
-                  className="w-full md:w-auto bg-primary text-white hover:bg-primary-dark"
+                  className="w-full md:w-auto"
                   disabled={isProcessing || !form.formState.isValid}
                 >
                   {isProcessing ? (
@@ -650,12 +650,12 @@ const CheckoutPage = () => {
         {/* Order summary */}
         <motion.div
           variants={itemVariants}
-          className="w-full lg:w-1/3 bg-white p-6 rounded-lg shadow-md"
+          className="w-full lg:w-1/3 "
         >
           <Card className="sticky top-24 border-muted/50">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-primary">Order Summary</h2>
+                <h2 className="text-xl font-bold">Order Summary</h2>
                 <Badge variant="outline" className="px-3 py-1">
                   {items.length} {items.length === 1 ? 'Item' : 'Items'}
                 </Badge>
