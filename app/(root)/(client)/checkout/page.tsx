@@ -8,7 +8,6 @@ import Link from 'next/link';
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-
 import { Province, vietnamProvinces } from '@/app/data/vietnam-provinces';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -39,8 +38,9 @@ import {
 } from "@/components/ui/select";
 import { Separator } from '@/components/ui/separator';
 import { useRouter } from 'next/navigation';
+import { CheckoutFormValues, CartItem } from './types';
+import { createOrder } from './api';
 
-// Add these new types
 type GeocodingResponse = {
   results: Array<{
     formatted_address: string;
@@ -91,9 +91,7 @@ const itemVariants = {
   }
 };
 
-type CheckoutFormValues = z.infer<typeof checkoutSchema>;
-
-type CakeConfig = {
+export type CakeConfig = {
   size: string;
   sponge: string;
   filling: string;
@@ -101,11 +99,11 @@ type CakeConfig = {
   imageUrl?: string;
 };
 
-interface CartItem {
-  id: string;
-  quantity: number;
-  config: CakeConfig;
-}
+// interface CartItem {
+//   id: string;
+//   quantity: number;
+//   config: CakeConfig;
+// }
 
 const CheckoutPage = () => {
   const router = useRouter();
@@ -168,9 +166,10 @@ const CheckoutPage = () => {
   // Add new function to handle geocoding
   const geocodeAddress = async (address: string) => {
     try {
+      const API_KEY_GOONG = '2R2HQynx7ypczZZcxS1w7uuJaxXIGoeXymvGGx0u'
       const encodedAddress = encodeURIComponent(address);
       const response = await fetch(
-        `https://rsapi.goong.io/geocode?address=${encodedAddress}&api_key=2R2HQynx7ypczZZcxS1w7uuJaxXIGoeXymvGGx0u`
+        `https://rsapi.goong.io/geocode?address=${encodedAddress}&api_key=${API_KEY_GOONG}`
       );
       const data: GeocodingResponse = await response.json();
 
@@ -198,51 +197,40 @@ const CheckoutPage = () => {
       const geocodeResult = await geocodeAddress(fullAddress);
 
       if (geocodeResult) {
-        // Generate a unique order ID
-        const orderId = `ORD`;
-
-        // Log the geocoding response
-        console.log('Geocoding Response:', {
-          fullAddress,
-          formattedAddress: geocodeResult.formatted_address,
-          coordinates: geocodeResult.location
-        });
-
-        // Create order details object
-        const orderDetails = {
-          orderId,
-          address: fullAddress,
-          lat: geocodeResult.location.lat,
-          lng: geocodeResult.location.lng,
-          subtotal: subtotal,
-          deliveryMethod: data.deliveryMethod,
-          customerName: data.fullName,
-          customerEmail: data.email,
-          customerPhone: data.phone,
-          orderDate: new Date().toISOString()
+        // Prepare order data
+        const orderData = {
+          bakery_id: "11f56ffc-6e29-4528-8e05-dadbc618dd5a",
+          order_note: data.specialInstructions || '',
+          phone_number: data.phone,
+          shipping_address: fullAddress,
+          latitude: geocodeResult.location.lat.toString(),
+          longitude: geocodeResult.location.lng.toString(),
+          pickup_time: new Date().toISOString(),
+          shipping_type: "DELIVERY",
+          payment_type: "QR_CODE",
+          voucher_code: "",
+          order_detail_create_models: items.map((item: CartItem) => ({
+            available_cake_id: null,
+            custom_cake_id: '631037c4-969f-4ac4-bb32-5e88921a0199',
+            cake_note: "note nè",
+            quantity: item.quantity,
+          })),
         };
 
-        // Log the complete order details
-        console.log('Order Details:', orderDetails);
+        // Log the order data
+        console.log('Order Data:', orderData);
 
-        // Create the URL parameters
-        const searchParams = new URLSearchParams({
-          orderId: orderDetails.orderId,
-          address: orderDetails.address,
-          lat: orderDetails.lat.toString(),
-          lng: orderDetails.lng.toString(),
-          subtotal: orderDetails.subtotal.toString(),
-          deliveryMethod: orderDetails.deliveryMethod,
-          customerName: orderDetails.customerName,
-          customerEmail: orderDetails.customerEmail,
-          customerPhone: orderDetails.customerPhone
-        });
+        // Call the API to create an order
+        const response = await createOrder(orderData);
 
-        // Log the final URL parameters
-        console.log('URL Parameters:', searchParams.toString());
-
-        // Navigate to QR page
-        router.push(`/qrPage?${searchParams.toString()}`);
+        if (response.status_code === 200) {
+          const { total_customer_paid, order_code } = response.payload;
+          const qrLink = `https://img.vietqr.io/image/TPBank-00005992966-qr_only.jpg?amount=${total_customer_paid}&addInfo=${order_code}`;
+          router.push(qrLink);
+        } else {
+          console.error('Order creation failed:', response.errors);
+          setIsProcessing(false);
+        }
       } else {
         console.error('Failed to geocode address:', fullAddress);
         setIsProcessing(false);
@@ -356,7 +344,7 @@ const CheckoutPage = () => {
 
   return (
     <motion.div
-      className="container mx-auto px-4 py-8 max-w-7xl"
+      className="container mx-auto px-4 py-8 max-w-7xl bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg shadow-lg"
       initial="hidden"
       animate="visible"
       variants={pageVariants}
@@ -368,24 +356,24 @@ const CheckoutPage = () => {
             Back to Cart
           </Link>
         </Button>
-        <h1 className="text-3xl font-bold">Checkout</h1>
+        <h1 className="text-3xl font-bold text-center text-primary">Checkout</h1>
       </motion.div>
 
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Main checkout form */}
         <motion.div
           variants={itemVariants}
-          className="w-full lg:w-2/3"
+          className="w-full lg:w-2/3 bg-white p-6 rounded-lg shadow-md"
         >
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               {/* Delivery Information */}
-              <Card className="p-6">
+              <Card className="p-6 bg-gradient-to-r from-green-100 to-blue-100 rounded-lg">
                 <div className="flex items-center mb-6">
                   <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-white mr-3">
                     1
                   </div>
-                  <h2 className="text-xl font-bold">Delivery Information</h2>
+                  <h2 className="text-xl font-bold text-primary">Delivery Information</h2>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -396,7 +384,7 @@ const CheckoutPage = () => {
                       <FormItem>
                         <FormLabel>Full Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="John Doe" {...field} />
+                          <Input placeholder="John Doe" {...field} className="border-primary focus:ring-primary" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -410,7 +398,7 @@ const CheckoutPage = () => {
                       <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="your@email.com" {...field} />
+                          <Input type="email" placeholder="your@email.com" {...field} className="border-primary focus:ring-primary" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -424,7 +412,7 @@ const CheckoutPage = () => {
                       <FormItem>
                         <FormLabel>Phone Number</FormLabel>
                         <FormControl>
-                          <Input placeholder="(123) 456-7890" {...field} />
+                          <Input placeholder="(123) 456-7890" {...field} className="border-primary focus:ring-primary" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -550,7 +538,7 @@ const CheckoutPage = () => {
                       <FormItem>
                         <FormLabel>Địa chỉ</FormLabel>
                         <FormControl>
-                          <Input placeholder="Số nhà, tên đường" {...field} />
+                          <Input placeholder="Số nhà, tên đường" {...field} className="border-primary focus:ring-primary" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -642,7 +630,7 @@ const CheckoutPage = () => {
                 <Button
                   type="submit"
                   size="lg"
-                  className="w-full md:w-auto"
+                  className="w-full md:w-auto bg-primary text-white hover:bg-primary-dark"
                   disabled={isProcessing || !form.formState.isValid}
                 >
                   {isProcessing ? (
@@ -662,12 +650,12 @@ const CheckoutPage = () => {
         {/* Order summary */}
         <motion.div
           variants={itemVariants}
-          className="w-full lg:w-1/3"
+          className="w-full lg:w-1/3 bg-white p-6 rounded-lg shadow-md"
         >
           <Card className="sticky top-24 border-muted/50">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold">Order Summary</h2>
+                <h2 className="text-xl font-bold text-primary">Order Summary</h2>
                 <Badge variant="outline" className="px-3 py-1">
                   {items.length} {items.length === 1 ? 'Item' : 'Items'}
                 </Badge>
