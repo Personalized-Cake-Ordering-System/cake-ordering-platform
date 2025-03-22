@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Trash2, Plus, Minus, ChevronRight, ShoppingBag } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-  
+
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -408,11 +408,11 @@ const CartPage = () => {
 
       {showCakeModal && selectedCake && (
         <Dialog open={showCakeModal} onOpenChange={setShowCakeModal}>
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent className="sm:max-w-[500px] bg-gradient-to-r from-pink-100 via-white to-pink-100 shadow-lg rounded-lg">
             <DialogHeader>
-              <DialogTitle>Custom {selectedCake.config.size} Cake Details</DialogTitle>
+              <DialogTitle className="text-2xl font-bold text-center">Custom {selectedCake.config.size} Cake Details</DialogTitle>
             </DialogHeader>
-            <div className="relative w-full h-64">
+            <div className="relative w-full h-72">
               {selectedCake.config.imageUrl ? (
                 <Image
                   src={selectedCake.config.imageUrl}
@@ -421,7 +421,7 @@ const CartPage = () => {
                   className="object-cover rounded-md"
                 />
               ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-white rounded-md">
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-white rounded-md shadow-md">
                   {/* Cake base */}
                   <div className="relative w-3/4 aspect-[4/3]">
                     {/* Left side (sponge layers) */}
@@ -456,7 +456,7 @@ const CartPage = () => {
                     {/* Message plaque if exists */}
                     {selectedCake.config.message && selectedCake.config.messageType === 'piped' && (
                       <div className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2
-                        w-24 h-24 rounded-full flex items-center justify-center ${selectedCake.config.plaqueColor === 'white' ? 'bg-white' :
+                        w-20 h-20 rounded-full flex items-center justify-center ${selectedCake.config.plaqueColor === 'white' ? 'bg-white' :
                           selectedCake.config.plaqueColor === 'pink' ? 'bg-pink-100' :
                             selectedCake.config.plaqueColor === 'blue' ? 'bg-blue-100' :
                               'bg-white'
@@ -512,26 +512,28 @@ const CartPage = () => {
                 </div>
               )}
             </div>
-            <div className="space-y-4">
-              <div>
-                <h4 className="font-medium">Specifications:</h4>
-                <p className="text-sm text-muted-foreground">
-                  Size: {selectedCake.config.size}<br />
-                  Sponge: {selectedCake.config.sponge}<br />
-                  Filling: {selectedCake.config.filling}<br />
-                  Outer Icing: {selectedCake.config.outerIcing}<br />
-                  {selectedCake.config.candles && `Candles: ${selectedCake.config.candles}`}<br />
-                  {selectedCake.config.goo && `Goo Layer: ${selectedCake.config.goo}`}<br />
-                  {selectedCake.config.extras.length > 0 && `Extras: ${selectedCake.config.extras.join(', ')}`}
-                </p>
-              </div>
-              <div>
-                <h4 className="font-medium">Price:</h4>
-                <p className="text-sm text-muted-foreground">
-                  ${selectedCake.config.price} each<br />
-                  Quantity: {selectedCake.quantity}<br />
-                  Total: ${(selectedCake.config.price * selectedCake.quantity).toFixed(2)}
-                </p>
+            <div className="space-y-4 p-4">
+              <div className='flex justify-between'>
+                <div>
+                  <h4 className="font-medium text-lg">Specifications:</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Size: {selectedCake.config.size}<br />
+                    Sponge: {selectedCake.config.sponge}<br />
+                    Filling: {selectedCake.config.filling}<br />
+                    Outer Icing: {selectedCake.config.outerIcing}<br />
+                    {selectedCake.config.candles && `Candles: ${selectedCake.config.candles}`}<br />
+                    {selectedCake.config.goo && `Goo Layer: ${selectedCake.config.goo}`}<br />
+                    {selectedCake.config.extras.length > 0 && `Extras: ${selectedCake.config.extras.join(', ')}`}
+                  </p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-lg">Price:</h4>
+                  <p className="text-sm text-muted-foreground">
+                    ${selectedCake.config.price} each<br />
+                    Quantity: {selectedCake.quantity}<br />
+                    Total: ${(selectedCake.config.price * selectedCake.quantity).toFixed(2)}
+                  </p>
+                </div>
               </div>
             </div>
           </DialogContent>
