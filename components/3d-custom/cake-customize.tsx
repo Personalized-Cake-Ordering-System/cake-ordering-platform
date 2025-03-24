@@ -8,6 +8,7 @@ import { ArrowLeft, Check, Download } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import React, { useEffect, useState } from 'react';
+import { useCakeConfigStore } from '@/components/shared/client/stores/cake-config';
 
 // Define type for the selected part
 type SelectedPart = 'cake' | 'outer-icing' | 'filling' | 'message' | 'candles' | 'board' | 'extras' | null;
@@ -251,10 +252,10 @@ const CakeCustomizer = () => {
     const router = useRouter();
     const searchParams = useSearchParams();
     const editId = searchParams.get('editId');
+    const { config, setConfig } = useCakeConfigStore();
 
     // Update state definitions with proper types
     const [selectedPart, setSelectedPart] = useState<SelectedPart>(null);
-    const [cakeConfig, setCakeConfig] = useState<CakeConfig>(getInitialCakeConfig());
     const [showJson, setShowJson] = useState(false);
     const [isZoomed, setIsZoomed] = useState(false);
 
@@ -263,15 +264,10 @@ const CakeCustomizer = () => {
         if (editId) {
             const itemToEdit = items.find(item => item.id === editId);
             if (itemToEdit) {
-                setCakeConfig(itemToEdit.config);
+                setConfig(itemToEdit.config);
             }
         }
-    }, [editId, items]);
-
-    // Add useEffect to save config whenever it changes
-    useEffect(() => {
-        localStorage.setItem('cakeConfig', JSON.stringify(cakeConfig));
-    }, [cakeConfig]);
+    }, [editId, items, setConfig]);
 
     // Add a function to reset the configuration
     const handleResetConfig = () => {
@@ -292,8 +288,7 @@ const CakeCustomizer = () => {
             uploadedImage: null,
             imageUrl: null,
         };
-        setCakeConfig(defaultConfig);
-        localStorage.setItem('cakeConfig', JSON.stringify(defaultConfig));
+        setConfig(defaultConfig);
     };
 
     // Options for customization
@@ -343,14 +338,14 @@ const CakeCustomizer = () => {
 
     // Update price handling to maintain number type
     const handleOptionSelect = (optionType: 'outerIcing' | 'filling' | 'candles' | 'board', optionId: string) => {
-        setCakeConfig({
-            ...cakeConfig,
+        setConfig({
+            ...config,
             [optionType]: optionId
         });
 
-        if (optionType === 'candles' && !cakeConfig.candles) {
+        if (optionType === 'candles' && !config.candles) {
             const selectedOption = candleOptions.find(option => option.id === optionId);
-            setCakeConfig(prev => ({ ...prev, price: prev.price + (selectedOption?.price || 0) }));
+            setConfig(prev => ({ ...prev, price: prev.price + (selectedOption?.price || 0) }));
         }
 
         if (optionType === 'filling' || optionType === 'outerIcing' || optionType === 'board') {
@@ -360,7 +355,7 @@ const CakeCustomizer = () => {
 
     // Update the candles removal handler
     const handleRemoveCandles = () => {
-        setCakeConfig(prev => ({
+        setConfig(prev => ({
             ...prev,
             candles: null,
             price: prev.price - 4.99
@@ -374,25 +369,25 @@ const CakeCustomizer = () => {
 
     const getCakeJson = () => {
         return JSON.stringify({
-            size: cakeConfig.size,
-            price: cakeConfig.price,
+            size: config.size,
+            price: config.price,
             design: {
                 outerIcing: {
-                    type: cakeConfig.outerIcing,
-                    name: icingOptions.find(o => o.id === cakeConfig.outerIcing)?.name
+                    type: config.outerIcing,
+                    name: icingOptions.find(o => o.id === config.outerIcing)?.name
                 },
                 filling: {
-                    type: cakeConfig.filling,
-                    name: fillingIcingOptions.find(o => o.id === cakeConfig.filling)?.name
+                    type: config.filling,
+                    name: fillingIcingOptions.find(o => o.id === config.filling)?.name
                 },
-                candles: cakeConfig.candles ? {
-                    type: cakeConfig.candles,
-                    name: candleOptions.find(o => o.id === cakeConfig.candles)?.name
+                candles: config.candles ? {
+                    type: config.candles,
+                    name: candleOptions.find(o => o.id === config.candles)?.name
                 } : null,
-                message: cakeConfig.message || null,
+                message: config.message || null,
                 board: {
-                    type: cakeConfig.board,
-                    name: boardOptions.find(o => o.id === cakeConfig.board)?.name
+                    type: config.board,
+                    name: boardOptions.find(o => o.id === config.board)?.name
                 }
             }
         }, null, 2);
@@ -401,44 +396,44 @@ const CakeCustomizer = () => {
     // Add this function to handle JSON download
     const handleDownloadJson = () => {
         const jsonData = {
-            size: cakeConfig.size,
-            price: cakeConfig.price.toFixed(2),
+            size: config.size,
+            price: config.price.toFixed(2),
             sponge: {
-                type: cakeConfig.sponge,
-                name: spongeOptions.find(o => o.id === cakeConfig.sponge)?.name
+                type: config.sponge,
+                name: spongeOptions.find(o => o.id === config.sponge)?.name
             },
             filling: {
-                type: cakeConfig.filling,
-                name: fillingIcingOptions.find(o => o.id === cakeConfig.filling)?.name
+                type: config.filling,
+                name: fillingIcingOptions.find(o => o.id === config.filling)?.name
             },
-            goo: cakeConfig.goo ? {
-                type: cakeConfig.goo,
-                name: gooOptions.find(o => o.id === cakeConfig.goo)?.name
+            goo: config.goo ? {
+                type: config.goo,
+                name: gooOptions.find(o => o.id === config.goo)?.name
             } : null,
-            extras: cakeConfig.extras.map(id => ({
+            extras: config.extras.map(id => ({
                 type: id,
                 name: extraOptions.find(o => o.id === id)?.name
             })),
             decoration: {
-                type: cakeConfig.outerIcing,
-                name: icingOptions.find(o => o.id === cakeConfig.outerIcing)?.name
+                type: config.outerIcing,
+                name: icingOptions.find(o => o.id === config.outerIcing)?.name
             },
             message: {
-                type: cakeConfig.messageType,
-                text: cakeConfig.message || null,
-                plaqueColor: cakeConfig.messageType === 'piped' ? {
-                    type: cakeConfig.plaqueColor,
-                    name: plaqueColors.find(c => c.id === cakeConfig.plaqueColor)?.name
+                type: config.messageType,
+                text: config.message || null,
+                plaqueColor: config.messageType === 'piped' ? {
+                    type: config.plaqueColor,
+                    name: plaqueColors.find(c => c.id === config.plaqueColor)?.name
                 } : null,
-                uploadedImage: cakeConfig.messageType === 'edible' ? cakeConfig.uploadedImage : null
+                uploadedImage: config.messageType === 'edible' ? config.uploadedImage : null
             },
-            candles: cakeConfig.candles ? {
-                type: cakeConfig.candles,
-                name: candleOptions.find(o => o.id === cakeConfig.candles)?.name
+            candles: config.candles ? {
+                type: config.candles,
+                name: candleOptions.find(o => o.id === config.candles)?.name
             } : null,
             board: {
-                type: cakeConfig.board,
-                name: boardOptions.find(o => o.id === cakeConfig.board)?.name
+                type: config.board,
+                name: boardOptions.find(o => o.id === config.board)?.name
             }
         };
 
@@ -454,17 +449,101 @@ const CakeCustomizer = () => {
         URL.revokeObjectURL(url);
     };
 
+    // Add these handler functions with proper types
+    const handleSizeSelect = (option: SizeOption) => {
+        setConfig({
+            size: option.size,
+            price: option.price
+        });
+    };
+
+    const handleSpongeSelect = (option: SpongeOption) => {
+        setConfig({
+            sponge: option.id,
+            price: config.price + (option.price || 0)
+        });
+    };
+
+    const handleFillingSelect = (option: FillingOption) => {
+        setConfig({
+            filling: option.id
+        });
+    };
+
+    const handleGooSelect = (option: GooOption) => {
+        setConfig({
+            goo: option.id,
+            price: config.price + option.price
+        });
+    };
+
+    const handleExtraSelect = (option: ExtraOption) => {
+        const extras = config.extras.includes(option.id)
+            ? config.extras.filter(id => id !== option.id)
+            : [...config.extras, option.id];
+
+        const price = config.price + (config.extras.includes(option.id) ? -option.price : option.price);
+
+        setConfig({
+            extras,
+            price
+        });
+    };
+
+    const handleMessageTypeSelect = (option: MessageOption) => {
+        setConfig({
+            messageType: option.id,
+            message: option.id === 'none' ? '' : config.message,
+            price: config.price + option.price - (
+                config.messageType === 'piped' ? 7.00 :
+                    config.messageType === 'edible' ? 8.00 : 0
+            )
+        });
+    };
+
+    // Update the event handlers with proper types
+    const handleMessageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setConfig({
+            message: e.target.value.slice(0, 30)
+        });
+    };
+
+    const handlePlaqueColorChange = (colorId: string) => {
+        setConfig({
+            plaqueColor: colorId
+        });
+    };
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                setConfig({
+                    uploadedImage: e.target?.result as string
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleImageRemove = () => {
+        setConfig({
+            uploadedImage: null
+        });
+    };
+
     // Render cake visualization
     const renderCake = () => {
-        const outerIcingColor = icingOptions.find(option => option.id === cakeConfig.outerIcing)?.color || 'bg-pink-200';
-        const spongeColor = spongeOptions.find(option => option.id === cakeConfig.sponge)?.color || 'bg-amber-50';
-        const gooColor = gooOptions.find(option => option.id === cakeConfig.goo)?.color;
-        const showCandles = cakeConfig.candles !== null;
-        const showMessage = cakeConfig.message !== '';
+        const outerIcingColor = icingOptions.find(option => option.id === config.outerIcing)?.color || 'bg-pink-200';
+        const spongeColor = spongeOptions.find(option => option.id === config.sponge)?.color || 'bg-amber-50';
+        const gooColor = gooOptions.find(option => option.id === config.goo)?.color;
+        const showCandles = config.candles !== null;
+        const showMessage = config.message !== '';
 
         // Special preview for message customization
         if (selectedPart === 'message' as SelectedPart) {
-            const selectedFilling = fillingIcingOptions.find(option => option.id === cakeConfig.filling);
+            const selectedFilling = fillingIcingOptions.find(option => option.id === config.filling);
             const fillingColor = selectedFilling?.color || 'bg-pink-200';
 
             return (
@@ -475,14 +554,14 @@ const CakeCustomizer = () => {
                         <div className={`absolute inset-0 rounded-full ${fillingColor} shadow-lg`}>
                             {/* Center content - plaque color */}
                             <div className={`absolute inset-[15%] rounded-full flex items-center justify-center
-                                ${cakeConfig.messageType === 'piped'
-                                    ? plaqueColors.find(c => c.id === cakeConfig.plaqueColor)?.color || 'bg-amber-50'
+                                ${config.messageType === 'piped'
+                                    ? plaqueColors.find(c => c.id === config.plaqueColor)?.color || 'bg-amber-50'
                                     : 'bg-white'
                                 }`}
                             >
-                                {cakeConfig.messageType === 'edible' && cakeConfig.uploadedImage ? (
+                                {config.messageType === 'edible' && config.uploadedImage ? (
                                     <Image
-                                        src={cakeConfig.uploadedImage}
+                                        src={config.uploadedImage}
                                         alt="Uploaded design"
                                         className="w-full h-full object-contain rounded-full"
                                         width={200}
@@ -490,7 +569,7 @@ const CakeCustomizer = () => {
                                     />
                                 ) : (
                                     <div className="text-center text-pink-400 italic p-8">
-                                        {cakeConfig.message || "Your message will be piped here..."}
+                                        {config.message || "Your message will be piped here..."}
                                     </div>
                                 )}
                             </div>
@@ -499,7 +578,7 @@ const CakeCustomizer = () => {
 
                     {/* Size indicator */}
                     <div className="absolute bottom-4 right-4 text-2xl font-bold">
-                        {cakeConfig.size}
+                        {config.size}
                     </div>
 
                     {renderCakeControls()}
@@ -561,8 +640,8 @@ const CakeCustomizer = () => {
                                         {/* Candle body */}
                                         <motion.div
                                             className={`w-3 h-24 rounded-full shadow-lg transform -translate-y-1
-                                                ${cakeConfig.candles === 'pink-candles' ? 'bg-gradient-to-b from-pink-300 to-pink-200' :
-                                                    cakeConfig.candles === 'blue-candles' ? 'bg-gradient-to-b from-blue-300 to-blue-200' :
+                                                ${config.candles === 'pink-candles' ? 'bg-gradient-to-b from-pink-300 to-pink-200' :
+                                                    config.candles === 'blue-candles' ? 'bg-gradient-to-b from-blue-300 to-blue-200' :
                                                         'bg-gradient-to-b from-gray-100 to-white'}
                                             `}
                                             whileHover={{ scale: 1.1 }}
@@ -573,10 +652,10 @@ const CakeCustomizer = () => {
                         )}
 
                         {/* Extras */}
-                        {cakeConfig.extras.length > 0 && (
+                        {config.extras.length > 0 && (
                             <div className="absolute inset-x-0 top-1/2 flex justify-center">
                                 <div className="relative w-3/4 flex flex-wrap justify-center gap-2">
-                                    {cakeConfig.extras.map((extraId, index) => {
+                                    {config.extras.map((extraId, index) => {
                                         const extra = extraOptions.find(opt => opt.id === extraId);
                                         if (!extra) return null;
 
@@ -610,14 +689,14 @@ const CakeCustomizer = () => {
                         {(showMessage || selectedPart === 'message') && (
                             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                                 <div className="w-32 h-32 bg-white/90 rounded-full flex justify-center items-center text-sm text-pink-400 p-4 text-center shadow-sm">
-                                    {cakeConfig.message || "Your message here..."}
+                                    {config.message || "Your message here..."}
                                 </div>
                             </div>
                         )}
 
                         {/* Size indicator */}
                         <div className="absolute bottom-4 right-4 text-2xl font-bold">
-                            {cakeConfig.size}
+                            {config.size}
                         </div>
 
                         {renderCakeControls()}
@@ -642,10 +721,10 @@ const CakeCustomizer = () => {
                                     <button
                                         key={option.id}
                                         onClick={() => handleSizeSelect(option)}
-                                        className={`flex flex-col items-center ${cakeConfig.size === option.size ? 'ring-2 ring-pink-500' : ''
+                                        className={`flex flex-col items-center ${config.size === option.size ? 'ring-2 ring-pink-500' : ''
                                             }`}
                                     >
-                                        <div className={`w-20 h-20 rounded-full border-2 ${cakeConfig.size === option.size ? 'border-pink-500' : 'border-gray-200'
+                                        <div className={`w-20 h-20 rounded-full border-2 ${config.size === option.size ? 'border-pink-500' : 'border-gray-200'
                                             } flex items-center justify-center text-lg font-bold`}>
                                             {option.size}
                                         </div>
@@ -657,7 +736,7 @@ const CakeCustomizer = () => {
                                 ))}
                             </div>
                             <div className="mt-2 text-sm text-gray-500">
-                                • Feeds approx. {sizeOptions.find(o => o.size === cakeConfig.size)?.feeds}
+                                • Feeds approx. {sizeOptions.find(o => o.size === config.size)?.feeds}
                             </div>
                         </div>
 
@@ -670,7 +749,7 @@ const CakeCustomizer = () => {
                                         onClick={() => handleSpongeSelect(option)}
                                         className="flex flex-col items-center"
                                     >
-                                        <div className={`w-16 h-16 ${option.color} rounded border ${cakeConfig.sponge === option.id ? 'ring-2 ring-pink-500' : 'ring-1 ring-gray-200'
+                                        <div className={`w-16 h-16 ${option.color} rounded border ${config.sponge === option.id ? 'ring-2 ring-pink-500' : 'ring-1 ring-gray-200'
                                             }`}>
                                             <div className="h-full flex flex-col">
                                                 <div className="flex-1 border-b border-white/20"></div>
@@ -699,7 +778,7 @@ const CakeCustomizer = () => {
                                     >
                                         <button
                                             onClick={() => handleFillingSelect(option)}
-                                            className={`w-20 h-20 relative ${option.color} ${cakeConfig.filling === option.id
+                                            className={`w-20 h-20 relative ${option.color} ${config.filling === option.id
                                                 ? 'ring-2 ring-pink-500'
                                                 : 'ring-1 ring-gray-200'
                                                 }`}
@@ -721,7 +800,7 @@ const CakeCustomizer = () => {
                                         onClick={() => handleGooSelect(option)}
                                         className="flex flex-col items-center"
                                     >
-                                        <div className={`w-16 h-4 ${option.color} rounded ${cakeConfig.goo === option.id ? 'ring-2 ring-pink-500' : 'ring-1 ring-gray-200'
+                                        <div className={`w-16 h-4 ${option.color} rounded ${config.goo === option.id ? 'ring-2 ring-pink-500' : 'ring-1 ring-gray-200'
                                             }`} />
                                         <div className="mt-2 text-xs font-medium text-center">{option.name}</div>
                                         <div className="text-xs text-gray-500">£{option.price.toFixed(2)}</div>
@@ -740,7 +819,7 @@ const CakeCustomizer = () => {
                             {icingOptions.map(option => (
                                 <div key={option.id} className="flex flex-col items-center">
                                     <button
-                                        className={`w-12 h-12 ${option.color} ${cakeConfig.outerIcing === option.id ? 'ring-2 ring-pink-500' : 'ring-1 ring-gray-200'} rounded`}
+                                        className={`w-12 h-12 ${option.color} ${config.outerIcing === option.id ? 'ring-2 ring-pink-500' : 'ring-1 ring-gray-200'} rounded`}
                                         onClick={() => handleOptionSelect('outerIcing', option.id)}
                                     />
                                     <p className="text-xs text-center mt-1">{option.name}</p>
@@ -765,7 +844,7 @@ const CakeCustomizer = () => {
                                     >
                                         <button
                                             onClick={() => handleFillingSelect(option)}
-                                            className={`w-20 h-20 relative ${option.color} ${cakeConfig.filling === option.id
+                                            className={`w-20 h-20 relative ${option.color} ${config.filling === option.id
                                                 ? 'ring-2 ring-pink-500'
                                                 : 'ring-1 ring-gray-200'
                                                 }`}
@@ -790,7 +869,7 @@ const CakeCustomizer = () => {
                                         key={option.id}
                                         whileHover={{ scale: 1.02 }}
                                         onClick={() => handleGooSelect(option)}
-                                        className={`group relative p-8 rounded-xl transition-all ${cakeConfig.goo === option.id
+                                        className={`group relative p-8 rounded-xl transition-all ${config.goo === option.id
                                             ? 'ring-2 ring-pink-500 shadow-lg bg-pink-50'
                                             : 'ring-1 ring-gray-200 hover:shadow-md hover:bg-gray-50'
                                             }`}
@@ -802,7 +881,7 @@ const CakeCustomizer = () => {
                                                 <p className="text-lg font-bold">{option.name}</p>
                                                 <p className="text-sm text-pink-500 font-medium">+£2.00</p>
                                             </div>
-                                            {cakeConfig.goo === option.id ? (
+                                            {config.goo === option.id ? (
                                                 <Check className="w-6 h-6 text-pink-500" />
                                             ) : (
                                                 <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center">
@@ -829,7 +908,7 @@ const CakeCustomizer = () => {
                                     className="flex flex-col items-center"
                                 >
                                     <div className={`w-16 h-16 bg-white rounded-lg border-2 flex items-center justify-center
-                                        ${cakeConfig.messageType === option.id ? 'border-pink-500' : 'border-gray-200'}`}
+                                        ${config.messageType === option.id ? 'border-pink-500' : 'border-gray-200'}`}
                                     >
                                         <span className="text-2xl">{option.icon}</span>
                                     </div>
@@ -841,7 +920,7 @@ const CakeCustomizer = () => {
                             ))}
                         </div>
 
-                        {cakeConfig.messageType === 'piped' && (
+                        {config.messageType === 'piped' && (
                             <>
                                 <div className="space-y-4">
                                     <div>
@@ -850,11 +929,8 @@ const CakeCustomizer = () => {
                                         </label>
                                         <input
                                             type="text"
-                                            value={cakeConfig.message}
-                                            onChange={(e) => setCakeConfig(prev => ({
-                                                ...prev,
-                                                message: e.target.value.slice(0, 30)
-                                            }))}
+                                            value={config.message}
+                                            onChange={handleMessageChange}
                                             placeholder="Happy Birthday!"
                                             className="w-full p-3 border rounded-md"
                                             maxLength={30}
@@ -869,12 +945,9 @@ const CakeCustomizer = () => {
                                             {plaqueColors.map((color) => (
                                                 <button
                                                     key={color.id}
-                                                    onClick={() => setCakeConfig(prev => ({
-                                                        ...prev,
-                                                        plaqueColor: color.id
-                                                    }))}
+                                                    onClick={() => handlePlaqueColorChange(color.id)}
                                                     className={`w-full aspect-square rounded-full ${color.color} border-2
-                                                        ${cakeConfig.plaqueColor === color.id ? 'border-pink-500' : 'border-gray-200'}`}
+                                                        ${config.plaqueColor === color.id ? 'border-pink-500' : 'border-gray-200'}`}
                                                     title={color.name}
                                                 />
                                             ))}
@@ -887,7 +960,7 @@ const CakeCustomizer = () => {
                             </>
                         )}
 
-                        {cakeConfig.messageType === 'edible' && (
+                        {config.messageType === 'edible' && (
                             <div className="space-y-4">
                                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
                                     <input
@@ -895,41 +968,23 @@ const CakeCustomizer = () => {
                                         id="image-upload"
                                         accept="image/*"
                                         className="hidden"
-                                        onChange={(e) => {
-                                            const file = e.target.files?.[0];
-                                            if (file) {
-                                                const reader = new FileReader();
-                                                reader.onload = (e) => {
-                                                    setCakeConfig(prev => ({
-                                                        ...prev,
-                                                        uploadedImage: e.target?.result as string
-                                                    }));
-                                                };
-                                                reader.readAsDataURL(file);
-                                            }
-                                        }}
+                                        onChange={handleImageUpload}
                                     />
                                     <label
                                         htmlFor="image-upload"
                                         className="flex flex-col items-center cursor-pointer"
                                     >
-                                        {cakeConfig.uploadedImage ? (
+                                        {config.uploadedImage ? (
                                             <div className="relative w-full aspect-square">
                                                 <Image
-                                                    src={cakeConfig.uploadedImage}
+                                                    src={config.uploadedImage}
                                                     alt="Uploaded"
                                                     className="w-full h-full object-contain"
                                                     width={200}
                                                     height={200}
                                                 />
                                                 <button
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        setCakeConfig(prev => ({
-                                                            ...prev,
-                                                            uploadedImage: null
-                                                        }));
-                                                    }}
+                                                    onClick={handleImageRemove}
                                                     className="absolute top-2 right-2 p-1 bg-white rounded-full shadow"
                                                 >
                                                     ✕
@@ -973,7 +1028,7 @@ const CakeCustomizer = () => {
                             {candleOptions.map(option => (
                                 <div key={option.id} className="flex flex-col items-center">
                                     <button
-                                        className={`w-12 h-12 ${option.color} ${cakeConfig.candles === option.id ? 'ring-2 ring-pink-500' : 'ring-1 ring-gray-200'} rounded flex flex-col items-center justify-center`}
+                                        className={`w-12 h-12 ${option.color} ${config.candles === option.id ? 'ring-2 ring-pink-500' : 'ring-1 ring-gray-200'} rounded flex flex-col items-center justify-center`}
                                         onClick={() => handleOptionSelect('candles', option.id)}
                                     >
                                         <div className="w-1 h-8 bg-gradient-to-b from-amber-100 to-transparent"></div>
@@ -1006,7 +1061,7 @@ const CakeCustomizer = () => {
                                     <button
                                         onClick={() => handleOptionSelect('board', option.id)}
                                         className={`w-20 h-20 ${option.color} ${option.border || ''} 
-                                            ${cakeConfig.board === option.id ? 'ring-2 ring-pink-500' : 'ring-1 ring-gray-200'} 
+                                            ${config.board === option.id ? 'ring-2 ring-pink-500' : 'ring-1 ring-gray-200'} 
                                             rounded-lg shadow-sm hover:shadow-md transition-all`}
                                     />
                                     <p className="text-sm font-medium text-center mt-2">{option.name}</p>
@@ -1032,7 +1087,7 @@ const CakeCustomizer = () => {
                                         onClick={() => handleExtraSelect(option)}
                                         disabled={!option.available}
                                         className={`relative w-full aspect-square rounded-lg transition-all 
-                                            ${cakeConfig.extras.includes(option.id)
+                                            ${config.extras.includes(option.id)
                                                 ? 'ring-2 ring-pink-500'
                                                 : 'ring-1 ring-gray-200'
                                             } ${!option.available ? 'opacity-50' : 'hover:shadow-lg'}`}
@@ -1040,14 +1095,14 @@ const CakeCustomizer = () => {
                                         <div className={`absolute inset-0 rounded-lg ${option.color} opacity-20`} />
 
                                         {/* Add button */}
-                                        {!cakeConfig.extras.includes(option.id) && (
+                                        {!config.extras.includes(option.id) && (
                                             <div className="absolute -top-2 -right-2 w-6 h-6 bg-white rounded-full shadow-md flex items-center justify-center">
                                                 <span className="text-lg">+</span>
                                             </div>
                                         )}
 
                                         {/* Selected checkmark */}
-                                        {cakeConfig.extras.includes(option.id) && (
+                                        {config.extras.includes(option.id) && (
                                             <div className="absolute -top-2 -right-2 w-6 h-6 bg-pink-500 rounded-full shadow-md flex items-center justify-center">
                                                 <Check className="w-4 h-4 text-white" />
                                             </div>
@@ -1064,66 +1119,6 @@ const CakeCustomizer = () => {
             default:
                 return null;
         }
-    };
-
-    // Add these handler functions
-    const handleSizeSelect = (option: SizeOption) => {
-        setCakeConfig(prev => ({
-            ...prev,
-            size: option.size,
-            price: option.price
-        }));
-    };
-
-    const handleSpongeSelect = (option: SpongeOption) => {
-        setCakeConfig(prev => ({
-            ...prev,
-            sponge: option.id,
-            price: prev.price + (option.price || 0)
-        }));
-    };
-
-    const handleFillingSelect = (option: FillingOption) => {
-        setCakeConfig(prev => ({
-            ...prev,
-            filling: option.id
-        }));
-    };
-
-    const handleGooSelect = (option: GooOption) => {
-        setCakeConfig(prev => ({
-            ...prev,
-            goo: option.id,
-            price: prev.price + option.price
-        }));
-    };
-
-    const handleExtraSelect = (option: ExtraOption) => {
-        setCakeConfig(prev => {
-            const extras = prev.extras.includes(option.id)
-                ? prev.extras.filter(id => id !== option.id)
-                : [...prev.extras, option.id];
-
-            const price = prev.price + (prev.extras.includes(option.id) ? -option.price : option.price);
-
-            return {
-                ...prev,
-                extras,
-                price
-            };
-        });
-    };
-
-    const handleMessageTypeSelect = (option: MessageOption) => {
-        setCakeConfig(prev => ({
-            ...prev,
-            messageType: option.id,
-            message: option.id === 'none' ? '' : prev.message,
-            price: prev.price + option.price - (
-                prev.messageType === 'piped' ? 7.00 :
-                    prev.messageType === 'edible' ? 8.00 : 0
-            )
-        }));
     };
 
     // Update the bottom controls in the renderCake function
@@ -1170,9 +1165,9 @@ const CakeCustomizer = () => {
     // Update the handleAddToCart function
     const handleAddToCart = () => {
         if (editId) {
-            editCartItem(editId, cakeConfig);
+            editCartItem(editId, config);
         } else {
-            addToCart(cakeConfig);
+            addToCart(config);
         }
         router.push('/cart');
     };
@@ -1260,7 +1255,7 @@ const CakeCustomizer = () => {
                                 animate={{ scale: 1 }}
                                 className="text-2xl font-bold text-gray-900"
                             >
-                                £{cakeConfig.price.toFixed(2)}
+                                £{config.price.toFixed(2)}
                             </motion.div>
                         </motion.div>
 
@@ -1278,7 +1273,7 @@ const CakeCustomizer = () => {
                                             <MenuItem
                                                 icon="🍰"
                                                 title="CAKE"
-                                                subtitle={`${cakeConfig.size}`}
+                                                subtitle={`${config.size}`}
                                                 onClick={() => setSelectedPart('cake')}
                                                 gradient="from-pink-500 to-rose-500"
                                             />
@@ -1292,7 +1287,7 @@ const CakeCustomizer = () => {
                                             <MenuItem
                                                 icon="✍️"
                                                 title="PIPING & PRINTING"
-                                                subtitle={cakeConfig.message || "PIPED MESSAGE + WHITE CHOCOLATE PLAQUE"}
+                                                subtitle={config.message || "PIPED MESSAGE + WHITE CHOCOLATE PLAQUE"}
                                                 onClick={() => setSelectedPart('message')}
                                                 gradient="from-blue-500 to-cyan-500"
                                             />
@@ -1306,15 +1301,15 @@ const CakeCustomizer = () => {
                                             <MenuItem
                                                 icon="📝"
                                                 title="CAKE BOARD"
-                                                subtitle={`${boardOptions.find(b => b.id === cakeConfig.board)?.name || 'Select board color'}`}
+                                                subtitle={`${boardOptions.find(b => b.id === config.board)?.name || 'Select board color'}`}
                                                 onClick={() => setSelectedPart('board')}
                                                 gradient="from-green-500 to-teal-500"
                                             />
                                             <MenuItem
                                                 icon="🍪"
                                                 title="MAKE IT EXTRA"
-                                                subtitle={cakeConfig.extras.length > 0
-                                                    ? `${cakeConfig.extras.length} extras added`
+                                                subtitle={config.extras.length > 0
+                                                    ? `${config.extras.length} extras added`
                                                     : "Add special toppings"}
                                                 onClick={() => setSelectedPart('extras')}
                                                 gradient="from-yellow-500 to-orange-500"

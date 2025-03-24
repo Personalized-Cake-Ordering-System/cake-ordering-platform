@@ -38,8 +38,9 @@ import {
 } from "@/components/ui/select";
 import { Separator } from '@/components/ui/separator';
 import { useRouter } from 'next/navigation';
-import { CheckoutFormValues, CartItem } from './types';
+import { CheckoutFormValues } from './types';
 import { createOrder } from './api';
+import { CartItem } from '@/types/cart';
 
 type GeocodingResponse = {
   results: Array<{
