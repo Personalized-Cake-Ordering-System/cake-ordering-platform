@@ -5,16 +5,18 @@ import { useFrame } from '@react-three/fiber';
 import { useGLTF, Text } from '@react-three/drei';
 import { useCustomizationStore } from '../shared/client/stores/customization';
 import * as THREE from 'three';
+import { CakeConfig } from '@/types/cake';
+import { CartItem } from "@/types/cart";
 
-interface TextConfig {
-    position: { x: number; y: number; z: number };
-    rotation: { x: number; y: number; z: number };
-    size: number;
-    color: string;
-    content: string;
+interface ModelGLBProps {
+    modelPath?: string;
+    config: CakeConfig;
+    addToCart: (config: CakeConfig) => void;
+    editCartItem: (id: string, newConfig: CakeConfig) => void;
+    items: CartItem[];
 }
 
-export function ModelGLB({ modelPath = '/cake3.glb' }) {
+export function ModelGLB({ modelPath = '/cake3.glb', config, addToCart, editCartItem, items }: ModelGLBProps) {
     const meshRef = React.useRef<THREE.Group>(null!);
     const { scene } = useGLTF(modelPath);
     const {
@@ -39,6 +41,52 @@ export function ModelGLB({ modelPath = '/cake3.glb' }) {
     const [rotation, setRotation] = React.useState(0);
     const [initialLoad, setInitialLoad] = React.useState(true);
 
+    // Initialize materials for each part of the cake
+    React.useEffect(() => {
+        scene.traverse((child) => {
+            if (child instanceof THREE.Mesh) {
+                // Set initial materials based on config
+                const material = new THREE.MeshStandardMaterial({
+                    metalness: 0.1,
+                    roughness: 0.3,
+                    side: THREE.DoubleSide,
+                });
+
+                // Map mesh names to config properties
+                switch (child.name.toLowerCase()) {
+                    case 'cake':
+                    case 'sponge':
+                        material.color.set(
+                            config.sponge === 'vanilla' ? '#f5f5dc' :
+                                config.sponge === 'chocolate' ? '#3c1321' :
+                                    config.sponge === 'red-velvet' ? '#8b0000' : '#f5f5dc'
+                        );
+                        break;
+                    case 'frosting':
+                    case 'icing':
+                    case 'buttercream':
+                        material.color.set(
+                            config.outerIcing === 'pink-vanilla' ? '#ffb6c1' :
+                                config.outerIcing === 'white-vanilla' ? '#ffffff' :
+                                    config.outerIcing === 'blue-vanilla' ? '#87ceeb' :
+                                        config.outerIcing === 'yellow-vanilla' ? '#ffd700' : '#ffffff'
+                        );
+                        break;
+                    case 'board':
+                    case 'base':
+                        material.color.set(
+                            config.board === 'white' ? '#ffffff' :
+                                config.board === 'pink' ? '#ffb6c1' :
+                                    config.board === 'blue' ? '#87ceeb' : '#ffffff'
+                        );
+                        break;
+                }
+
+                child.material = material;
+            }
+        });
+    }, [scene, config]);
+
     // Save original materials on first load and initialize colors
     React.useEffect(() => {
         const initialColors: Record<string, string> = {};
@@ -61,7 +109,7 @@ export function ModelGLB({ modelPath = '/cake3.glb' }) {
         if (initialLoad) {
             Object.entries(initialColors).forEach(([partName, color]) => {
                 if (!customizedParts.includes(partName)) {
-                    setColorForPart(partName, color, false); // false = not a custom color
+                    setColorForPart(partName, color, false);
                 }
             });
             setInitialLoad(false);
@@ -85,12 +133,10 @@ export function ModelGLB({ modelPath = '/cake3.glb' }) {
                 textureLoader.load(
                     textureUrl,
                     (texture) => {
-                        // Configure texture
                         texture.colorSpace = THREE.SRGBColorSpace;
                         texture.flipY = false;
                         texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
                         texture.needsUpdate = true;
-
                         resolve(texture);
                     },
                     undefined,
@@ -128,26 +174,97 @@ export function ModelGLB({ modelPath = '/cake3.glb' }) {
                     newMaterial.metalness = metalness;
                     newMaterial.needsUpdate = true;
 
-                    // Apply color (use custom color if specified, otherwise use the color from store)
-                    if (colors[child.name]) {
-                        newMaterial.color.set(colors[child.name]);
-                    } else {
-                        // Fallback to original color if available
-                        newMaterial.color.copy(originalMaterial.color);
+                    // Apply colors based on cake config
+                    if (child.name === 'sponge') {
+                        // Sponge colors
+                        newMaterial.color.set(
+                            config.sponge === 'vanilla' ? '#f5f5dc' :
+                                config.sponge === 'chocolate' ? '#3c1321' :
+                                    config.sponge === 'red-velvet' ? '#8b0000' :
+                                        config.sponge === 'salted-caramel' ? '#d2691e' :
+                                            config.sponge === 'raspberry-ripple' ? '#ff69b4' :
+                                                config.sponge === 'lemon' ? '#ffd700' :
+                                                    config.sponge === 'rainbow' ? '#ffffff' :
+                                                        config.sponge === 'funfetti' ? '#ffffff' : '#f5f5dc'
+                        );
+                    } else if (child.name === 'outerIcing') {
+                        // Outer icing colors
+                        newMaterial.color.set(
+                            config.outerIcing === 'pink-vanilla' ? '#ffb6c1' :
+                                config.outerIcing === 'white-vanilla' ? '#ffffff' :
+                                    config.outerIcing === 'blue-vanilla' ? '#87ceeb' :
+                                        config.outerIcing === 'yellow-vanilla' ? '#ffd700' : '#ffffff'
+                        );
+                    } else if (child.name === 'filling') {
+                        // Filling colors
+                        newMaterial.color.set(
+                            config.filling === 'white-vanilla' ? '#ffffff' :
+                                config.filling === 'pink-vanilla' ? '#ffb6c1' :
+                                    config.filling === 'blue-vanilla' ? '#87ceeb' :
+                                        config.filling === 'yellow-vanilla' ? '#ffd700' :
+                                            config.filling === 'cream-cheese' ? '#f0f8ff' :
+                                                config.filling === 'chocolate' ? '#3c1321' :
+                                                    config.filling === 'salted-caramel' ? '#d2691e' :
+                                                        config.filling === 'raspberry' ? '#ff69b4' : '#ffffff'
+                        );
+                    } else if (child.name === 'board') {
+                        // Cake board colors
+                        newMaterial.color.set(
+                            config.board === 'white' ? '#ffffff' :
+                                config.board === 'pink' ? '#ffb6c1' :
+                                    config.board === 'blue' ? '#87ceeb' : '#ffffff'
+                        );
+                    } else if (child.name === 'candles') {
+                        // Candle colors
+                        if (config.candles) {
+                            newMaterial.color.set(
+                                config.candles === 'pink-candles' ? '#ffb6c1' :
+                                    config.candles === 'blue-candles' ? '#87ceeb' :
+                                        config.candles === 'white-candles' ? '#ffffff' : '#ffffff'
+                            );
+                        } else {
+                            newMaterial.visible = false;
+                        }
+                    } else if (child.name === 'toppings') {
+                        // Handle toppings visibility
+                        newMaterial.visible = config.extras.length > 0;
+                        if (config.extras.length > 0) {
+                            // Apply topping colors based on selected extras
+                            const toppingColor = new THREE.Color();
+                            config.extras.forEach(extra => {
+                                switch (extra) {
+                                    case 'cookie-dough':
+                                        toppingColor.set('#d2691e');
+                                        break;
+                                    case 'caramelised-white':
+                                        toppingColor.set('#f5f5dc');
+                                        break;
+                                    case 'oreo-crumbs':
+                                        toppingColor.set('#000000');
+                                        break;
+                                    case 'biscoff-crumbs':
+                                        toppingColor.set('#d2691e');
+                                        break;
+                                    case 'malted-cornflakes':
+                                        toppingColor.set('#ffd700');
+                                        break;
+                                    case 'pinata':
+                                        toppingColor.set('#ff69b4');
+                                        break;
+                                }
+                            });
+                            newMaterial.color.copy(toppingColor);
+                        }
                     }
 
                     // Apply texture
                     const textureConfig = textures[child.name];
                     if (textureConfig && loadedTextures.has(textureConfig.texture)) {
                         const texture = loadedTextures.get(textureConfig.texture)!.clone();
-
-                        // Configure texture properties
                         texture.repeat.set(textureConfig.repeat, textureConfig.repeat);
                         texture.rotation = textureConfig.rotation * Math.PI / 180;
                         texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
                         texture.needsUpdate = true;
-
-                        // Apply texture to material
                         newMaterial.map = texture;
                         newMaterial.needsUpdate = true;
                     }
@@ -166,7 +283,7 @@ export function ModelGLB({ modelPath = '/cake3.glb' }) {
                 }
             }
         });
-    }, [colors, selectedPart, hovered, originalMaterials, textures, loadedTextures, roughness, metalness, scene]);
+    }, [colors, selectedPart, hovered, originalMaterials, textures, loadedTextures, roughness, metalness, scene, config]);
 
     return (
         <group
@@ -184,38 +301,46 @@ export function ModelGLB({ modelPath = '/cake3.glb' }) {
             }}
             onClick={(e) => {
                 e.stopPropagation();
-
-                // Store the selected part name (object name)
                 setSelectedPart(e.object.name);
-
-                // Store the exact click position in 3D space
                 const clickPosition = {
                     x: e.point.x,
                     y: e.point.y,
                     z: e.point.z
                 };
-
-                // Save the click position for text placement
                 setClickPosition(clickPosition);
             }}
         >
             <primitive object={scene} />
 
-            {/* Render text elements properly positioned relative to the cake */}
-            {Object.entries(texts).map(([textId, config]: [string, TextConfig]) => (
+            {/* Render text elements for messages */}
+            {config.messageType === 'piped' && config.message && (
                 <Text
-                    key={textId}
-                    position={[config.position.x, config.position.y, config.position.z]}
-                    rotation={[config.rotation.x, config.rotation.y, config.rotation.z]}
-                    fontSize={config.size}
-                    color={config.color}
+                    position={[0, 0, 0]}
+                    rotation={[0, 0, 0]}
+                    fontSize={0.5}
+                    color={config.plaqueColor === 'white' ? '#ffffff' :
+                        config.plaqueColor === 'dark' ? '#000000' :
+                            config.plaqueColor === 'pink' ? '#ffb6c1' :
+                                config.plaqueColor === 'blue' ? '#87ceeb' : '#ffffff'}
                     anchorX="center"
                     anchorY="middle"
                     renderOrder={10}
                 >
-                    {config.content}
+                    {config.message}
                 </Text>
-            ))}
+            )}
+
+            {/* Render edible image if selected */}
+            {config.messageType === 'edible' && config.uploadedImage && (
+                <mesh position={[0, 0, 0]}>
+                    <planeGeometry args={[1, 1]} />
+                    <meshBasicMaterial
+                        map={new THREE.TextureLoader().load(config.uploadedImage)}
+                        transparent
+                        side={THREE.DoubleSide}
+                    />
+                </mesh>
+            )}
         </group>
     );
 }
