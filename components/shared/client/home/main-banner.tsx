@@ -42,7 +42,7 @@ const defaultSlides: BannerSlide[] = [
     price: "320.000đ",
     priceLabel: "Giá chỉ từ",
     buttonText: "XEM CỬA HÀNG",
-    buttonUrl: "/store/tiem-banh-hanh-phuc",
+    buttonUrl: "/stores/tiem-banh-hanh-phuc",
   },
   {
     id: 2,
@@ -54,7 +54,7 @@ const defaultSlides: BannerSlide[] = [
     price: "280.000đ",
     priceLabel: "Giá chỉ từ",
     buttonText: "XEM CỬA HÀNG",
-    buttonUrl: "/store/paris-bakery",
+    buttonUrl: "/stores/paris-bakery",
   },
   {
     id: 3,
@@ -66,7 +66,7 @@ const defaultSlides: BannerSlide[] = [
     price: "350.000đ",
     priceLabel: "Giá chỉ từ",
     buttonText: "XEM CỬA HÀNG",
-    buttonUrl: "/store/cheesecake-factory",
+    buttonUrl: "/stores/cheesecake-factory",
   },
 ];
 

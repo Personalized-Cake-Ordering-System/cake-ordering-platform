@@ -209,7 +209,7 @@ const CheckoutPage = () => {
           shipping_type: "DELIVERY",
           payment_type: "QR_CODE",
           voucher_code: "",
-          order_detail_create_models: items.map((item: CartItem) => ({
+          order_detail_create_models: items.map((item: any) => ({
             available_cake_id: null,
             custom_cake_id: '631037c4-969f-4ac4-bb32-5e88921a0199',
             cake_note: "note nè",
