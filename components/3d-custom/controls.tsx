@@ -3,6 +3,11 @@ import React from 'react';
 import { useCustomizationStore } from '../shared/client/stores/customization';
 import { Play, Pause, Download, Upload, Palette, LucideIcon } from 'lucide-react';
 import { ToastContainer } from './toast-save-show'; // Import the toast component
+import { useCakeConfigStore } from '../shared/client/stores/cake-config';
+import { Slider } from '../ui/slider';
+import { Label } from '../ui/label';
+import { Button } from '../ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 interface SliderProps {
     label: string;
@@ -41,6 +46,7 @@ export function Controls() {
         addToppingToPart,
         removeToppingFromPart
     } = useCustomizationStore();
+    const { config, setConfig } = useCakeConfigStore();
 
     const exportConfig = () => {
         try {
@@ -90,15 +96,15 @@ export function Controls() {
 
                     // Remove all existing images from each part
                     Object.entries(images).forEach(([part, partImages]) => {
-                        partImages.forEach((_, index) => {
-                            removeImageFromPart(part, 0); // Always remove index 0 as the array shortens with each removal
+                        partImages.forEach(() => {
+                            removeImageFromPart(part, 0);
                         });
                     });
 
                     // Remove all existing toppings from each part
                     Object.entries(toppings).forEach(([part, partToppings]) => {
-                        partToppings.forEach((_, index) => {
-                            removeToppingFromPart(part, 0); // Always remove index 0 as the array shortens
+                        partToppings.forEach(() => {
+                            removeToppingFromPart(part, 0);
                         });
                     });
 
@@ -194,107 +200,114 @@ export function Controls() {
     );
 
     return (
-        <>
-            <div className="w-80 p-6 bg-white rounded-xl shadow-lg space-y-6">
-                <div className="flex items-center justify-between">
-                    <h2 className="text-2xl font-bold text-gray-800">Cake Customizer</h2>
-                    <button
-                        onClick={() => setIsPlaying(!isPlaying)}
-                        className="p-2 rounded-full bg-teal-100 text-teal-600 hover:bg-teal-200 
-                                 transition-colors duration-200"
-                    >
-                        {isPlaying ? <Pause size={20} /> : <Play size={20} />}
-                    </button>
-                </div>
+        <div className="space-y-6">
+            {/* Cake Size */}
+            <div className="space-y-2">
+                <Label>Cake Size</Label>
+                <Select value={config.size} onValueChange={(value) => setConfig({ ...config, size: value })}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Select size" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="6">6&quot; (serves 8-10)</SelectItem>
+                        <SelectItem value="8">8&quot; (serves 12-15)</SelectItem>
+                        <SelectItem value="10">10&quot; (serves 20-25)</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
 
-                {selectedPart ? (
-                    <div className="bg-gray-50 p-4 rounded-lg space-y-3">
-                        <div className="flex items-center gap-2">
-                            <Palette size={16} className="text-teal-600" />
-                            <label className="text-sm font-medium text-gray-700">
-                                {selectedPart} Color
-                            </label>
-                        </div>
-                        <input
-                            type="color"
-                            value={colors[selectedPart] || '#ffffff'}
-                            onChange={(e) => setColorForPart(selectedPart, e.target.value)}
-                            className="w-full h-10 rounded cursor-pointer"
-                        />
-                    </div>
-                ) : (
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                        <p className="text-sm text-gray-500 flex items-center gap-2">
-                            <Palette size={16} />
-                            Click any part of the cake to customize its color
-                        </p>
-                    </div>
-                )}
+            {/* Sponge Type */}
+            <div className="space-y-2">
+                <Label>Sponge Type</Label>
+                <Select value={config.sponge} onValueChange={(value) => setConfig({ ...config, sponge: value })}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Select sponge" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="vanilla">Vanilla</SelectItem>
+                        <SelectItem value="chocolate">Chocolate</SelectItem>
+                        <SelectItem value="red-velvet">Red Velvet</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
 
-                <div className="space-y-4">
+            {/* Outer Icing */}
+            <div className="space-y-2">
+                <Label>Outer Icing</Label>
+                <Select value={config.outerIcing} onValueChange={(value) => setConfig({ ...config, outerIcing: value })}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Select icing" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="white-vanilla">White Vanilla</SelectItem>
+                        <SelectItem value="pink-vanilla">Pink Vanilla</SelectItem>
+                        <SelectItem value="blue-vanilla">Blue Vanilla</SelectItem>
+                        <SelectItem value="yellow-vanilla">Yellow Vanilla</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+
+            {/* 3D View Controls */}
+            <div className="space-y-4 pt-4 border-t">
+                <h3 className="font-medium">3D View Settings</h3>
+
+                <div className="space-y-2">
+                    <Label>Model Scale</Label>
                     <Slider
-                        label="Cake Size"
+                        label="Model Scale"
                         value={scale}
-                        onChange={(e) => setScale(parseFloat(e.target.value))}
+                        onChange={(e) => setScale(Number(e.target.value))}
                         min={0.5}
                         max={2}
                         step={0.1}
                     />
+                </div>
 
-                    <Slider
-                        label="Frosting Texture"
-                        value={roughness}
-                        onChange={(e) => setRoughness(parseFloat(e.target.value))}
-                        min={0}
-                        max={1}
-                        step={0.1}
-                    />
-
-                    <Slider
-                        label="Decoration Shine"
-                        value={metalness}
-                        onChange={(e) => setMetalness(parseFloat(e.target.value))}
-                        min={0}
-                        max={1}
-                        step={0.1}
-                    />
-
+                <div className="space-y-2">
+                    <Label>Rotation Speed</Label>
                     <Slider
                         label="Rotation Speed"
                         value={animationSpeed}
-                        onChange={(e) => setAnimationSpeed(parseFloat(e.target.value))}
+                        onChange={(e) => setAnimationSpeed(Number(e.target.value))}
                         min={0}
                         max={2}
                         step={0.1}
                     />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 pt-2">
-                    <button
-                        onClick={exportConfig}
-                        className="flex items-center justify-center gap-2 px-4 py-2 bg-teal-600 
-                                 text-white rounded-lg hover:bg-teal-700 transition-colors duration-200"
-                    >
-                        <Download size={16} />
-                        Save Design
-                    </button>
-                    <label className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-600 
-                                    text-white rounded-lg hover:bg-gray-700 transition-colors duration-200 
-                                    cursor-pointer">
-                        <Upload size={16} />
-                        Load Design
-                        <input
-                            type="file"
-                            accept=".json"
-                            onChange={importConfig}
-                            className="hidden"
-                        />
-                    </label>
-                </div>
+                <Button
+                    onClick={() => setIsPlaying(!isPlaying)}
+                    variant={isPlaying ? "secondary" : "default"}
+                >
+                    {isPlaying ? "Stop Rotation" : "Start Rotation"}
+                </Button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 pt-2">
+                <button
+                    onClick={exportConfig}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-teal-600 
+                             text-white rounded-lg hover:bg-teal-700 transition-colors duration-200"
+                >
+                    <Download size={16} />
+                    Save Design
+                </button>
+                <label className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-600 
+                                text-white rounded-lg hover:bg-gray-700 transition-colors duration-200 
+                                cursor-pointer">
+                    <Upload size={16} />
+                    Load Design
+                    <input
+                        type="file"
+                        accept=".json"
+                        onChange={importConfig}
+                        className="hidden"
+                    />
+                </label>
             </div>
 
             {/* Toast container for notifications */}
             <ToastContainer />
-        </>
+        </div>
     );
 }

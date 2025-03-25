@@ -8,7 +8,6 @@ import Link from 'next/link';
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-
 import { Province, vietnamProvinces } from '@/app/data/vietnam-provinces';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -39,8 +38,10 @@ import {
 } from "@/components/ui/select";
 import { Separator } from '@/components/ui/separator';
 import { useRouter } from 'next/navigation';
+import { CheckoutFormValues } from './types';
+import { createOrder } from './api';
+import { CartItem } from '@/types/cart';
 
-// Add these new types
 type GeocodingResponse = {
   results: Array<{
     formatted_address: string;
@@ -91,9 +92,7 @@ const itemVariants = {
   }
 };
 
-type CheckoutFormValues = z.infer<typeof checkoutSchema>;
-
-type CakeConfig = {
+export type CakeConfig = {
   size: string;
   sponge: string;
   filling: string;
@@ -101,11 +100,11 @@ type CakeConfig = {
   imageUrl?: string;
 };
 
-interface CartItem {
-  id: string;
-  quantity: number;
-  config: CakeConfig;
-}
+// interface CartItem {
+//   id: string;
+//   quantity: number;
+//   config: CakeConfig;
+// }
 
 const CheckoutPage = () => {
   const router = useRouter();
@@ -168,9 +167,10 @@ const CheckoutPage = () => {
   // Add new function to handle geocoding
   const geocodeAddress = async (address: string) => {
     try {
+      const API_KEY_GOONG = '2R2HQynx7ypczZZcxS1w7uuJaxXIGoeXymvGGx0u'
       const encodedAddress = encodeURIComponent(address);
       const response = await fetch(
-        `https://rsapi.goong.io/geocode?address=${encodedAddress}&api_key=2R2HQynx7ypczZZcxS1w7uuJaxXIGoeXymvGGx0u`
+        `https://rsapi.goong.io/geocode?address=${encodedAddress}&api_key=${API_KEY_GOONG}`
       );
       const data: GeocodingResponse = await response.json();
 
@@ -198,51 +198,40 @@ const CheckoutPage = () => {
       const geocodeResult = await geocodeAddress(fullAddress);
 
       if (geocodeResult) {
-        // Generate a unique order ID
-        const orderId = `ORD`;
-
-        // Log the geocoding response
-        console.log('Geocoding Response:', {
-          fullAddress,
-          formattedAddress: geocodeResult.formatted_address,
-          coordinates: geocodeResult.location
-        });
-
-        // Create order details object
-        const orderDetails = {
-          orderId,
-          address: fullAddress,
-          lat: geocodeResult.location.lat,
-          lng: geocodeResult.location.lng,
-          subtotal: subtotal,
-          deliveryMethod: data.deliveryMethod,
-          customerName: data.fullName,
-          customerEmail: data.email,
-          customerPhone: data.phone,
-          orderDate: new Date().toISOString()
+        // Prepare order data
+        const orderData = {
+          bakery_id: "11f56ffc-6e29-4528-8e05-dadbc618dd5a",
+          order_note: data.specialInstructions || '',
+          phone_number: data.phone,
+          shipping_address: fullAddress,
+          latitude: geocodeResult.location.lat.toString(),
+          longitude: geocodeResult.location.lng.toString(),
+          pickup_time: new Date().toISOString(),
+          shipping_type: "DELIVERY",
+          payment_type: "QR_CODE",
+          voucher_code: "",
+          order_detail_create_models: items.map((item: any) => ({
+            available_cake_id: null,
+            custom_cake_id: '631037c4-969f-4ac4-bb32-5e88921a0199',
+            cake_note: "note nè",
+            quantity: item.quantity,
+          })),
         };
 
-        // Log the complete order details
-        console.log('Order Details:', orderDetails);
+        // Log the order data
+        console.log('Order Data:', orderData);
 
-        // Create the URL parameters
-        const searchParams = new URLSearchParams({
-          orderId: orderDetails.orderId,
-          address: orderDetails.address,
-          lat: orderDetails.lat.toString(),
-          lng: orderDetails.lng.toString(),
-          subtotal: orderDetails.subtotal.toString(),
-          deliveryMethod: orderDetails.deliveryMethod,
-          customerName: orderDetails.customerName,
-          customerEmail: orderDetails.customerEmail,
-          customerPhone: orderDetails.customerPhone
-        });
+        // Call the API to create an order
+        const response = await createOrder(orderData);
 
-        // Log the final URL parameters
-        console.log('URL Parameters:', searchParams.toString());
-
-        // Navigate to QR page
-        router.push(`/qrPage?${searchParams.toString()}`);
+        if (response.status_code === 200) {
+          const { total_customer_paid, order_code } = response.payload;
+          const qrLink = `https://img.vietqr.io/image/TPBank-00005992966-qr_only.jpg?amount=${total_customer_paid}&addInfo=${order_code}`;
+          router.push(qrLink);
+        } else {
+          console.error('Order creation failed:', response.errors);
+          setIsProcessing(false);
+        }
       } else {
         console.error('Failed to geocode address:', fullAddress);
         setIsProcessing(false);
@@ -662,7 +651,7 @@ const CheckoutPage = () => {
         {/* Order summary */}
         <motion.div
           variants={itemVariants}
-          className="w-full lg:w-1/3"
+          className="w-full lg:w-1/3 "
         >
           <Card className="sticky top-24 border-muted/50">
             <div className="p-6">
