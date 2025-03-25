@@ -49,7 +49,8 @@ const WishlistPage = () => {
                             <Card className="overflow-hidden">
                                 <div className="aspect-square relative">
                                     <Image
-                                        src={item.image}
+                                        // src={item.image}
+                                        src="/imagecake1.jpeg"
                                         alt={item.name}
                                         fill
                                         className="object-cover"

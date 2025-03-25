@@ -1,8 +1,8 @@
 import { Suspense } from 'react';
 import { getBakeryById } from '@/features/barkeries/actions/barkeries-action';
 import { LoadingSpinner } from '@/components/shared/custom-ui/loading-spinner';
-import BreadCrumb from '@/components/shared/dashboard/bread-crumb';
 import StoreDetailPage from './components/StoreDetailPage';
+import Breadcrumb from '@/components/shared/bread-crumb';
 
 // Define the interface for the API response
 interface BakeryApiResponse {
@@ -76,7 +76,7 @@ export default async function BakeryPage({ params }: { params: Promise<{ storeId
 
   return (
     <div className="container mx-auto px-4 py-6">
-      <BreadCrumb items={breadcrumbItems} />
+      <Breadcrumb items={breadcrumbItems} />
       <Suspense fallback={<div className="flex justify-center items-center min-h-[60vh]"><LoadingSpinner /></div>}>
         <StoreDetailPage bakery={mappedBakeryData} />
       </Suspense>

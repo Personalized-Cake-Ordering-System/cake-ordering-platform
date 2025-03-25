@@ -6,7 +6,6 @@ import { ModelGLB } from '@/components/3d-custom/modelGLB';
 import { Controls } from '@/components/3d-custom/controls';
 import { TextureControls } from '@/components/3d-custom/texture-controls';
 import TextControls from '@/components/3d-custom/text-controls';
-import ToppingControls from '@/components/3d-custom/topping-controls';
 import { ToastContainer } from '@/components/3d-custom/toast-save-show';
 
 
@@ -17,7 +16,6 @@ export default function Model3DCustom() {
                 <Controls />
                 <TextureControls />
                 <TextControls />
-                <ToppingControls />
             </div>
             <div className="w-3/4">
                 <Canvas
@@ -26,7 +24,28 @@ export default function Model3DCustom() {
                 >
                     <ambientLight intensity={0.5} />
                     <pointLight position={[10, 10, 10]} />
-                    <ModelGLB />
+                    <ModelGLB
+                        config={{
+                            size: '8"',
+                            price: 95.99,
+                            sponge: 'vanilla',
+                            outerIcing: 'white-vanilla',
+                            filling: 'white-vanilla',
+                            board: 'white',
+                            extras: [],
+                            message: '',
+                            messageType: 'none',
+                            plaqueColor: 'white',
+                            uploadedImage: null,
+                            topping: null,
+                            candles: 'none',
+                            goo: 'none',
+                            imageUrl: ''
+                        }}
+                        addToCart={() => { }}
+                        editCartItem={() => { }}
+                        items={[]}
+                    />
                     <OrbitControls />
                 </Canvas>
             </div>
