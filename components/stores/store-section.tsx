@@ -46,6 +46,7 @@ const StoreSection = ({ barkeriesPromise }: StoreSectionProps) => {
   } = useStoreFilters();
 
     // const store = barkeriesPromise.data;
+    
     // console.log(store);
 
   return (
@@ -123,8 +124,8 @@ const StoreSection = ({ barkeriesPromise }: StoreSectionProps) => {
           <div className="flex-1">
             <StoreFilterTags />
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {stores.map((store) => (
-                <StoreCard key={store.id} store={store} />
+              {barkeriesPromise.data?.data?.map((store: IBakery) => (
+                <StoreCard key={store.id} bakery={store} />
               ))}
             </div>
 
