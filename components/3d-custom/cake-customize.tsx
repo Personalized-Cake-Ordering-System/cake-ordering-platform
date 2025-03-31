@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from '@/components/ui/button';
-import { useCart } from '@/contexts/CartContext';
+import { useCart } from '@/app/store/useCart';
 import { CakeConfig } from '@/types/cake';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft, Check, Download } from 'lucide-react';
@@ -248,7 +248,7 @@ const getInitialCakeConfig = (): CakeConfig => {
 };
 
 const CakeCustomizer = () => {
-    const { addToCart, items, editCartItem } = useCart();
+    const { addToCart, items } = useCart();
     const router = useRouter();
     const searchParams = useSearchParams();
     const editId = searchParams.get('editId');
@@ -1164,11 +1164,31 @@ const CakeCustomizer = () => {
 
     // Update the handleAddToCart function
     const handleAddToCart = () => {
-        if (editId) {
-            editCartItem(editId, config);
-        } else {
-            addToCart(config);
-        }
+        const customCake = {
+            id: crypto.randomUUID(),
+            quantity: 1,
+            config: {
+                price: config.price,
+                size: config.size,
+                sponge: config.sponge,
+                filling: config.filling,
+                outerIcing: config.outerIcing,
+                candles: config.candles,
+                goo: config.goo,
+                extras: config.extras,
+                board: config.board,
+                message: config.message,
+                messageType: config.messageType,
+                plaqueColor: config.plaqueColor,
+                uploadedImage: config.uploadedImage,
+                topping: config.topping,
+                name: `Custom ${config.size} Cake`,
+                description: `${config.sponge} sponge with ${config.filling} filling and ${config.outerIcing} icing`,
+                type: 'custom'
+            }
+        };
+
+        addToCart(customCake);
         router.push('/cart');
     };
 

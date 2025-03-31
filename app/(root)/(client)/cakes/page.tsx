@@ -14,92 +14,41 @@ import Image from 'next/image';
 import Link from 'next/link';
 import * as React from 'react';
 
-// Sample data - replace with actual data from your API
-const cakeCategories = [
-  { id: 1, name: 'Birthday', icon: '🎂' },
-  { id: 2, name: 'Wedding', icon: '💍' },
-  { id: 3, name: 'Anniversary', icon: '🎊' },
-  { id: 4, name: 'Custom', icon: '✨' },
-  { id: 5, name: 'Special Occasion', icon: '🎉' },
-];
-
-const featuredCakes = [
-  {
-    id: 1,
-    name: 'Chocolate Fantasy',
-    image: '/imagecake3.jpg',
-    price: 49.99,
-    rating: 4.8,
-    category: 'Birthday',
-    isNew: true,
-    discount: null,
-  },
-  {
-    id: 2,
-    name: 'Vanilla Elegance',
-    image: '/imagecake1.jpeg',
-    price: 59.99,
-    rating: 4.7,
-    category: 'Wedding',
-    isNew: false,
-    discount: 10,
-  },
-  {
-    id: 3,
-    name: 'Strawberry Delight',
-    image: '/imagecake2.jpeg',
-    price: 44.99,
-    rating: 4.9,
-    category: 'Anniversary',
-    isNew: false,
-    discount: null,
-  },
-  {
-    id: 4,
-    name: 'Tiramisu Dream',
-    image: '/imagecake1.jpeg',
-    price: 54.99,
-    rating: 4.6,
-    category: 'Custom',
-    isNew: true,
-    discount: 15,
-  },
-  {
-    id: 5,
-    name: 'Red Velvet Passion',
-    image: '/imagecake3.jpg',
-    price: 39.99,
-    rating: 4.5,
-    category: 'Birthday',
-    isNew: false,
-    discount: null,
-  },
-  {
-    id: 6,
-    name: 'Fruit Paradise',
-    image: '/imagecake.jpg',
-    price: 49.99,
-    rating: 4.7,
-    category: 'Special Occasion',
-    isNew: false,
-    discount: 5,
-  },
-];
-
 const MultiCakes = () => {
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
-  const [cakes, setCakes] = React.useState(featuredCakes);
+  const [cakes, setCakes] = React.useState<any[]>([]);
   const [isLoaded, setIsLoaded] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  const fetchCakes = async () => {
+    try {
+      const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/available_cakes');
+      const data = await response.json();
+      if (data.status_code === 200) {
+        setCakes(data.payload);
+      }
+    } catch (error) {
+      console.error('Error fetching cakes:', error);
+    } finally {
+      setIsLoading(false);
+      setIsLoaded(true);
+    }
+  };
 
   React.useEffect(() => {
-    setIsLoaded(true);
+    fetchCakes();
+  }, []);
 
+  React.useEffect(() => {
     if (selectedCategory) {
-      setCakes(featuredCakes.filter(cake => cake.category === selectedCategory));
+      const filteredCakes = cakes.filter(cake =>
+        cake.available_cake_type === selectedCategory
+      );
+      setCakes(filteredCakes);
     } else {
-      setCakes(featuredCakes);
+      fetchCakes();
     }
-  }, [selectedCategory]);
+  }, [selectedCategory, cakes]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -127,6 +76,11 @@ const MultiCakes = () => {
   const filterByCategory = (category: string | null) => {
     setSelectedCategory(category);
   };
+
+  const cakeCategories = [
+    { id: 1, name: 'BANH_KEM', icon: '🎂' },
+    { id: 2, name: 'BANHKEM', icon: '🍰' },
+  ];
 
   return (
     <div className="container mx-auto py-12 px-4 md:px-6">
@@ -198,110 +152,84 @@ const MultiCakes = () => {
         animate={isLoaded ? "visible" : "hidden"}
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"
       >
-        {cakes.map((cake) => (
-          <motion.div
-            key={cake.id}
-            variants={itemVariants}
-            whileHover={{ y: -10, transition: { duration: 0.3 } }}
-            className="h-full"
-          >
-            <Link href={`/cakes/${cake.id}`}>
-              <Card className="overflow-hidden h-full flex flex-col hover:shadow-xl transition-shadow duration-300 bg-white dark:bg-gray-800 border-0 shadow-lg">
-                <div className="relative">
-                  <div className="aspect-video relative overflow-hidden">
-                    <Image
-                      src={cake.image}
-                      alt={cake.name}
-                      fill
-                      className="object-cover transition-transform duration-500 hover:scale-110"
-                    />
-                  </div>
+        {isLoading ? (
+          <div>Loading...</div>
+        ) : (
+          cakes.map((cake) => (
+            <motion.div
+              key={cake.id}
+              variants={itemVariants}
+              whileHover={{ y: -10, transition: { duration: 0.3 } }}
+              className="h-full"
+            >
+              <Link href={`/cakes/${cake.id}`}>
+                <Card className="overflow-hidden h-full flex flex-col hover:shadow-xl transition-shadow duration-300 bg-white dark:bg-gray-800 border-0 shadow-lg">
+                  <div className="relative">
+                    <div className="aspect-video relative overflow-hidden">
+                      <Image
+                        src={cake.available_cake_image_files?.[0]?.file_url || '/placeholder-cake.jpg'}
+                        alt={cake.available_cake_name}
+                        fill
+                        className="object-cover transition-transform duration-500 hover:scale-110"
+                      />
+                    </div>
 
-                  {/* Floating badges */}
-                  <div className="absolute top-4 left-4 flex flex-col gap-2">
-                    {cake.isNew && (
-                      <Badge className="bg-blue-500 hover:bg-blue-600">New</Badge>
-                    )}
-                    {cake.discount && (
-                      <Badge className="bg-red-500 hover:bg-red-600">-{cake.discount}%</Badge>
-                    )}
-                  </div>
-
-                  {/* Quick action buttons */}
-                  <div className="absolute top-4 right-4 flex flex-col gap-2">
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      className="bg-white dark:bg-gray-900 rounded-full p-2 shadow-md hover:bg-pink-50 dark:hover:bg-pink-900"
-                    >
-                      <Heart className="h-5 w-5 text-pink-500" />
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      className="bg-white dark:bg-gray-900 rounded-full p-2 shadow-md hover:bg-blue-50 dark:hover:bg-blue-900"
-                    >
-                      <EyeIcon className="h-5 w-5 text-blue-500" />
-                    </motion.button>
-                  </div>
-                </div>
-
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-xl font-semibold">{cake.name}</CardTitle>
-                    <Badge variant="outline" className="bg-transparent border-pink-200 text-pink-500">
-                      {cake.category}
-                    </Badge>
-                  </div>
-                </CardHeader>
-
-                <CardContent className="flex-grow">
-                  <div className="flex items-center mb-2">
-                    {[...Array(5)].map((_, i) => (
-                      <svg
-                        key={i}
-                        className={`w-4 h-4 ${i < Math.floor(cake.rating) ? 'text-yellow-500' : 'text-gray-300 dark:text-gray-600'
-                          }`}
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
+                    {/* Quick action buttons */}
+                    <div className="absolute top-4 right-4 flex flex-col gap-2">
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        className="bg-white dark:bg-gray-900 rounded-full p-2 shadow-md hover:bg-pink-50 dark:hover:bg-pink-900"
                       >
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                    ))}
-                    <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">({cake.rating})</span>
+                        <Heart className="h-5 w-5 text-pink-500" />
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        className="bg-white dark:bg-gray-900 rounded-full p-2 shadow-md hover:bg-blue-50 dark:hover:bg-blue-900"
+                      >
+                        <EyeIcon className="h-5 w-5 text-blue-500" />
+                      </motion.button>
+                    </div>
                   </div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Perfect for celebrations and special occasions
-                  </p>
-                </CardContent>
 
-                <CardFooter className="flex justify-between items-center pt-0">
-                  <div className="flex items-center">
-                    {cake.discount ? (
-                      <>
-                        <span className="text-lg font-bold text-pink-600">
-                          ${(cake.price * (1 - cake.discount / 100)).toFixed(2)}
-                        </span>
-                        <span className="ml-2 text-sm text-gray-400 line-through">
-                          ${cake.price.toFixed(2)}
-                        </span>
-                      </>
-                    ) : (
-                      <span className="text-lg font-bold text-pink-600">${cake.price.toFixed(2)}</span>
-                    )}
-                  </div>
-                  <Button
-                    size="sm"
-                    className="rounded-full bg-pink-500 hover:bg-pink-600"
-                  >
-                    <ShoppingCart className="h-4 w-4 mr-2" />
-                    Add
-                  </Button>
-                </CardFooter>
-              </Card>
-            </Link>
-          </motion.div>
-        ))}
+                  <CardHeader className="pb-2">
+                    <div className="flex justify-between items-start">
+                      <CardTitle className="text-xl font-semibold">{cake.available_cake_name}</CardTitle>
+                      <Badge variant="outline" className="bg-transparent border-pink-200 text-pink-500">
+                        {cake.available_cake_type}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+
+                  <CardContent className="flex-grow">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {cake.available_cake_description}
+                    </p>
+                    <p className="mt-2">
+                      Available: {cake.available_cake_quantity}
+                    </p>
+                  </CardContent>
+
+                  <CardFooter className="flex justify-between items-center pt-0">
+                    <div className="flex items-center">
+                      <span className="text-lg font-bold text-pink-600">
+                        ${cake.available_cake_price.toFixed(2)}
+                      </span>
+                    </div>
+                    <Button
+                      size="sm"
+                      className="rounded-full bg-pink-500 hover:bg-pink-600"
+                    >
+                      <ShoppingCart className="h-4 w-4 mr-2" />
+                      Add
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </Link>
+            </motion.div>
+          ))
+        )}
       </motion.div>
 
       {/* Custom 3D Cake Banner */}
