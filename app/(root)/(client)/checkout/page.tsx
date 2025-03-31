@@ -41,6 +41,7 @@ import { useRouter } from 'next/navigation';
 import { CheckoutFormValues } from './types';
 import { createOrder } from './api';
 import { CartItem } from '@/types/cart';
+import { useEffect } from 'react';
 
 type GeocodingResponse = {
   results: Array<{
@@ -193,15 +194,12 @@ const CheckoutPage = () => {
     setIsProcessing(true);
 
     try {
-      // Construct full address
       const fullAddress = `${data.address}, ${data.district}, ${data.province}`;
       const geocodeResult = await geocodeAddress(fullAddress);
 
       if (geocodeResult) {
-        // Prepare order data
         const orderData = {
           bakery_id: "11f56ffc-6e29-4528-8e05-dadbc618dd5a",
-          // bakery_id: data.bakery_id,
           order_note: data.specialInstructions || '',
           phone_number: data.phone,
           shipping_address: fullAddress,
@@ -220,29 +218,36 @@ const CheckoutPage = () => {
           })),
         };
 
-        // Log the order data
-        console.log('Order Data:', orderData);
-
-        // Call the API to create an order
         const response = await createOrder(orderData);
 
         if (response.status_code === 200) {
           const { total_customer_paid, order_code } = response.payload;
           const qrLink = `https://img.vietqr.io/image/TPBank-00005992966-qr_only.jpg?amount=${total_customer_paid}&addInfo=${order_code}`;
-          router.push(qrLink)
-          // Instead of directly redirecting to qrLink, redirect to QR page with parameters
-          // router.push(`/qr-payment?qrLink=${encodeURIComponent(qrLink)}&orderCode=${order_code}&amount=${total_customer_paid}&orderDetails=${encodeURIComponent(JSON.stringify({
-          //   customerName: data.fullName,
-          //   email: data.email,
-          //   phone: data.phone,
-          //   address: `${data.address}, ${data.district}, ${data.province}`,
-          //   items: items,
-          //   deliveryMethod: data.deliveryMethod,
-          //   subtotal: subtotal,
-          //   tax: tax,
-          //   deliveryFee: deliveryFee,
-          //   total: total
-          // }))}`);
+
+          // Store order details in localStorage
+          const orderDetails = {
+            customerInfo: {
+              fullName: data.fullName,
+              email: data.email,
+              phone: data.phone,
+              address: fullAddress,
+            },
+            orderInfo: {
+              items,
+              subtotal,
+              tax,
+              deliveryMethod: data.deliveryMethod,
+              deliveryFee,
+              total: total_customer_paid,
+              orderCode: order_code,
+            },
+            qrLink
+          };
+
+          localStorage.setItem('currentOrder', JSON.stringify(orderDetails));
+
+          // Redirect to QR payment page
+          router.push('/qr-payment');
         } else {
           console.error('Order creation failed:', response.errors);
           setIsProcessing(false);
@@ -256,6 +261,23 @@ const CheckoutPage = () => {
       setIsProcessing(false);
     }
   };
+
+  useEffect(() => {
+    const savedOrder = localStorage.getItem('currentOrder');
+    if (savedOrder) {
+      const orderDetails = JSON.parse(savedOrder);
+      // Pre-fill the form with saved customer information
+      form.reset({
+        fullName: orderDetails.customerInfo.fullName,
+        email: orderDetails.customerInfo.email,
+        phone: orderDetails.customerInfo.phone,
+        address: orderDetails.customerInfo.address.split(', ')[0],
+        province: orderDetails.customerInfo.address.split(', ')[2],
+        district: orderDetails.customerInfo.address.split(', ')[1],
+        deliveryMethod: orderDetails.orderInfo.deliveryMethod,
+      });
+    }
+  }, []);
 
   if (isComplete) {
     return (
