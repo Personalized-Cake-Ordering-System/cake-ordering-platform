@@ -7,9 +7,16 @@ import { Trash2, ShoppingCart } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 
 const WishlistPage = () => {
     const { items, removeFromWishlist } = useWishlist();
+
+    const handleRemoveFromWishlist = (id: string) => {
+        removeFromWishlist(id);
+        toast.success('Removed from wishlist');
+    };
 
     const container = {
         hidden: { opacity: 0 },
@@ -34,7 +41,9 @@ const WishlistPage = () => {
                 <div className="text-center py-12">
                     <p className="text-gray-500 mb-4">Your wishlist is empty</p>
                     <Link href="/cakes">
-                        <Button>Browse Cakes</Button>
+                        <Button className="bg-pink-500 hover:bg-pink-600">
+                            Browse Cakes
+                        </Button>
                     </Link>
                 </div>
             ) : (
@@ -45,35 +54,45 @@ const WishlistPage = () => {
                     className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
                 >
                     {items.map((item) => (
-                        <motion.div key={item.id} >
-                            <Card className="overflow-hidden">
-                                <div className="aspect-square relative">
+                        <motion.div
+                            key={item.id}
+                            variants={item}
+                            className="h-full"
+                        >
+                            <Card className="overflow-hidden h-full flex flex-col hover:shadow-xl transition-shadow duration-300">
+                                <div className="relative aspect-video">
                                     <Image
-                                        // src={item.image}
-                                        src="/imagecake1.jpeg"
+                                        src={item.image}
                                         alt={item.name}
                                         fill
                                         className="object-cover"
                                     />
                                 </div>
-                                <CardContent className="p-4">
-                                    <h3 className="font-medium text-lg mb-2">{item.name}</h3>
-                                    <div className="flex justify-between items-center">
+                                <CardContent className="p-6 flex flex-col flex-grow">
+                                    <div className="flex justify-between items-start mb-4">
+                                        <h3 className="font-semibold text-xl">{item.name}</h3>
+                                        <Badge variant="outline" className="bg-transparent border-pink-200 text-pink-500">
+                                            Wishlist
+                                        </Badge>
+                                    </div>
+
+                                    <div className="flex justify-between items-center mt-auto pt-4">
                                         <span className="text-xl font-bold text-pink-600">
-                                            ${item.price}
+                                            ${item.price.toFixed(2)}
                                         </span>
                                         <div className="flex gap-2">
                                             <Button
                                                 variant="outline"
                                                 size="icon"
-                                                onClick={() => removeFromWishlist(item.id)}
-                                                className="text-red-500 hover:bg-red-50"
+                                                onClick={() => handleRemoveFromWishlist(item.id)}
+                                                className="text-red-500 hover:bg-red-50 hover:text-red-600"
                                             >
                                                 <Trash2 className="h-5 w-5" />
                                             </Button>
                                             <Link href={`/cakes/${item.id}`}>
-                                                <Button className="bg-pink-600 hover:bg-pink-700">
-                                                    <ShoppingCart className="h-5 w-5" />
+                                                <Button className="bg-pink-500 hover:bg-pink-600">
+                                                    <ShoppingCart className="h-5 w-5 mr-2" />
+                                                    View Details
                                                 </Button>
                                             </Link>
                                         </div>
