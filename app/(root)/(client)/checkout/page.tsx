@@ -1,5 +1,5 @@
 'use client'
-import { useCart } from '@/contexts/CartContext';
+import { useCart } from '@/app/store/useCart';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { motion } from 'framer-motion';
 import { AlertCircle, ArrowLeft, Check, ChevronDown, ChevronUp, MapPin, PackageCheck, ShieldCheck } from 'lucide-react';
@@ -201,6 +201,7 @@ const CheckoutPage = () => {
         // Prepare order data
         const orderData = {
           bakery_id: "11f56ffc-6e29-4528-8e05-dadbc618dd5a",
+          // bakery_id: data.bakery_id,
           order_note: data.specialInstructions || '',
           phone_number: data.phone,
           shipping_address: fullAddress,
@@ -215,6 +216,7 @@ const CheckoutPage = () => {
             custom_cake_id: '631037c4-969f-4ac4-bb32-5e88921a0199',
             cake_note: "note nè",
             quantity: item.quantity,
+            price: item.config.price
           })),
         };
 
@@ -227,7 +229,20 @@ const CheckoutPage = () => {
         if (response.status_code === 200) {
           const { total_customer_paid, order_code } = response.payload;
           const qrLink = `https://img.vietqr.io/image/TPBank-00005992966-qr_only.jpg?amount=${total_customer_paid}&addInfo=${order_code}`;
-          router.push(qrLink);
+          router.push(qrLink)
+          // Instead of directly redirecting to qrLink, redirect to QR page with parameters
+          // router.push(`/qr-payment?qrLink=${encodeURIComponent(qrLink)}&orderCode=${order_code}&amount=${total_customer_paid}&orderDetails=${encodeURIComponent(JSON.stringify({
+          //   customerName: data.fullName,
+          //   email: data.email,
+          //   phone: data.phone,
+          //   address: `${data.address}, ${data.district}, ${data.province}`,
+          //   items: items,
+          //   deliveryMethod: data.deliveryMethod,
+          //   subtotal: subtotal,
+          //   tax: tax,
+          //   deliveryFee: deliveryFee,
+          //   total: total
+          // }))}`);
         } else {
           console.error('Order creation failed:', response.errors);
           setIsProcessing(false);
@@ -692,7 +707,24 @@ const CheckoutPage = () => {
                                   className="object-cover"
                                 />
                               ) : (
-                                <div className="absolute inset-0 bg-gradient-to-br from-pink-200 to-purple-200" />
+                                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-pink-200 to-purple-200">
+                                  <div className="w-12 h-12 flex items-center justify-center">
+                                    <div className="w-full h-full flex flex-col">
+                                      {/* Sponge layers */}
+                                      {[...Array(3)].map((_, i) => (
+                                        <div key={i} className={`flex-1 ${item.config.sponge === 'vanilla' ? 'bg-amber-50' :
+                                          item.config.sponge === 'chocolate' ? 'bg-brown-900' :
+                                            item.config.sponge === 'red-velvet' ? 'bg-red-900' :
+                                              'bg-amber-50'}`} />
+                                      ))}
+                                      {/* Icing */}
+                                      <div className={`h-1/3 ${item.config.outerIcing === 'white-vanilla' ? 'bg-amber-50' :
+                                        item.config.outerIcing === 'pink-vanilla' ? 'bg-pink-200' :
+                                          item.config.outerIcing === 'blue-vanilla' ? 'bg-blue-200' :
+                                            'bg-pink-200'}`} />
+                                    </div>
+                                  </div>
+                                </div>
                               )}
                               {item.quantity > 1 && (
                                 <div className="absolute -right-2 -top-2 h-6 w-6 rounded-full bg-primary flex items-center justify-center">
@@ -732,7 +764,24 @@ const CheckoutPage = () => {
                               className="object-cover"
                             />
                           ) : (
-                            <div className="absolute inset-0 bg-gradient-to-br from-pink-200 to-purple-200" />
+                            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-pink-200 to-purple-200">
+                              <div className="w-12 h-12 flex items-center justify-center">
+                                <div className="w-full h-full flex flex-col">
+                                  {/* Sponge layers */}
+                                  {[...Array(3)].map((_, i) => (
+                                    <div key={i} className={`flex-1 ${item.config.sponge === 'vanilla' ? 'bg-amber-50' :
+                                      item.config.sponge === 'chocolate' ? 'bg-brown-900' :
+                                        item.config.sponge === 'red-velvet' ? 'bg-red-900' :
+                                          'bg-amber-50'}`} />
+                                  ))}
+                                  {/* Icing */}
+                                  <div className={`h-1/3 ${item.config.outerIcing === 'white-vanilla' ? 'bg-amber-50' :
+                                    item.config.outerIcing === 'pink-vanilla' ? 'bg-pink-200' :
+                                      item.config.outerIcing === 'blue-vanilla' ? 'bg-blue-200' :
+                                        'bg-pink-200'}`} />
+                                </div>
+                              </div>
+                            </div>
                           )}
                           {item.quantity > 1 && (
                             <div className="absolute -right-2 -top-2 h-6 w-6 rounded-full bg-primary flex items-center justify-center">

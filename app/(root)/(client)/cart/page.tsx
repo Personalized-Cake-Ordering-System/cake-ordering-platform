@@ -4,11 +4,10 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Trash2, Plus, Minus, ChevronRight, ShoppingBag } from 'lucide-react';
-import { useCart } from '@/contexts/CartContext';
+import { useCart } from '@/app/store/useCart';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -69,7 +68,7 @@ const itemVariants = {
 };
 
 const CartPage = () => {
-  const { items, removeFromCart, updateQuantity } = useCart();
+  const { items, removeFromCart, updateQuantity, clearCart } = useCart();
   const [showCakeModal, setShowCakeModal] = React.useState(false);
   const [selectedCake, setSelectedCake] = React.useState<CartItem | null>(null);
 
@@ -95,10 +94,19 @@ const CartPage = () => {
     }
   };
 
-  const subtotal = items.reduce((sum, item) => sum + item.config.price * item.quantity, 0);
+  const subtotal = items.reduce((sum, item) => {
+    if (!item?.config?.price) return sum;
+    return sum + item.config.price * item.quantity;
+  }, 0);
   const tax = subtotal * 0.08; // 8% tax
   const delivery = 5.99;
   const total = subtotal + tax + delivery;
+
+  // Add error handling for image loading
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    const target = e.target as HTMLImageElement;
+    target.src = '/placeholder-cake.jpg'; // Fallback image
+  };
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -130,7 +138,7 @@ const CartPage = () => {
             >
               <ShoppingBag className="w-16 h-16 text-muted-foreground mb-4" />
               <h2 className="text-2xl font-medium mb-2">Your cart is empty</h2>
-              <p className="text-muted-foreground mb-6">Looks like you havent added any cakes to your cart yet.</p>
+              <p className="text-muted-foreground mb-6">Looks like you haven&apos;t added any cakes to your cart yet.</p>
               <Button asChild>
                 <Link href="/customizeCake">
                   Customize a Cake
@@ -161,10 +169,12 @@ const CartPage = () => {
                         >
                           {item.config.imageUrl ? (
                             <Image
-                              src={item.config.imageUrl}
+                              src={item.config.imageUrl || '/placeholder-cake.jpg'}
                               alt={`Custom ${item.config.size} Cake`}
                               fill
                               className="object-cover transition-transform hover:scale-105"
+                              onError={handleImageError}
+                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                             />
                           ) : (
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -202,7 +212,7 @@ const CartPage = () => {
                                 {/* Message plaque if exists */}
                                 {item.config.message && item.config.messageType === 'piped' && (
                                   <div className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2
-                                    w-16 h-16 rounded-full flex items-center justify-center ${item.config.plaqueColor === 'white' ? 'bg-white' :
+                                        w-16 h-16 rounded-full flex items-center justify-center ${item.config.plaqueColor === 'white' ? 'bg-white' :
                                       item.config.plaqueColor === 'pink' ? 'bg-pink-100' :
                                         item.config.plaqueColor === 'blue' ? 'bg-blue-100' :
                                           'bg-white'
@@ -406,19 +416,22 @@ const CartPage = () => {
         </motion.div>
       </div>
 
+      {/* Cake Modal */}
       {showCakeModal && selectedCake && (
         <Dialog open={showCakeModal} onOpenChange={setShowCakeModal}>
-          <DialogContent className="sm:max-w-[500px] bg-gradient-to-r from-pink-100 via-white to-pink-100 shadow-lg rounded-lg">
+          <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold text-center">Custom {selectedCake.config.size} Cake Details</DialogTitle>
+              <DialogTitle>Cake Details</DialogTitle>
             </DialogHeader>
             <div className="relative w-full h-72">
               {selectedCake.config.imageUrl ? (
                 <Image
-                  src={selectedCake.config.imageUrl}
+                  src={selectedCake.config.imageUrl || '/placeholder-cake.jpg'}
                   alt={`Custom ${selectedCake.config.size} Cake`}
                   fill
                   className="object-cover rounded-md"
+                  onError={handleImageError}
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 />
               ) : (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-white rounded-md shadow-md">
@@ -456,7 +469,7 @@ const CartPage = () => {
                     {/* Message plaque if exists */}
                     {selectedCake.config.message && selectedCake.config.messageType === 'piped' && (
                       <div className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2
-                        w-20 h-20 rounded-full flex items-center justify-center ${selectedCake.config.plaqueColor === 'white' ? 'bg-white' :
+                            w-20 h-20 rounded-full flex items-center justify-center ${selectedCake.config.plaqueColor === 'white' ? 'bg-white' :
                           selectedCake.config.plaqueColor === 'pink' ? 'bg-pink-100' :
                             selectedCake.config.plaqueColor === 'blue' ? 'bg-blue-100' :
                               'bg-white'
