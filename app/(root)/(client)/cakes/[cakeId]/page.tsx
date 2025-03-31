@@ -106,6 +106,9 @@ const CakeDetail = () => {
   const { addToCart } = useCart();
   const [quantity, setQuantity] = useState(1);
 
+  // Add wishlist hook
+  const { addToWishlist, removeFromWishlist, items } = useWishlist();
+
   // Fetch cake data from API
   useEffect(() => {
     const fetchCakeData = async () => {
@@ -152,6 +155,26 @@ const CakeDetail = () => {
       });
       toast.success('Added to cart');
       router.push('/cart');
+    }
+  };
+
+  // Add wishlist toggle handler
+  const handleWishlistToggle = () => {
+    if (!cakeData) return;
+
+    const isInWishlist = items.some(item => item.id === cakeData.id);
+
+    if (isInWishlist) {
+      removeFromWishlist(cakeData.id);
+      toast.success('Removed from wishlist');
+    } else {
+      addToWishlist({
+        id: cakeData.id,
+        name: cakeData.available_cake_name,
+        price: cakeData.available_cake_price,
+        image: cakeData.available_cake_image_files?.[0]?.file_url || '/placeholder-cake.jpg',
+      });
+      toast.success('Added to wishlist');
     }
   };
 
@@ -289,9 +312,18 @@ const CakeDetail = () => {
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-12 w-12 border-pink-200 hover:bg-pink-50 dark:hover:bg-pink-950/30"
+                  onClick={handleWishlistToggle}
+                  className={`h-12 w-12 ${items.some(item => item.id === cakeData?.id)
+                    ? 'bg-pink-50 border-pink-500'
+                    : 'border-pink-200'
+                    } hover:bg-pink-50 dark:hover:bg-pink-950/30`}
                 >
-                  <Heart className="h-5 w-5" />
+                  <Heart
+                    className={`h-5 w-5 ${items.some(item => item.id === cakeData?.id)
+                      ? 'fill-pink-500 text-pink-500'
+                      : 'text-pink-500'
+                      }`}
+                  />
                 </Button>
 
                 <Button

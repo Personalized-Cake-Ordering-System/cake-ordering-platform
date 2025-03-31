@@ -13,12 +13,16 @@ import { EyeIcon, Heart, ShoppingCart } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import * as React from 'react';
+import { useWishlist } from '@/app/store/useWishlist';
+import { toast } from 'sonner';
 
 const MultiCakes = () => {
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
   const [cakes, setCakes] = React.useState<any[]>([]);
   const [isLoaded, setIsLoaded] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
+
+  const { addToWishlist, removeFromWishlist, items } = useWishlist();
 
   const fetchCakes = async () => {
     try {
@@ -81,6 +85,23 @@ const MultiCakes = () => {
     { id: 1, name: 'BANH_KEM', icon: '🎂' },
     { id: 2, name: 'BANHKEM', icon: '🍰' },
   ];
+
+  const handleWishlistToggle = (cake: any) => {
+    const isInWishlist = items.some(item => item.id === cake.id);
+
+    if (isInWishlist) {
+      removeFromWishlist(cake.id);
+      toast.success('Removed from wishlist');
+    } else {
+      addToWishlist({
+        id: cake.id,
+        name: cake.available_cake_name,
+        price: cake.available_cake_price,
+        image: cake.available_cake_image_files?.[0]?.file_url || '/placeholder-cake.jpg',
+      });
+      toast.success('Added to wishlist');
+    }
+  };
 
   return (
     <div className="container mx-auto py-12 px-4 md:px-6">
@@ -179,9 +200,18 @@ const MultiCakes = () => {
                       <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
+                        onClick={(e) => {
+                          e.preventDefault(); // Prevent Link navigation
+                          handleWishlistToggle(cake);
+                        }}
                         className="bg-white dark:bg-gray-900 rounded-full p-2 shadow-md hover:bg-pink-50 dark:hover:bg-pink-900"
                       >
-                        <Heart className="h-5 w-5 text-pink-500" />
+                        <Heart
+                          className={`h-5 w-5 ${items.some(item => item.id === cake.id)
+                            ? 'fill-pink-500 text-pink-500'
+                            : 'text-pink-500'
+                            }`}
+                        />
                       </motion.button>
                       <motion.button
                         whileHover={{ scale: 1.1 }}
