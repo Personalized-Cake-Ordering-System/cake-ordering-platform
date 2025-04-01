@@ -47,7 +47,7 @@ interface BakeryData {
 export default async function BakeryPage({ params }: { params: Promise<{ storeId: string }> }) {
   // Fetch bakery data server-side
   const apiResponse = await getBakeryById((await params).storeId);
-  
+
   // Extract the bakery data from the API response and provide a type assertion
   const bakeryData = (apiResponse.data || {}) as BakeryData;
 
@@ -62,10 +62,10 @@ export default async function BakeryPage({ params }: { params: Promise<{ storeId
     status: bakeryData.status || 'ACTIVE',
     created_at: bakeryData.created_at || new Date().toISOString(),
     // Map other fields as needed
-    avatar_file: bakeryData.avatar_file || 
-                (bakeryData.logo ? { file_url: bakeryData.logo } : undefined),
-    shop_image_files: bakeryData.shop_image_files || 
-                     (bakeryData.banner ? [{ file_url: bakeryData.banner }] : [])
+    avatar_file: bakeryData.avatar_file ||
+      (bakeryData.logo ? { file_url: bakeryData.logo } : undefined),
+    shop_image_files: bakeryData.shop_image_files ||
+      (bakeryData.banner ? [{ file_url: bakeryData.banner }] : [])
   };
 
   const breadcrumbItems = [
@@ -76,7 +76,6 @@ export default async function BakeryPage({ params }: { params: Promise<{ storeId
 
   return (
     <div className="container mx-auto px-4 py-6">
-      <Breadcrumb items={breadcrumbItems} />
       <Suspense fallback={<div className="flex justify-center items-center min-h-[60vh]"><LoadingSpinner /></div>}>
         <StoreDetailPage bakery={mappedBakeryData} />
       </Suspense>
