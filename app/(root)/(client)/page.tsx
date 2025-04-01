@@ -12,10 +12,10 @@ import { StoreHighlightCard } from "@/components/shared/client/home/store-highli
 import { StoreItem } from "@/components/shared/client/home/store-item";
 import { IBakery } from "@/features/barkeries/types/barkeries-type";
 import { getBakeries } from "@/features/barkeries/actions/barkeries-action";
-
+import { getCakes } from "@/features/barkeries/actions/cake-action";
 const HomePage = async () => {
   const bakeries = await getBakeries();
-
+  const cakes = await getCakes({});
   const featuredBakeries = bakeries.data?.data?.slice(0, 8);
 
   return (
@@ -33,7 +33,8 @@ const HomePage = async () => {
                   id: featuredBakeries![0].id,
                   name: featuredBakeries![0].bakery_name,
                   rating: 4.8,
-                  imageUrl: featuredBakeries![0].avatar_file?.file_url || "",
+                  imageUrl:
+                    featuredBakeries![0].shop_image_files[0].file_url! || "",
                   isFeatured: true,
                 }}
                 bgColor="bg-custom-pink/30"
@@ -47,7 +48,8 @@ const HomePage = async () => {
                   id: featuredBakeries![1].id,
                   name: featuredBakeries![1].bakery_name,
                   rating: 4.7,
-                  imageUrl: featuredBakeries![1].avatar_file?.file_url || "",
+                  imageUrl:
+                    featuredBakeries![1].shop_image_files[0].file_url! || "",
                   isFeatured: true,
                 }}
                 bgColor="bg-custom-teal/30"
@@ -76,17 +78,16 @@ const HomePage = async () => {
             {featuredBakeries!.map((bakery) => (
               <StoreItem
                 key={bakery.id}
-                  icon={
-                    <div className="bg-custom-pink/30 dark:bg-custom-pink/30 p-3 rounded-full">
-                      <Store className="h-6 w-6 text-custom-teal dark:text-custom-teal" />
-                    </div>
-                  }
-                  name={bakery.bakery_name}
-                  rating={4.5}
-                  speciality={bakery.bakery_name}
-                />
-              ))
-            }
+                icon={
+                  <div className="bg-custom-pink/30 dark:bg-custom-pink/30 p-3 rounded-full">
+                    <Store className="h-6 w-6 text-custom-teal dark:text-custom-teal" />
+                  </div>
+                }
+                name={bakery.bakery_name}
+                rating={4.5}
+                speciality={bakery.bakery_name}
+              />
+            ))}
           </div>
         </div>
 
@@ -144,14 +145,14 @@ const HomePage = async () => {
 
           {/* Product Grid */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-            {bakeries.data?.data?.map((product) => (
+            {cakes.payload?.map((product) => (
               <CakeItem
                 key={product.id}
-                discount={product.password}
-                imageUrl={product.avatar_file.file_url}
-                title={product.bakery_name}
-                store={product.bakery_name}
-                price={product.identity_card_number}
+                discount={product.available_cake_quantity}
+                imageUrl={product.available_cake_image_files?.[0]?.file_url}
+                title={product.available_cake_type}
+                store={product.bakery_id}
+                price={product.available_cake_price}
               />
             ))}
           </div>
