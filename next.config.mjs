@@ -26,8 +26,14 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'firebasestorage.googleapis.com',
         pathname: '/v0/b/digital-dynamo-cb555.appspot.com/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'img.vietqr.io',
+        pathname: '/image/**',
       }
     ],
+    domains: ['img.vietqr.io'],
   },
 };
 

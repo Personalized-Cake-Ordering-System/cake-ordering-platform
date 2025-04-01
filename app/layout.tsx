@@ -9,7 +9,7 @@ import SessionProviders from "@/providers/session-provider";
 import { ModalProvider } from "@/providers/modal-provider";
 import { QueryProvider } from "@/providers/query-provider";
 
-import NextTopLoader from "nextjs-toploader";
+import { ThemeAwareLoader } from "@/components/shared/custom-ui/theme-aware-loader";
 import { cn } from "@/lib/utils";
 import { CartProvider } from '@/contexts/CartContext';
 
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  colorScheme: "dark light",
+  colorScheme: "light dark",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "white" },
     { media: "(prefers-color-scheme: dark)", color: "black" },
@@ -47,7 +47,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={cn(
           "font-sans antialiased",
@@ -55,23 +55,13 @@ export default function RootLayout({
           fontMono.variable
         )}
       >
-        <NextTopLoader
-          height={5}
-          color={
-            typeof window !== "undefined" &&
-              window.matchMedia("(prefers-color-scheme: dark)").matches
-              ? "#E87931"
-              : "#14b8a6"
-          }
-          shadow="0 0 10px #E87931, 0 0 5px #E87931"
-        />
-
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
+          <ThemeAwareLoader />
           <SessionProviders>
             <QueryProvider>
               <ModalProvider />
