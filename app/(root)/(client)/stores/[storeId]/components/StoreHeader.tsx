@@ -16,7 +16,7 @@ interface StoreInfo {
   bannerImages: string[];
   status: string;
   createdAt: string;
-  taxCode: string;
+  taxCode?: string;
 }
 
 export default function StoreHeader({ storeInfo }: { storeInfo: StoreInfo }) {
@@ -24,11 +24,14 @@ export default function StoreHeader({ storeInfo }: { storeInfo: StoreInfo }) {
     <div className="relative w-full h-[300px] md:h-[400px] rounded-xl overflow-hidden">
       {/* Banner Image Carousel */}
       <div className="absolute inset-0">
-        <img
-          src={storeInfo.bannerImages[0] || '/images/default-banner.jpg'}
-          alt={storeInfo.name}
-          className="w-full h-full object-cover"
-        />
+        <div className="relative w-full h-full">
+          <Image
+            src={storeInfo.bannerImages[0] || '/images/default-banner.jpg'}
+            alt={storeInfo.name}
+            fill
+            className="object-cover"
+          />
+        </div>
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent" />
       </div>
 
@@ -36,11 +39,12 @@ export default function StoreHeader({ storeInfo }: { storeInfo: StoreInfo }) {
       <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
         <div className="flex items-center gap-6">
           {/* Store Avatar */}
-          <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-white shadow-lg">
-            <img
+          <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-white shadow-lg relative">
+            <Image
               src={storeInfo.avatar}
               alt={storeInfo.name}
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
             />
           </div>
 

@@ -277,7 +277,7 @@ const CheckoutPage = () => {
         deliveryMethod: orderDetails.orderInfo.deliveryMethod,
       });
     }
-  }, []);
+  }, [form]);
 
   if (isComplete) {
     return (

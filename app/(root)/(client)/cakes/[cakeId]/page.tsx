@@ -137,6 +137,7 @@ const CakeDetail = () => {
       addToCart({
         id: cakeData.id,
         quantity: quantity,
+        price: cakeData.available_cake_price,
         config: {
           price: cakeData.available_cake_price,
           size: 'standard',
