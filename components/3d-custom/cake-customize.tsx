@@ -488,7 +488,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
             const requestBody = {
                 cake_name: `Custom ${config.size} Cake`,
                 cake_description: `${config.sponge} sponge with ${config.filling} filling and ${config.outerIcing} icing`,
-                bakery_id: "6d67782d-d621-4d06-b326-5011b46f3915",
+                bakery_id: storeId,
                 message_selection: {
                     text: config.message,
                     message_type: config.messageType === 'edible' ? 'IMAGE' : config.messageType === 'piped' ? 'TEXT' : 'NONE',
