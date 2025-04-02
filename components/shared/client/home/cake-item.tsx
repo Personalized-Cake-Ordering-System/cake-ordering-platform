@@ -1,22 +1,27 @@
 import { Button } from "@/components/ui/button";
+import { getBakeryById } from "@/features/barkeries/actions/barkeries-action";
 import { Heart, ShoppingCart } from "lucide-react";
 import Image from "next/image";
 
 export interface CakeItemProps {
   discount?: any;
-  imageUrl: string;
+  imageUrl: string | null;
   title: string;
   store: string;
   price: any;
 }
 
-export const CakeItem: React.FC<CakeItemProps> = ({
+export const CakeItem: React.FC<CakeItemProps> = async ({
   discount,
   imageUrl,
   title,
   store,
   price,
 }) => {
+
+  const bakery = await getBakeryById(store);
+
+
   return (
     <div className="relative bg-white dark:bg-gray-900 rounded-lg overflow-hidden shadow-sm group">
       {discount && (
@@ -25,13 +30,19 @@ export const CakeItem: React.FC<CakeItemProps> = ({
         </div>
       )}
       <div className="relative h-64 overflow-hidden">
-        <Image
-          src={imageUrl}
-          alt={title}
-          width={300}
-          height={300}
-          className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
-        />
+        {imageUrl ? (
+          <Image
+            src={imageUrl}
+            alt={title}
+            width={300}
+            height={300}
+            className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+            <span className="text-gray-400">No image available</span>
+          </div>
+        )}
         <div className="absolute inset-0 bg-black bg-opacity-20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
           <Button
             variant="outline"
@@ -52,7 +63,7 @@ export const CakeItem: React.FC<CakeItemProps> = ({
           {title}
         </h3>
         <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">
-          Cửa hàng: {store}
+          Cửa hàng: {bakery.data?.bakery_name}
         </p>
         <div className="mt-2 flex items-center">
           <span className="text-red-500 dark:text-red-400 font-semibold">
