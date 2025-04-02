@@ -54,7 +54,7 @@ export default function Model3DCustom() {
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.3 }}
                     >
-                        <CakeCustomizer />
+                        {/* <CakeCustomizer /> */}
                     </motion.div>
                 ) : (
                     <motion.div
