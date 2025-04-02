@@ -24,7 +24,7 @@ export default function Model3DCustom() {
                 >
                     <ambientLight intensity={0.5} />
                     <pointLight position={[10, 10, 10]} />
-                    <ModelGLB
+                    {/* <ModelGLB
                         config={{
                             size: '8"',
                             price: 95.99,
@@ -45,7 +45,7 @@ export default function Model3DCustom() {
                         addToCart={() => { }}
                         editCartItem={() => { }}
                         items={[]}
-                    />
+                    /> */}
                     <OrbitControls />
                 </Canvas>
             </div>
