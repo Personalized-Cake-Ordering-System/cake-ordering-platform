@@ -22,6 +22,14 @@ const QRPaymentPage = () => {
     const [countdown, setCountdown] = useState(900); // 15 minutes in seconds
     const [isLoading, setIsLoading] = useState(true);
 
+    // Add VND currency formatter
+    const formatVND = (amount: number) => {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND'
+        }).format(amount);
+    };
+
     // Add animation variants
     const containerVariants = {
         hidden: { opacity: 0 },
@@ -34,12 +42,13 @@ const QRPaymentPage = () => {
     };
 
     useEffect(() => {
+        // Get order details from localStorage
         const savedOrder = localStorage.getItem('currentOrder');
         if (savedOrder) {
             setOrderDetails(JSON.parse(savedOrder));
         }
 
-        // Countdown timer
+        // Set up countdown timer
         const timer = setInterval(() => {
             setCountdown((prev) => {
                 if (prev <= 1) {
@@ -163,7 +172,7 @@ const QRPaymentPage = () => {
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm text-muted-foreground">Amount:</span>
                                     <span className="font-bold text-lg">
-                                        ${orderDetails.orderInfo.total.toFixed(2)}
+                                        {formatVND(orderDetails.orderInfo.total)}
                                     </span>
                                 </div>
 
@@ -210,10 +219,10 @@ const QRPaymentPage = () => {
                                     {orderDetails.orderInfo.items.map((item: any, index: number) => (
                                         <div key={index} className="flex items-center space-x-4">
                                             <div className="relative h-16 w-16 flex-shrink-0">
-                                                {item.config.imageUrl ? (
+                                                {item.main_image?.file_url ? (
                                                     <Image
-                                                        src={item.config.imageUrl}
-                                                        alt={`${item.config.size} Cake`}
+                                                        src={item.main_image.file_url}
+                                                        alt={item.cake_name}
                                                         fill
                                                         className="object-cover rounded-md"
                                                     />
@@ -222,13 +231,13 @@ const QRPaymentPage = () => {
                                                 )}
                                             </div>
                                             <div className="flex-1">
-                                                <p className="font-medium">Custom {item.config.size} Cake</p>
+                                                <p className="font-medium">{item.cake_name}</p>
                                                 <p className="text-sm text-muted-foreground">
-                                                    {item.config.sponge} sponge with {item.config.filling} filling
+                                                    {item.cake_note || 'No special notes'}
                                                 </p>
                                             </div>
                                             <div className="text-right">
-                                                <p className="font-medium">${(item.config.price * item.quantity).toFixed(2)}</p>
+                                                <p className="font-medium">{formatVND(item.sub_total_price)}</p>
                                                 <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
                                             </div>
                                         </div>
@@ -244,22 +253,22 @@ const QRPaymentPage = () => {
                                 <div className="space-y-2">
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">Subtotal</span>
-                                        <span>${orderDetails.orderInfo.subtotal.toFixed(2)}</span>
+                                        <span>{formatVND(orderDetails.orderInfo.subtotal)}</span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">Tax</span>
-                                        <span>${orderDetails.orderInfo.tax.toFixed(2)}</span>
+                                        <span>{formatVND(orderDetails.orderInfo.tax)}</span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">
                                             {orderDetails.orderInfo.deliveryMethod === 'express' ? 'Express' : 'Standard'} Delivery
                                         </span>
-                                        <span>${orderDetails.orderInfo.deliveryFee.toFixed(2)}</span>
+                                        <span>{formatVND(orderDetails.orderInfo.deliveryFee)}</span>
                                     </div>
                                     <Separator className="my-2" />
                                     <div className="flex justify-between font-bold">
                                         <span>Total</span>
-                                        <span>${orderDetails.orderInfo.total.toFixed(2)}</span>
+                                        <span>{formatVND(orderDetails.orderInfo.total)}</span>
                                     </div>
                                 </div>
                             </div>

@@ -40,8 +40,8 @@ import { Separator } from '@/components/ui/separator';
 import { useRouter } from 'next/navigation';
 import { CheckoutFormValues } from './types';
 import { createOrder } from './api';
-import { CartItem } from '@/types/cart';
-import { useEffect } from 'react';
+import { cartService } from '@/app/services/cartService';
+import { ShoppingBag } from 'lucide-react';
 
 type GeocodingResponse = {
   results: Array<{
@@ -101,11 +101,18 @@ export type CakeConfig = {
   imageUrl?: string;
 };
 
-// interface CartItem {
-//   id: string;
-//   quantity: number;
-//   config: CakeConfig;
-// }
+// Add CartItem type from cartService
+type CartItem = {
+  available_cake_id?: string;
+  custom_cake_id?: string;
+  cake_name: string;
+  cake_note?: string;
+  quantity: number;
+  sub_total_price: number;
+  main_image?: {
+    file_url: string;
+  };
+};
 
 const CheckoutPage = () => {
   const router = useRouter();
@@ -115,33 +122,21 @@ const CheckoutPage = () => {
   const [isOrderSummaryOpen, setIsOrderSummaryOpen] = React.useState(false);
   const [selectedProvince, setSelectedProvince] = React.useState<string>('');
   const [availableDistricts, setAvailableDistricts] = React.useState<Array<{ name: string; code: string }>>([]);
+  const [cartItems, setCartItems] = React.useState<CartItem[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
 
-  const { items } = useCart();
-
-  // Calculate totals based on actual cart items
-  const subtotal = items.reduce((sum, item) => sum + item.config.price * item.quantity, 0);
-  const tax = subtotal * 0.08; // 8% tax
-  const standardDelivery = 5.99;
-  const expressDelivery = 12.99;
-
-  // Handle province change
-  const handleProvinceChange = (provinceCode: string) => {
-    const province = vietnamProvinces.find((p: Province) => p.code === provinceCode);
-    if (province) {
-      setSelectedProvince(provinceCode);
-      setAvailableDistricts(province.districts);
-      form.setValue('province', province.name);
-      form.setValue('district', '');
-    }
+  // Add VND currency formatter
+  const formatVND = (amount: number) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND'
+    }).format(amount);
   };
 
-  // Handle district change
-  const handleDistrictChange = (districtCode: string) => {
-    const district = availableDistricts.find(d => d.code === districtCode);
-    if (district) {
-      form.setValue('district', district.name);
-    }
-  };
+  // Delivery fees
+  const standardDelivery = 50000; // 50,000 VND
+  const expressDelivery = 100000; // 100,000 VND
 
   // Form setup
   const form = useForm<CheckoutFormValues>({
@@ -161,9 +156,30 @@ const CheckoutPage = () => {
   // Get the delivery method value from the form
   const deliveryMethod = form.watch('deliveryMethod');
 
-  // Calculate total based on delivery method
+  // Calculate totals based on actual cart items
+  const subtotal = cartItems.reduce((sum, item) => sum + item.sub_total_price, 0);
+  const tax = subtotal * 0.08; // 8% tax
   const deliveryFee = deliveryMethod === 'express' ? expressDelivery : standardDelivery;
   const total = subtotal + tax + deliveryFee;
+
+  // Handle province change
+  const handleProvinceChange = (provinceCode: string) => {
+    const province = vietnamProvinces.find((p: Province) => p.code === provinceCode);
+    if (province) {
+      setSelectedProvince(provinceCode);
+      setAvailableDistricts(province.districts);
+      form.setValue('province', province.name);
+      form.setValue('district', '');
+    }
+  };
+
+  // Handle district change
+  const handleDistrictChange = (districtCode: string) => {
+    const district = availableDistricts.find(d => d.code === districtCode);
+    if (district) {
+      form.setValue('district', district.name);
+    }
+  };
 
   // Add new function to handle geocoding
   const geocodeAddress = async (address: string) => {
@@ -209,12 +225,12 @@ const CheckoutPage = () => {
           shipping_type: "DELIVERY",
           payment_type: "QR_CODE",
           voucher_code: "",
-          order_detail_create_models: items.map((item: any) => ({
-            available_cake_id: null,
-            custom_cake_id: '631037c4-969f-4ac4-bb32-5e88921a0199',
-            cake_note: "note nè",
+          order_detail_create_models: cartItems.map((item) => ({
+            available_cake_id: item.available_cake_id,
+            custom_cake_id: item.custom_cake_id,
+            cake_note: item.cake_note || '',
             quantity: item.quantity,
-            price: item.config.price
+            price: item.sub_total_price / item.quantity
           })),
         };
 
@@ -233,7 +249,7 @@ const CheckoutPage = () => {
               address: fullAddress,
             },
             orderInfo: {
-              items,
+              items: cartItems,
               subtotal,
               tax,
               deliveryMethod: data.deliveryMethod,
@@ -262,7 +278,7 @@ const CheckoutPage = () => {
     }
   };
 
-  useEffect(() => {
+  React.useEffect(() => {
     const savedOrder = localStorage.getItem('currentOrder');
     if (savedOrder) {
       const orderDetails = JSON.parse(savedOrder);
@@ -278,6 +294,80 @@ const CheckoutPage = () => {
       });
     }
   }, [form]);
+
+  React.useEffect(() => {
+    const fetchCart = async () => {
+      const accessToken = localStorage.getItem('accessToken');
+      console.log('Access Token:', accessToken ? 'Found' : 'Not found');
+
+      if (!accessToken) {
+        setError('Please login to view your cart');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        console.log('Fetching cart data...');
+        const response = await cartService.getCart(accessToken);
+        console.log('Cart API Response:', response);
+        console.log('Cart Items:', response.payload.cartItems);
+        setCartItems(response.payload.cartItems as CartItem[]);
+      } catch (err) {
+        console.error('Error fetching cart:', err);
+        setError('Failed to fetch cart items');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCart();
+  }, []);
+
+  // Add getImageUrl function
+  const getImageUrl = (fileUrl: string | undefined) => {
+    if (!fileUrl) return null;
+    try {
+      // If it's already a valid URL, return it
+      if (fileUrl.startsWith('http')) {
+        return fileUrl;
+      }
+      // If it's a Google Images URL, return it directly
+      if (fileUrl.includes('gstatic.com')) {
+        return fileUrl;
+      }
+      // Otherwise try to create a URL object
+      const url = new URL(fileUrl);
+      return url.toString();
+    } catch {
+      // If URL parsing fails, return null to trigger fallback
+      return null;
+    }
+  };
+
+  // Add handleImageError function
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    const target = e.target as HTMLImageElement;
+    target.src = '/placeholder-cake.jpg'; // Fallback image
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <h2 className="text-2xl font-bold text-destructive mb-4">{error}</h2>
+        <Button asChild>
+          <Link href="/sign-in">Login</Link>
+        </Button>
+      </div>
+    );
+  }
 
   if (isComplete) {
     return (
@@ -621,7 +711,7 @@ const CheckoutPage = () => {
                                   </p>
                                 </div>
                               </div>
-                              <p className="font-bold self-end mt-2">${standardDelivery.toFixed(2)}</p>
+                              <p className="font-bold self-end mt-2">{formatVND(standardDelivery)}</p>
                             </Label>
                           </motion.div>
 
@@ -648,7 +738,7 @@ const CheckoutPage = () => {
                                   </p>
                                 </div>
                               </div>
-                              <p className="font-bold self-end mt-2">${expressDelivery.toFixed(2)}</p>
+                              <p className="font-bold self-end mt-2">{formatVND(expressDelivery)}</p>
                             </Label>
                           </motion.div>
                         </RadioGroup>
@@ -677,7 +767,7 @@ const CheckoutPage = () => {
                       Processing...
                     </>
                   ) : (
-                    `Complete Order $${total.toFixed(2)}`
+                    `Complete Order ${formatVND(total)}`
                   )}
                 </Button>
               </motion.div>
@@ -695,7 +785,7 @@ const CheckoutPage = () => {
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold">Order Summary</h2>
                 <Badge variant="outline" className="px-3 py-1">
-                  {items.length} {items.length === 1 ? 'Item' : 'Items'}
+                  {cartItems.length} {cartItems.length === 1 ? 'Item' : 'Items'}
                 </Badge>
               </div>
 
@@ -718,34 +808,23 @@ const CheckoutPage = () => {
                   <CollapsibleContent className="mt-4">
                     <ScrollArea className="h-[calc(100vh-480px)] min-h-[150px]">
                       <div className="space-y-4 pr-4">
-                        {items.map((item) => (
-                          <div key={item.id} className="flex gap-3">
+                        {cartItems.map((item) => (
+                          <div key={item.available_cake_id || item.custom_cake_id} className="flex gap-3">
                             <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border">
-                              {item.config.imageUrl ? (
+                              {item.main_image?.file_url ? (
                                 <Image
-                                  src={item.config.imageUrl}
-                                  alt={`Custom ${item.config.size} Cake`}
+                                  src={getImageUrl(item.main_image.file_url) || '/placeholder-cake.jpg'}
+                                  alt={item.cake_name}
                                   fill
                                   className="object-cover"
+                                  onError={handleImageError}
+                                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                  unoptimized
+                                  priority
                                 />
                               ) : (
                                 <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-pink-200 to-purple-200">
-                                  <div className="w-12 h-12 flex items-center justify-center">
-                                    <div className="w-full h-full flex flex-col">
-                                      {/* Sponge layers */}
-                                      {[...Array(3)].map((_, i) => (
-                                        <div key={i} className={`flex-1 ${item.config.sponge === 'vanilla' ? 'bg-amber-50' :
-                                          item.config.sponge === 'chocolate' ? 'bg-brown-900' :
-                                            item.config.sponge === 'red-velvet' ? 'bg-red-900' :
-                                              'bg-amber-50'}`} />
-                                      ))}
-                                      {/* Icing */}
-                                      <div className={`h-1/3 ${item.config.outerIcing === 'white-vanilla' ? 'bg-amber-50' :
-                                        item.config.outerIcing === 'pink-vanilla' ? 'bg-pink-200' :
-                                          item.config.outerIcing === 'blue-vanilla' ? 'bg-blue-200' :
-                                            'bg-pink-200'}`} />
-                                    </div>
-                                  </div>
+                                  <ShoppingBag className="w-12 h-12 text-muted-foreground" />
                                 </div>
                               )}
                               {item.quantity > 1 && (
@@ -755,12 +834,12 @@ const CheckoutPage = () => {
                               )}
                             </div>
                             <div className="flex flex-1 flex-col justify-center">
-                              <h3 className="font-medium">Custom {item.config.size} Cake</h3>
+                              <h3 className="font-medium">{item.cake_name}</h3>
                               <p className="text-sm text-muted-foreground line-clamp-1">
-                                {item.config.sponge} sponge with {item.config.filling} filling
+                                {item.cake_note || 'No special notes'}
                               </p>
                               <div className="mt-auto text-sm font-medium">
-                                ${(item.config.price * item.quantity).toFixed(2)}
+                                {formatVND(item.sub_total_price)}
                               </div>
                             </div>
                           </div>
@@ -775,34 +854,23 @@ const CheckoutPage = () => {
               <div className="hidden lg:block">
                 <ScrollArea className="h-[calc(100vh-480px)] min-h-[150px]">
                   <div className="space-y-4 pr-4">
-                    {items.map((item) => (
-                      <div key={item.id} className="flex gap-3">
+                    {cartItems.map((item) => (
+                      <div key={item.available_cake_id || item.custom_cake_id} className="flex gap-3">
                         <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border">
-                          {item.config.imageUrl ? (
+                          {item.main_image?.file_url ? (
                             <Image
-                              src={item.config.imageUrl}
-                              alt={`Custom ${item.config.size} Cake`}
+                              src={getImageUrl(item.main_image.file_url) || '/placeholder-cake.jpg'}
+                              alt={item.cake_name}
                               fill
                               className="object-cover"
+                              onError={handleImageError}
+                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                              unoptimized
+                              priority
                             />
                           ) : (
                             <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-pink-200 to-purple-200">
-                              <div className="w-12 h-12 flex items-center justify-center">
-                                <div className="w-full h-full flex flex-col">
-                                  {/* Sponge layers */}
-                                  {[...Array(3)].map((_, i) => (
-                                    <div key={i} className={`flex-1 ${item.config.sponge === 'vanilla' ? 'bg-amber-50' :
-                                      item.config.sponge === 'chocolate' ? 'bg-brown-900' :
-                                        item.config.sponge === 'red-velvet' ? 'bg-red-900' :
-                                          'bg-amber-50'}`} />
-                                  ))}
-                                  {/* Icing */}
-                                  <div className={`h-1/3 ${item.config.outerIcing === 'white-vanilla' ? 'bg-amber-50' :
-                                    item.config.outerIcing === 'pink-vanilla' ? 'bg-pink-200' :
-                                      item.config.outerIcing === 'blue-vanilla' ? 'bg-blue-200' :
-                                        'bg-pink-200'}`} />
-                                </div>
-                              </div>
+                              <ShoppingBag className="w-12 h-12 text-muted-foreground" />
                             </div>
                           )}
                           {item.quantity > 1 && (
@@ -812,12 +880,12 @@ const CheckoutPage = () => {
                           )}
                         </div>
                         <div className="flex flex-1 flex-col justify-center">
-                          <h3 className="font-medium">Custom {item.config.size} Cake</h3>
+                          <h3 className="font-medium">{item.cake_name}</h3>
                           <p className="text-sm text-muted-foreground line-clamp-1">
-                            {item.config.sponge} sponge with {item.config.filling} filling
+                            {item.cake_note || 'No special notes'}
                           </p>
                           <div className="mt-auto text-sm font-medium">
-                            ${(item.config.price * item.quantity).toFixed(2)}
+                            {formatVND(item.sub_total_price)}
                           </div>
                         </div>
                       </div>
@@ -832,22 +900,22 @@ const CheckoutPage = () => {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>{formatVND(subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Tax (8%)</span>
-                  <span>${tax.toFixed(2)}</span>
+                  <span>{formatVND(tax)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">
                     {deliveryMethod === 'express' ? 'Express' : 'Standard'} Delivery
                   </span>
-                  <span>${deliveryFee.toFixed(2)}</span>
+                  <span>{formatVND(deliveryFee)}</span>
                 </div>
                 <Separator className="my-2" />
                 <div className="flex justify-between font-medium">
                   <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>{formatVND(total)}</span>
                 </div>
               </div>
 

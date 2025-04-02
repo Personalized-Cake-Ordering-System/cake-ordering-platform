@@ -132,30 +132,60 @@ const CakeDetail = () => {
   }, [cakeId]);
 
   // Add handleAddToCart function
-  const handleAddToCart = () => {
-    if (cakeData) {
-      addToCart({
-        id: cakeData.id,
-        quantity: quantity,
-        price: cakeData.available_cake_price,
-        config: {
-          price: cakeData.available_cake_price,
-          size: 'standard',
-          sponge: 'vanilla',
-          filling: 'vanilla',
-          outerIcing: 'white-vanilla',
-          imageUrl: cakeData.available_cake_image_files[0]?.file_url || '/placeholder-cake.jpg',
-          candles: null,
-          goo: null,
-          extras: [],
-          board: 'standard',
-          name: cakeData.available_cake_name,
-          description: cakeData.available_cake_description,
-          type: cakeData.available_cake_type
-        }
+  const handleAddToCart = async () => {
+    if (!cakeData) return;
+
+    try {
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) {
+        toast.error('Please login to add items to cart');
+        router.push('/sign-in');
+        return;
+      }
+
+      const cartPayload = {
+        bakeryId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        order_note: "",
+        phone_number: "",
+        shipping_address: "",
+        latitude: "",
+        longitude: "",
+        pickup_time: new Date().toISOString(),
+        shipping_type: "DELIVERY",
+        payment_type: "QR_CODE",
+        voucher_code: "",
+        cartItems: [{
+          cake_name: cakeData.available_cake_name,
+          main_image_id: cakeData.available_cake_image_files[0]?.id || "",
+          main_image: cakeData.available_cake_image_files[0] || null,
+          quantity: quantity,
+          cake_note: "",
+          sub_total_price: cakeData.available_cake_price * quantity,
+          available_cake_id: cakeData.id,
+          custom_cake_id: null
+        }]
+      };
+
+      const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/carts', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify(cartPayload)
       });
-      toast.success('Added to cart');
-      router.push('/cart');
+
+      const data = await response.json();
+
+      if (data.status_code === 200) {
+        toast.success('Added to cart successfully');
+        router.push('/cart');
+      } else {
+        toast.error(data.errors?.[0] || 'Failed to add to cart');
+      }
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      toast.error('Failed to add to cart');
     }
   };
 
