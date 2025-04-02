@@ -3,6 +3,7 @@ import "./globals.css";
 import { siteConfig } from "@/config/site";
 import { fontMono, fontSans } from "@/lib/fonts";
 import { Toaster } from "@/components/ui/toaster";
+import { Toaster as HotToaster } from 'react-hot-toast';
 
 import { ThemeProvider } from "@/providers/theme-provider";
 import SessionProviders from "@/providers/session-provider";
@@ -69,6 +70,7 @@ export default function RootLayout({
                 {children}
               </CartProvider>
               <Toaster />
+              <HotToaster position="top-center" />
             </QueryProvider>
           </SessionProviders>
         </ThemeProvider>
