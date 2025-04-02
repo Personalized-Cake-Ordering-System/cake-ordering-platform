@@ -9,6 +9,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import React, { useEffect, useState } from 'react';
 import { useCakeConfigStore } from '@/components/shared/client/stores/cake-config';
+import { toast } from 'react-hot-toast';
 
 // Define type for the selected part
 type SelectedPart = 'cake' | 'outer-icing' | 'filling' | 'message' | 'candles' | 'board' | 'extras' | null;
@@ -195,6 +196,61 @@ const plaqueColors: PlaqueColor[] = [
     { id: 'blue', name: 'BLUE CHOCOLATE', color: 'bg-blue-200' }
 ];
 
+// Add these new types for API error handling
+interface ApiError {
+    code: string;
+    message: string;
+    details?: any;
+}
+
+// Update the ApiResponse interface
+interface ApiResponse<T> {
+    status_code: number;
+    errors: ApiError[];
+    meta_data: {
+        total_items_count: number;
+        page_size: number;
+        total_pages_count: number;
+        page_index: number;
+        has_next: boolean;
+        has_previous: boolean;
+    };
+    payload: T[];
+}
+
+interface ApiItem {
+    id: string;
+    name: string;
+    price: number;
+    color: string;
+    is_default: boolean;
+    description: string;
+    image_id: string | null;
+    image: {
+        file_name: string;
+        file_url: string;
+        id: string;
+        created_at: string;
+        created_by: string;
+        updated_at: string | null;
+        updated_by: string | null;
+        is_deleted: boolean;
+    } | null;
+    type: string;
+    bakery_id: string;
+    bakery: null;
+    created_at: string;
+    created_by: string;
+    updated_at: string | null;
+    updated_by: string | null;
+    is_deleted: boolean;
+}
+
+interface ApiOptionGroup {
+    type: string;
+    items: ApiItem[];
+}
+
 const getInitialCakeConfig = (): CakeConfig => {
     if (typeof window === 'undefined') {
         // Return default config when running on server
@@ -214,6 +270,7 @@ const getInitialCakeConfig = (): CakeConfig => {
             plaqueColor: 'white',
             uploadedImage: null,
             imageUrl: null,
+            pipingColor: 'white'
         };
     }
 
@@ -244,10 +301,11 @@ const getInitialCakeConfig = (): CakeConfig => {
         plaqueColor: 'white',
         uploadedImage: null,
         imageUrl: null,
+        pipingColor: 'white'
     };
 };
 
-const CakeCustomizer = () => {
+const CakeCustomizer = ({ storeId }: { storeId: string }) => {
     const { addToCart, items } = useCart();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -258,6 +316,14 @@ const CakeCustomizer = () => {
     const [selectedPart, setSelectedPart] = useState<SelectedPart>(null);
     const [showJson, setShowJson] = useState(false);
     const [isZoomed, setIsZoomed] = useState(false);
+
+    // Add state for API data
+    const [decorationOptions, setDecorationOptions] = useState<ApiOptionGroup[]>([]);
+    const [extraOptions, setExtraOptions] = useState<ApiOptionGroup[]>([]);
+    const [messageOptions, setMessageOptions] = useState<ApiOptionGroup[]>([]);
+    const [partOptions, setPartOptions] = useState<ApiOptionGroup[]>([]);
+    const [error, setError] = useState<ApiError | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
 
     // Update the initial state to load existing item if editing
     useEffect(() => {
@@ -287,6 +353,7 @@ const CakeCustomizer = () => {
             plaqueColor: 'white',
             uploadedImage: null,
             imageUrl: null,
+            pipingColor: 'white'
         };
         setConfig(defaultConfig);
     };
@@ -364,7 +431,139 @@ const CakeCustomizer = () => {
     };
 
     const handleSaveDesign = () => {
-        setShowJson(true);
+        try {
+            localStorage.setItem('cakeConfig', JSON.stringify(config));
+            toast.success('Design saved successfully!');
+        } catch (error) {
+            console.error('Error saving design:', error);
+            toast.error('Failed to save design');
+        }
+    };
+
+    const handleOrderCake = async () => {
+        try {
+            console.log('Order button clicked');
+            console.log('Current cake config:', config);
+
+            const accessToken = localStorage.getItem('accessToken');
+            if (!accessToken) {
+                console.log('No access token found - user not logged in');
+                toast.error('Please login to order a cake');
+                return;
+            }
+            console.log('Access token found');
+
+            // Get message options from API response
+            const messageTypeGroup = messageOptions.find(group => group.type === 'MESSAGE_TYPE');
+            const plaqueColorGroup = messageOptions.find(group => group.type === 'PLAQUE_COLOUR');
+            const pipingColorGroup = messageOptions.find(group => group.type === 'PIPING_COLOUR');
+
+            // Get the selected message type option
+            const selectedMessageType = messageTypeGroup?.items.find(item =>
+                (config.messageType === 'none' && item.name === 'NONE') ||
+                (config.messageType === 'piped' && item.name === 'PIPED MESSAGE') ||
+                (config.messageType === 'edible' && item.name === 'EDIBLE IMAGE')
+            );
+
+            // Get the selected plaque color option
+            const selectedPlaqueColor = plaqueColorGroup?.items.find(item =>
+                item.name.toLowerCase().includes(config.plaqueColor.toLowerCase())
+            );
+
+            // Get the selected piping color option
+            const selectedPipingColor = pipingColorGroup?.items.find(item =>
+                item.name.toLowerCase().includes(config.pipingColor.toLowerCase())
+            );
+
+            // Collect all selected message option IDs
+            const messageOptionIds = [
+                selectedMessageType?.id,
+                selectedPlaqueColor?.id,
+                selectedPipingColor?.id
+            ].filter(Boolean) as string[];
+
+            console.log('Selected message option IDs:', messageOptionIds);
+
+            // Prepare the API request body
+            const requestBody = {
+                cake_name: `Custom ${config.size} Cake`,
+                cake_description: `${config.sponge} sponge with ${config.filling} filling and ${config.outerIcing} icing`,
+                bakery_id: "6d67782d-d621-4d06-b326-5011b46f3915",
+                message_selection: {
+                    text: config.message,
+                    message_type: config.messageType === 'edible' ? 'IMAGE' : config.messageType === 'piped' ? 'TEXT' : 'NONE',
+                    image_id: config.uploadedImage ? "3fa85f64-5717-4562-b3fc-2c963f66afa6" : null,
+                    cake_message_option_ids: messageOptionIds
+                },
+                part_selections: [
+                    {
+                        part_type: "SIZE",
+                        part_option_id: config.size
+                    },
+                    {
+                        part_type: "SPONGE",
+                        part_option_id: config.sponge
+                    },
+                    {
+                        part_type: "FILLING",
+                        part_option_id: config.filling
+                    }
+                ],
+                decoration_selections: [
+                    {
+                        decoration_type: "OUTER_ICING",
+                        decoration_option_id: config.outerIcing
+                    }
+                ],
+                extra_selections: config.extras.map(extraId => ({
+                    extra_type: "TOPPING",
+                    extra_option_id: extraId
+                }))
+            };
+            console.log('Prepared request body:', requestBody);
+
+            // Call the API to create the custom cake
+            console.log('Making API request to create custom cake...');
+            const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/custom_cakes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            if (!response.ok) {
+                console.error('API request failed:', response.status, response.statusText);
+                throw new Error('Failed to create custom cake');
+            }
+
+            const data = await response.json();
+            console.log('API response:', data);
+
+            // Add to cart using the cart service
+            const cartItem = {
+                id: data.payload.id,
+                quantity: 1,
+                price: config.price,
+                storeId: storeId,
+                config: {
+                    ...config,
+                    name: `Custom ${config.size} Cake`,
+                    description: `${config.sponge} sponge with ${config.filling} filling and ${config.outerIcing} icing`,
+                    type: 'custom'
+                }
+            };
+            console.log('Adding to cart:', cartItem);
+
+            addToCart(cartItem);
+            toast.success('Cake added to cart successfully!');
+            console.log('Order process completed successfully');
+            router.push('/cart');
+        } catch (error) {
+            console.error('Error in handleOrderCake:', error);
+            toast.error('Failed to order cake. Please try again.');
+        }
     };
 
     const getCakeJson = () => {
@@ -410,10 +609,13 @@ const CakeCustomizer = () => {
                 type: config.goo,
                 name: gooOptions.find(o => o.id === config.goo)?.name
             } : null,
-            extras: config.extras.map(id => ({
-                type: id,
-                name: extraOptions.find(o => o.id === id)?.name
-            })),
+            extras: config.extras.map(id => {
+                const extra = extraOptions.flatMap(group => group.items).find(item => item.id === id);
+                return {
+                    type: id,
+                    name: extra?.name
+                };
+            }),
             decoration: {
                 type: config.outerIcing,
                 name: icingOptions.find(o => o.id === config.outerIcing)?.name
@@ -531,6 +733,125 @@ const CakeCustomizer = () => {
         setConfig({
             uploadedImage: null
         });
+    };
+
+    // Update fetch functions with better error handling
+    const fetchDecorationOptions = async () => {
+        try {
+            setIsLoading(true);
+            setError(null);
+            const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/decoration_options');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data: ApiResponse<ApiOptionGroup> = await response.json();
+            if (data.errors && data.errors.length > 0) {
+                throw new Error(data.errors[0].message);
+            }
+            setDecorationOptions(data.payload);
+        } catch (error) {
+            console.error('Error fetching decoration options:', error);
+            setError({
+                code: 'FETCH_ERROR',
+                message: error instanceof Error ? error.message : 'Failed to fetch decoration options'
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const fetchExtraOptions = async () => {
+        try {
+            setIsLoading(true);
+            setError(null);
+            const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/extra_options');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data: ApiResponse<ApiOptionGroup> = await response.json();
+            if (data.errors && data.errors.length > 0) {
+                throw new Error(data.errors[0].message);
+            }
+            setExtraOptions(data.payload);
+        } catch (error) {
+            console.error('Error fetching extra options:', error);
+            setError({
+                code: 'FETCH_ERROR',
+                message: error instanceof Error ? error.message : 'Failed to fetch extra options'
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const fetchMessageOptions = async () => {
+        try {
+            setIsLoading(true);
+            setError(null);
+            const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/message_options');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data: ApiResponse<ApiOptionGroup> = await response.json();
+            if (data.errors && data.errors.length > 0) {
+                throw new Error(data.errors[0].message);
+            }
+            setMessageOptions(data.payload);
+        } catch (error) {
+            console.error('Error fetching message options:', error);
+            setError({
+                code: 'FETCH_ERROR',
+                message: error instanceof Error ? error.message : 'Failed to fetch message options'
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const fetchPartOptions = async () => {
+        try {
+            setIsLoading(true);
+            setError(null);
+            const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/part_options');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data: ApiResponse<ApiOptionGroup> = await response.json();
+            if (data.errors && data.errors.length > 0) {
+                throw new Error(data.errors[0].message);
+            }
+            setPartOptions(data.payload);
+        } catch (error) {
+            console.error('Error fetching part options:', error);
+            setError({
+                code: 'FETCH_ERROR',
+                message: error instanceof Error ? error.message : 'Failed to fetch part options'
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Update the handlePartSelect function to handle errors
+    const handlePartSelect = (part: SelectedPart) => {
+        setError(null);
+        setSelectedPart(part);
+
+        // Fetch data based on selected part
+        switch (part) {
+            case 'outer-icing':
+                fetchDecorationOptions();
+                break;
+            case 'extras':
+                fetchExtraOptions();
+                break;
+            case 'message':
+                fetchMessageOptions();
+                break;
+            case 'cake':
+                fetchPartOptions();
+                break;
+        }
     };
 
     // Render cake visualization
@@ -656,7 +977,7 @@ const CakeCustomizer = () => {
                             <div className="absolute inset-x-0 top-1/2 flex justify-center">
                                 <div className="relative w-3/4 flex flex-wrap justify-center gap-2">
                                     {config.extras.map((extraId, index) => {
-                                        const extra = extraOptions.find(opt => opt.id === extraId);
+                                        const extra = extraOptions.flatMap(group => group.items).find(item => item.id === extraId);
                                         if (!extra) return null;
 
                                         return (
@@ -668,16 +989,10 @@ const CakeCustomizer = () => {
                                                 className="absolute"
                                                 style={{
                                                     top: `${Math.sin(index * (Math.PI / 3)) * 30}%`,
-                                                    left: `${50 + Math.cos(index * (Math.PI / 3)) * 30}%`
+                                                    left: `${Math.cos(index * (Math.PI / 3)) * 30}%`,
                                                 }}
                                             >
-                                                {extraId === 'cookie-dough' && (
-                                                    <div className="w-8 h-8 rounded-full bg-amber-200 shadow-md" />
-                                                )}
-                                                {extraId === 'oreo-crumbs' && (
-                                                    <div className="w-2 h-2 rounded-full bg-gray-900 shadow-sm" />
-                                                )}
-                                                {/* Add similar visualizations for other extras */}
+                                                <div className={`w-8 h-8 rounded-full ${extra.color} shadow-lg`} />
                                             </motion.div>
                                         );
                                     })}
@@ -706,108 +1021,128 @@ const CakeCustomizer = () => {
         );
     };
 
-    // Render customization options panel based on selected part
+    // Add helper functions for data handling
+    const getOptionColor = (option: ApiItem): string => {
+        return option.color || 'bg-gray-200';
+    };
+
+    const getOptionPrice = (option: ApiItem): number => {
+        return option.price || 0;
+    };
+
+    const getOptionName = (option: ApiItem): string => {
+        return option.name || 'Unnamed Option';
+    };
+
+    const getOptionImage = (option: ApiItem): string | null => {
+        return option.image?.file_url || null;
+    };
+
+    // Update the renderCustomizationPanel function
     const renderCustomizationPanel = () => {
         if (!selectedPart) return null;
+
+        if (error) {
+            return (
+                <div className="flex flex-col items-center justify-center h-64 space-y-4">
+                    <div className="text-red-500 text-xl">⚠️</div>
+                    <p className="text-red-500 text-center">{error.message}</p>
+                    <Button
+                        onClick={() => {
+                            setError(null);
+                            handlePartSelect(selectedPart);
+                        }}
+                        variant="outline"
+                    >
+                        Try Again
+                    </Button>
+                </div>
+            );
+        }
+
+        if (isLoading) {
+            return (
+                <div className="flex flex-col items-center justify-center h-64 space-y-4">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500"></div>
+                    <p className="text-gray-500">Loading options...</p>
+                </div>
+            );
+        }
 
         switch (selectedPart) {
             case 'cake':
                 return (
                     <div className="space-y-6">
-                        <div>
-                            <h3 className="font-bold mb-4">SIZE</h3>
-                            <div className="grid grid-cols-3 gap-4">
-                                {sizeOptions.map((option) => (
-                                    <button
-                                        key={option.id}
-                                        onClick={() => handleSizeSelect(option)}
-                                        className={`flex flex-col items-center ${config.size === option.size ? 'ring-2 ring-pink-500' : ''
-                                            }`}
-                                    >
-                                        <div className={`w-20 h-20 rounded-full border-2 ${config.size === option.size ? 'border-pink-500' : 'border-gray-200'
-                                            } flex items-center justify-center text-lg font-bold`}>
-                                            {option.size}
-                                        </div>
-                                        <div className="mt-2 text-sm font-medium">{option.name}</div>
-                                        <div className="text-sm text-gray-500">
-                                            {option.priceChange > 0 ? '+' : ''}£{Math.abs(option.priceChange).toFixed(2)}
-                                        </div>
-                                    </button>
-                                ))}
-                            </div>
-                            <div className="mt-2 text-sm text-gray-500">
-                                • Feeds approx. {sizeOptions.find(o => o.size === config.size)?.feeds}
-                            </div>
-                        </div>
+                        {/* Size options from API */}
+                        {partOptions.find(group => group.type === 'Size')?.items.map((option) => (
+                            <button
+                                key={option.id}
+                                onClick={() => handleSizeSelect({
+                                    id: option.id,
+                                    name: getOptionName(option),
+                                    size: getOptionName(option),
+                                    price: getOptionPrice(option),
+                                    priceChange: getOptionPrice(option) - config.price,
+                                    feeds: '8-10' // You might want to add this to the API
+                                })}
+                                className={`flex flex-col items-center ${config.size === getOptionName(option) ? 'ring-2 ring-pink-500' : ''}`}
+                            >
+                                <div className={`w-20 h-20 rounded-full border-2 ${config.size === getOptionName(option) ? 'border-pink-500' : 'border-gray-200'} flex items-center justify-center text-lg font-bold`}>
+                                    {getOptionName(option)}
+                                </div>
+                                <div className="mt-2 text-sm font-medium">{getOptionName(option)}</div>
+                                <div className="text-sm text-gray-500">
+                                    {getOptionPrice(option) > config.price ? '+' : ''}£{Math.abs(getOptionPrice(option) - config.price).toFixed(2)}
+                                </div>
+                            </button>
+                        ))}
 
-                        <div>
-                            <h3 className="font-bold mb-4">SPONGE</h3>
-                            <div className="grid grid-cols-4 gap-4">
-                                {spongeOptions.map((option) => (
-                                    <button
-                                        key={option.id}
-                                        onClick={() => handleSpongeSelect(option)}
-                                        className="flex flex-col items-center"
-                                    >
-                                        <div className={`w-16 h-16 ${option.color} rounded border ${config.sponge === option.id ? 'ring-2 ring-pink-500' : 'ring-1 ring-gray-200'
-                                            }`}>
-                                            <div className="h-full flex flex-col">
-                                                <div className="flex-1 border-b border-white/20"></div>
-                                                <div className="flex-1 border-b border-white/20"></div>
-                                                <div className="flex-1 border-b border-white/20"></div>
-                                                <div className="flex-1"></div>
-                                            </div>
-                                        </div>
-                                        <div className="mt-2 text-xs font-medium text-center">{option.name}</div>
-                                        {option.price && (
-                                            <div className="text-xs text-gray-500">£{option.price.toFixed(2)}</div>
-                                        )}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
+                        {/* Sponge options from API */}
+                        {partOptions.find(group => group.type === 'Sponge')?.items.map((option) => (
+                            <button
+                                key={option.id}
+                                onClick={() => handleSpongeSelect({
+                                    id: option.id,
+                                    name: getOptionName(option),
+                                    color: getOptionColor(option),
+                                    price: getOptionPrice(option)
+                                })}
+                                className="flex flex-col items-center"
+                            >
+                                <div className={`w-16 h-16 ${getOptionColor(option)} rounded border ${config.sponge === option.id ? 'ring-2 ring-pink-500' : 'ring-1 ring-gray-200'}`}>
+                                    <div className="h-full flex flex-col">
+                                        <div className="flex-1 border-b border-white/20"></div>
+                                        <div className="flex-1 border-b border-white/20"></div>
+                                        <div className="flex-1 border-b border-white/20"></div>
+                                        <div className="flex-1"></div>
+                                    </div>
+                                </div>
+                                <div className="mt-2 text-xs font-medium text-center">{getOptionName(option)}</div>
+                                {getOptionPrice(option) > 0 && (
+                                    <div className="text-xs text-gray-500">£{getOptionPrice(option).toFixed(2)}</div>
+                                )}
+                            </button>
+                        ))}
 
-                        <div>
-                            <h3 className="font-bold mb-4">FILLING ICING</h3>
-                            <div className="grid grid-cols-4 gap-4">
-                                {fillingIcingOptions.map((option) => (
-                                    <motion.div
-                                        key={option.id}
-                                        whileHover={{ scale: 1.05 }}
-                                        className="flex flex-col items-center"
-                                    >
-                                        <button
-                                            onClick={() => handleFillingSelect(option)}
-                                            className={`w-20 h-20 relative ${option.color} ${config.filling === option.id
-                                                ? 'ring-2 ring-pink-500'
-                                                : 'ring-1 ring-gray-200'
-                                                }`}
-                                        />
-                                        <p className="text-[10px] font-medium mt-2 text-center max-w-[80px]">
-                                            {option.name}
-                                        </p>
-                                    </motion.div>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div>
-                            <h3 className="font-bold mb-4">GOO</h3>
-                            <div className="grid grid-cols-4 gap-4">
-                                {gooOptions.map((option) => (
-                                    <button
-                                        key={option.id}
-                                        onClick={() => handleGooSelect(option)}
-                                        className="flex flex-col items-center"
-                                    >
-                                        <div className={`w-16 h-4 ${option.color} rounded ${config.goo === option.id ? 'ring-2 ring-pink-500' : 'ring-1 ring-gray-200'
-                                            }`} />
-                                        <div className="mt-2 text-xs font-medium text-center">{option.name}</div>
-                                        <div className="text-xs text-gray-500">£{option.price.toFixed(2)}</div>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
+                        {/* Filling options from API */}
+                        {partOptions.find(group => group.type === 'Filling')?.items.map((option) => (
+                            <button
+                                key={option.id}
+                                onClick={() => handleFillingSelect({
+                                    id: option.id,
+                                    name: getOptionName(option),
+                                    color: getOptionColor(option),
+                                    price: getOptionPrice(option),
+                                    icon: '≡'
+                                })}
+                                className="flex flex-col items-center"
+                            >
+                                <div className={`w-20 h-20 relative ${getOptionColor(option)} ${config.filling === option.id ? 'ring-2 ring-pink-500' : 'ring-1 ring-gray-200'}`} />
+                                <p className="text-[10px] font-medium mt-2 text-center max-w-[80px]">
+                                    {getOptionName(option)}
+                                </p>
+                            </button>
+                        ))}
                     </div>
                 );
 
@@ -816,92 +1151,40 @@ const CakeCustomizer = () => {
                     <div>
                         <h3 className="font-bold mb-2">OUTER ICING</h3>
                         <div className="grid grid-cols-4 gap-2">
-                            {icingOptions.map(option => (
-                                <div key={option.id} className="flex flex-col items-center">
-                                    <button
-                                        className={`w-12 h-12 ${option.color} ${config.outerIcing === option.id ? 'ring-2 ring-pink-500' : 'ring-1 ring-gray-200'} rounded`}
-                                        onClick={() => handleOptionSelect('outerIcing', option.id)}
-                                    />
-                                    <p className="text-xs text-center mt-1">{option.name}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                );
-
-            case 'filling':
-                return (
-                    <div className="space-y-8">
-                        {/* Filling Icing Section */}
-                        <div>
-                            <h3 className="font-bold mb-4">FILLING ICING</h3>
-                            <div className="grid grid-cols-4 gap-4">
-                                {fillingIcingOptions.map((option) => (
-                                    <motion.div
-                                        key={option.id}
-                                        whileHover={{ scale: 1.05 }}
-                                        className="flex flex-col items-center"
-                                    >
+                            {decorationOptions.map(group =>
+                                group.items.map(option => (
+                                    <div key={option.id} className="flex flex-col items-center">
                                         <button
-                                            onClick={() => handleFillingSelect(option)}
-                                            className={`w-20 h-20 relative ${option.color} ${config.filling === option.id
-                                                ? 'ring-2 ring-pink-500'
-                                                : 'ring-1 ring-gray-200'
-                                                }`}
+                                            className={`w-12 h-12 ${getOptionColor(option)} ${config.outerIcing === option.id ? 'ring-2 ring-pink-500' : 'ring-1 ring-gray-200'} rounded`}
+                                            onClick={() => handleOptionSelect('outerIcing', option.id)}
                                         />
-                                        <p className="text-[10px] font-medium mt-2 text-center max-w-[80px]">
-                                            {option.name}
-                                        </p>
-                                    </motion.div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Goo Section with larger buttons */}
-                        <div className="mt-12">
-                            <div className="flex items-center justify-between mb-6">
-                                <h3 className="text-xl font-bold text-pink-600">ADD SOME GOO?</h3>
-                                <span className="text-sm font-medium text-pink-500">+£2.00 each</span>
-                            </div>
-                            <div className="grid grid-cols-1 gap-4">
-                                {gooOptions.map((option) => (
-                                    <motion.button
-                                        key={option.id}
-                                        whileHover={{ scale: 1.02 }}
-                                        onClick={() => handleGooSelect(option)}
-                                        className={`group relative p-8 rounded-xl transition-all ${config.goo === option.id
-                                            ? 'ring-2 ring-pink-500 shadow-lg bg-pink-50'
-                                            : 'ring-1 ring-gray-200 hover:shadow-md hover:bg-gray-50'
-                                            }`}
-                                    >
-                                        <div className="flex items-center gap-6">
-                                            <div className={`w-16 h-16 rounded-full ${option.color} shadow-lg
-                                                group-hover:animate-pulse transition-all duration-500`} />
-                                            <div className="flex-1 text-left">
-                                                <p className="text-lg font-bold">{option.name}</p>
-                                                <p className="text-sm text-pink-500 font-medium">+£2.00</p>
-                                            </div>
-                                            {config.goo === option.id ? (
-                                                <Check className="w-6 h-6 text-pink-500" />
-                                            ) : (
-                                                <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center">
-                                                    <span className="text-xl text-pink-500">+</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </motion.button>
-                                ))}
-                            </div>
+                                        <p className="text-xs text-center mt-1">{getOptionName(option)}</p>
+                                        {getOptionPrice(option) > 0 && (
+                                            <p className="text-xs text-gray-500">£{getOptionPrice(option).toFixed(2)}</p>
+                                        )}
+                                    </div>
+                                ))
+                            )}
                         </div>
                     </div>
                 );
 
             case 'message':
+                const plaqueColourGroup = messageOptions.find(group => group.type === 'PLAQUE_COLOUR');
+                const pipingColourGroup = messageOptions.find(group => group.type === 'PIPING_COLOUR');
+                const messageTypeOptions: MessageOption[] = [
+                    { id: 'none', name: 'NONE', price: 0, icon: '✖️' },
+                    { id: 'piped', name: 'PIPED MESSAGE', price: 7.00, icon: '✍️' },
+                    { id: 'edible', name: 'EDIBLE IMAGE', price: 8.00, icon: '🖼️' }
+                ];
+
                 return (
                     <div className="space-y-6">
                         <h3 className="font-bold mb-4">PRINTING & PIPING</h3>
-                        <div className="grid grid-cols-3 gap-4">
-                            {messageOptions.map((option) => (
+
+                        {/* Message Type Selection */}
+                        <div className="grid grid-cols-3 gap-4 mb-6">
+                            {messageTypeOptions.map(option => (
                                 <button
                                     key={option.id}
                                     onClick={() => handleMessageTypeSelect(option)}
@@ -913,109 +1196,162 @@ const CakeCustomizer = () => {
                                         <span className="text-2xl">{option.icon}</span>
                                     </div>
                                     <div className="mt-2 text-xs font-medium text-center">{option.name}</div>
-                                    {option.price > 0 && (
-                                        <div className="text-xs text-gray-500">£{option.price.toFixed(2)}</div>
-                                    )}
                                 </button>
                             ))}
                         </div>
 
-                        {config.messageType === 'piped' && (
-                            <>
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="text-sm text-gray-600 mb-2 block">
-                                            Enter your message (max 30 characters)
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={config.message}
-                                            onChange={handleMessageChange}
-                                            placeholder="Happy Birthday!"
-                                            className="w-full p-3 border rounded-md"
-                                            maxLength={30}
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="text-sm font-bold mb-2 block">
-                                            PLAQUE COLOUR
-                                        </label>
-                                        <div className="grid grid-cols-4 gap-3">
-                                            {plaqueColors.map((color) => (
-                                                <button
-                                                    key={color.id}
-                                                    onClick={() => handlePlaqueColorChange(color.id)}
-                                                    className={`w-full aspect-square rounded-full ${color.color} border-2
-                                                        ${config.plaqueColor === color.id ? 'border-pink-500' : 'border-gray-200'}`}
-                                                    title={color.name}
-                                                />
-                                            ))}
+                        {/* Message Content */}
+                        {config.messageType !== 'none' && (
+                            <div className="space-y-4">
+                                {config.messageType === 'edible' ? (
+                                    <div className="space-y-4">
+                                        <div className="flex flex-col items-center space-y-2">
+                                            <label className="text-sm font-medium text-gray-700">
+                                                Upload Design Image
+                                            </label>
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={handleImageUpload}
+                                                className="hidden"
+                                                id="design-upload"
+                                            />
+                                            <label
+                                                htmlFor="design-upload"
+                                                className="cursor-pointer p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-pink-500 transition-colors"
+                                            >
+                                                {config.uploadedImage ? (
+                                                    <div className="relative w-32 h-32">
+                                                        <Image
+                                                            src={config.uploadedImage}
+                                                            alt="Uploaded design"
+                                                            fill
+                                                            className="object-contain rounded-lg"
+                                                        />
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                handleImageRemove();
+                                                            }}
+                                                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <div className="text-center">
+                                                        <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                        </svg>
+                                                        <p className="mt-2 text-sm text-gray-600">Click to upload your design</p>
+                                                    </div>
+                                                )}
+                                            </label>
                                         </div>
                                     </div>
-                                </div>
-                                <div className="text-sm text-gray-500 italic">
-                                    • (EDIBLE IMAGE not available with PIPED MESSAGE)
-                                </div>
-                            </>
-                        )}
+                                ) : (
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Your Message (max 30 characters)
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={config.message}
+                                                onChange={handleMessageChange}
+                                                maxLength={30}
+                                                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                                                placeholder="Enter your message..."
+                                            />
+                                        </div>
 
-                        {config.messageType === 'edible' && (
-                            <div className="space-y-4">
-                                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
-                                    <input
-                                        type="file"
-                                        id="image-upload"
-                                        accept="image/*"
-                                        className="hidden"
-                                        onChange={handleImageUpload}
-                                    />
-                                    <label
-                                        htmlFor="image-upload"
-                                        className="flex flex-col items-center cursor-pointer"
-                                    >
-                                        {config.uploadedImage ? (
-                                            <div className="relative w-full aspect-square">
-                                                <Image
-                                                    src={config.uploadedImage}
-                                                    alt="Uploaded"
-                                                    className="w-full h-full object-contain"
-                                                    width={200}
-                                                    height={200}
+                                        {/* Plaque Color Selection */}
+                                        {plaqueColourGroup?.items.map(option => (
+                                            <div key={option.id} className="flex items-center space-x-2">
+                                                <input
+                                                    type="radio"
+                                                    id={`plaque-${option.id}`}
+                                                    name="plaque-color"
+                                                    value={option.id}
+                                                    checked={config.plaqueColor === option.id}
+                                                    onChange={() => handlePlaqueColorChange(option.id)}
+                                                    className="h-4 w-4 text-pink-600 focus:ring-pink-500"
                                                 />
-                                                <button
-                                                    onClick={handleImageRemove}
-                                                    className="absolute top-2 right-2 p-1 bg-white rounded-full shadow"
-                                                >
-                                                    ✕
-                                                </button>
+                                                <label htmlFor={`plaque-${option.id}`} className="text-sm text-gray-700">
+                                                    {option.name}
+                                                </label>
                                             </div>
-                                        ) : (
-                                            <>
-                                                <div className="text-center">
-                                                    <p className="text-sm text-gray-600">Drag and drop, or browse</p>
-                                                    <p className="text-xs text-gray-500 mt-1">PNG, JPG, JPEG, AI, EPS, PDF, HEIC</p>
-                                                </div>
-                                            </>
-                                        )}
-                                    </label>
-                                </div>
+                                        ))}
+
+                                        {/* Piping Color Selection */}
+                                        {pipingColourGroup?.items.map(option => (
+                                            <div key={option.id} className="flex items-center space-x-2">
+                                                <input
+                                                    type="radio"
+                                                    id={`piping-${option.id}`}
+                                                    name="piping-color"
+                                                    value={option.id}
+                                                    checked={config.pipingColor === option.id}
+                                                    onChange={() => setConfig(prev => ({ ...prev, pipingColor: option.id }))}
+                                                    className="h-4 w-4 text-pink-600 focus:ring-pink-500"
+                                                />
+                                                <label htmlFor={`piping-${option.id}`} className="text-sm text-gray-700">
+                                                    {option.name}
+                                                </label>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         )}
+                    </div>
+                );
 
-                        <div className="flex justify-between pt-4">
-                            <button
-                                onClick={() => setSelectedPart(null)}
-                                className="p-2 hover:bg-gray-100 rounded"
-                            >
-                                <ArrowLeft className="w-6 h-6" />
-                            </button>
-                            <button
-                                onClick={() => setSelectedPart(null)}
-                                className="p-2 hover:bg-gray-100 rounded"
-                            >
-                                <Check className="w-6 h-6" />
-                            </button>
+            case 'extras':
+                return (
+                    <div>
+                        <h3 className="font-bold mb-4">MAKE IT EXTRA</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                            {extraOptions.flatMap(group =>
+                                group.items.map(option => (
+                                    <motion.div
+                                        key={option.id}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="flex flex-col items-center"
+                                    >
+                                        <button
+                                            onClick={() => handleExtraSelect({
+                                                id: option.id,
+                                                name: getOptionName(option),
+                                                price: getOptionPrice(option),
+                                                available: true,
+                                                icon: '🍪',
+                                                color: getOptionColor(option)
+                                            })}
+                                            disabled={!option.is_default}
+                                            className={`relative w-full aspect-square rounded-lg transition-all 
+                                                ${config.extras.includes(option.id)
+                                                    ? 'ring-2 ring-pink-500'
+                                                    : 'ring-1 ring-gray-200'
+                                                } ${!option.is_default ? 'opacity-50' : 'hover:shadow-lg'}`}
+                                        >
+                                            {getOptionImage(option) && (
+                                                <Image
+                                                    src={getOptionImage(option)!}
+                                                    alt={getOptionName(option)}
+                                                    fill
+                                                    className="object-cover rounded-lg"
+                                                />
+                                            )}
+                                        </button>
+                                        <p className="text-xs font-medium mt-2 text-center">{getOptionName(option)}</p>
+                                        <p className="text-xs text-gray-600">£{getOptionPrice(option).toFixed(2)}</p>
+                                    </motion.div>
+                                ))
+                            )}
                         </div>
                     </div>
                 );
@@ -1071,51 +1407,6 @@ const CakeCustomizer = () => {
                     </div>
                 );
 
-            case 'extras':
-                return (
-                    <div>
-                        <h3 className="font-bold mb-4">MAKE IT EXTRA</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            {extraOptions.map((option) => (
-                                <motion.div
-                                    key={option.id}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="flex flex-col items-center"
-                                >
-                                    <button
-                                        onClick={() => handleExtraSelect(option)}
-                                        disabled={!option.available}
-                                        className={`relative w-full aspect-square rounded-lg transition-all 
-                                            ${config.extras.includes(option.id)
-                                                ? 'ring-2 ring-pink-500'
-                                                : 'ring-1 ring-gray-200'
-                                            } ${!option.available ? 'opacity-50' : 'hover:shadow-lg'}`}
-                                    >
-                                        <div className={`absolute inset-0 rounded-lg ${option.color} opacity-20`} />
-
-                                        {/* Add button */}
-                                        {!config.extras.includes(option.id) && (
-                                            <div className="absolute -top-2 -right-2 w-6 h-6 bg-white rounded-full shadow-md flex items-center justify-center">
-                                                <span className="text-lg">+</span>
-                                            </div>
-                                        )}
-
-                                        {/* Selected checkmark */}
-                                        {config.extras.includes(option.id) && (
-                                            <div className="absolute -top-2 -right-2 w-6 h-6 bg-pink-500 rounded-full shadow-md flex items-center justify-center">
-                                                <Check className="w-4 h-4 text-white" />
-                                            </div>
-                                        )}
-                                    </button>
-                                    <p className="text-xs font-medium mt-2 text-center">{option.name}</p>
-                                    <p className="text-xs text-gray-600">£{option.price.toFixed(2)}</p>
-                                </motion.div>
-                            ))}
-                        </div>
-                    </div>
-                );
-
             default:
                 return null;
         }
@@ -1153,10 +1444,36 @@ const CakeCustomizer = () => {
                 <motion.button
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
-                    onClick={handleDownloadJson}
+                    onClick={handleSaveDesign}
                     className="p-3 rounded-full bg-white/90 backdrop-blur shadow-lg hover:bg-white/95 transition-all"
                 >
-                    <Download className="w-6 h-6" />
+                    <svg
+                        className="w-6 h-6"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                    >
+                        <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
+                        <path d="M17 21v-8H7v8M7 3v5h8" />
+                    </svg>
+                </motion.button>
+
+                <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={handleOrderCake}
+                    className="p-3 rounded-full bg-pink-500 text-white shadow-lg hover:bg-pink-600 transition-all"
+                >
+                    <svg
+                        className="w-6 h-6"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                    >
+                        <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
                 </motion.button>
             </motion.div>
         );
@@ -1168,6 +1485,7 @@ const CakeCustomizer = () => {
             id: editId || crypto.randomUUID(),
             quantity: 1,
             price: config.price,
+            storeId: storeId,
             config: {
                 size: config.size,
                 sponge: config.sponge,
@@ -1296,35 +1614,35 @@ const CakeCustomizer = () => {
                                                 icon="🍰"
                                                 title="CAKE"
                                                 subtitle={`${config.size}`}
-                                                onClick={() => setSelectedPart('cake')}
+                                                onClick={() => handlePartSelect('cake')}
                                                 gradient="from-pink-500 to-rose-500"
                                             />
                                             <MenuItem
                                                 icon="🧁"
                                                 title="DECORATION"
                                                 subtitle="CHOCOLATE BUTTERCREAM"
-                                                onClick={() => setSelectedPart('outer-icing')}
+                                                onClick={() => handlePartSelect('outer-icing')}
                                                 gradient="from-purple-500 to-indigo-500"
                                             />
                                             <MenuItem
                                                 icon="✍️"
                                                 title="PIPING & PRINTING"
                                                 subtitle={config.message || "PIPED MESSAGE + WHITE CHOCOLATE PLAQUE"}
-                                                onClick={() => setSelectedPart('message')}
+                                                onClick={() => handlePartSelect('message')}
                                                 gradient="from-blue-500 to-cyan-500"
                                             />
                                             <MenuItem
                                                 icon="🕯️"
                                                 title="FINISHING TOUCHES"
                                                 subtitle="6x PINK CANDLES + WHITE CHOCOLATE PLAQUE"
-                                                onClick={() => setSelectedPart('candles')}
+                                                onClick={() => handlePartSelect('candles')}
                                                 gradient="from-teal-500 to-emerald-500"
                                             />
                                             <MenuItem
                                                 icon="📝"
                                                 title="CAKE BOARD"
                                                 subtitle={`${boardOptions.find(b => b.id === config.board)?.name || 'Select board color'}`}
-                                                onClick={() => setSelectedPart('board')}
+                                                onClick={() => handlePartSelect('board')}
                                                 gradient="from-green-500 to-teal-500"
                                             />
                                             <MenuItem
@@ -1333,7 +1651,7 @@ const CakeCustomizer = () => {
                                                 subtitle={config.extras.length > 0
                                                     ? `${config.extras.length} extras added`
                                                     : "Add special toppings"}
-                                                onClick={() => setSelectedPart('extras')}
+                                                onClick={() => handlePartSelect('extras')}
                                                 gradient="from-yellow-500 to-orange-500"
                                             />
                                         </motion.div>
@@ -1346,7 +1664,7 @@ const CakeCustomizer = () => {
                                         >
                                             <div className="flex items-center gap-2 mb-6">
                                                 <button
-                                                    onClick={() => setSelectedPart(null)}
+                                                    onClick={() => handlePartSelect(null)}
                                                     className="p-2 hover:bg-pink-50 rounded-full transition-colors"
                                                 >
                                                     <ArrowLeft className="w-6 h-6 text-pink-600" />
@@ -1364,15 +1682,23 @@ const CakeCustomizer = () => {
 
                         <motion.div
                             whileHover={{ scale: 1.02 }}
-                            className="p-4 border-t border-gray-100"
+                            className="p-4 border-t border-gray-100 flex gap-4"
                         >
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                onClick={handleAddToCart}
-                                className="w-full bg-gradient-to-r from-pink-600 to-purple-600 text-white py-4 text-lg font-bold rounded-xl hover:from-pink-700 hover:to-purple-700 transition-all"
+                                onClick={handleSaveDesign}
+                                className="flex-1 bg-white border-2 border-pink-600 text-pink-600 py-4 text-lg font-bold rounded-xl hover:bg-pink-50 transition-all"
                             >
-                                {editId ? 'UPDATE CART' : 'ADD TO CART'}
+                                SAVE DESIGN
+                            </motion.button>
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={handleOrderCake}
+                                className="flex-1 bg-gradient-to-r from-pink-600 to-purple-600 text-white py-4 text-lg font-bold rounded-xl hover:from-pink-700 hover:to-purple-700 transition-all"
+                            >
+                                ORDER NOW
                             </motion.button>
                         </motion.div>
                     </div>

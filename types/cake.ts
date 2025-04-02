@@ -4,7 +4,7 @@ export type CakeConfig = {
     sponge: string;
     outerIcing: string;
     filling: string;
-    topping: null;
+    topping: string | null;
     message: string;
     candles: string | null;
     board: string;
@@ -14,6 +14,7 @@ export type CakeConfig = {
     plaqueColor: string;
     uploadedImage: string | null;
     imageUrl: string | null;
+    pipingColor: string;
     // numberOfCandles: number;
     // candleColor: string;
 } 
