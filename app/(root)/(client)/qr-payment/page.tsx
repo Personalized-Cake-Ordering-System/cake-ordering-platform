@@ -178,7 +178,7 @@ const QRPaymentPage = () => {
 
                                 <div className="text-sm text-muted-foreground mt-4">
                                     <p>1. Open your banking app</p>
-                                    <p>2. Select "Scan QR"</p>
+                                    <p>2. Select &quot;Scan QR&quot;</p>
                                     <p>3. Scan this VietQR code</p>
                                     <p>4. Confirm the payment</p>
                                 </div>

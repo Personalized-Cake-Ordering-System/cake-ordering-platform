@@ -1165,10 +1165,10 @@ const CakeCustomizer = () => {
     // Update the handleAddToCart function
     const handleAddToCart = () => {
         const customCake = {
-            id: crypto.randomUUID(),
+            id: editId || crypto.randomUUID(),
             quantity: 1,
+            price: config.price,
             config: {
-                price: config.price,
                 size: config.size,
                 sponge: config.sponge,
                 filling: config.filling,
@@ -1177,6 +1177,8 @@ const CakeCustomizer = () => {
                 goo: config.goo,
                 extras: config.extras,
                 board: config.board,
+                imageUrl: config.imageUrl || '',
+                price: config.price,
                 message: config.message,
                 messageType: config.messageType,
                 plaqueColor: config.plaqueColor,

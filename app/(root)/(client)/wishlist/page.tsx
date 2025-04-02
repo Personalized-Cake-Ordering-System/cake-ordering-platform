@@ -28,7 +28,7 @@ const WishlistPage = () => {
         }
     };
 
-    const item = {
+    const itemVariant = {
         hidden: { opacity: 0, y: 20 },
         show: { opacity: 1, y: 0 }
     };
@@ -56,7 +56,7 @@ const WishlistPage = () => {
                     {items.map((item) => (
                         <motion.div
                             key={item.id}
-                            variants={item}
+                            variants={itemVariant}
                             className="h-full"
                         >
                             <Card className="overflow-hidden h-full flex flex-col hover:shadow-xl transition-shadow duration-300">

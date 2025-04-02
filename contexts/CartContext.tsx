@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { CakeConfig } from '@/types/cake';
 import { CartItem } from '@/types/cart';
 
@@ -18,6 +18,13 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: React.ReactNode }) {
     const [items, setItems] = useState<CartItem[]>([]);
     const [isInitialized, setIsInitialized] = useState(false);
+    const counterRef = useRef(0);
+    
+    // Generate unique IDs without random values
+    const generateId = () => {
+        counterRef.current += 1;
+        return `item-${Date.now()}-${counterRef.current}`;
+    };
 
     // Load cart data from localStorage after component mounts
     useEffect(() => {
@@ -75,8 +82,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     const addToCart = (config: CakeConfig) => {
         const price = calculatePrice(config);
+        const newId = generateId();
         setItems(prev => [...prev, {
-            id: Math.random().toString(36).substr(2, 9),
+            id: newId,
             config,
             quantity: 1,
             price
