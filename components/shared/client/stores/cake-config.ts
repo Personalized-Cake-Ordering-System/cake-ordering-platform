@@ -24,6 +24,7 @@ const defaultConfig: CakeConfig = {
     plaqueColor: 'white',
     uploadedImage: null,
     imageUrl: null,
+    pipingColor: 'white'
 };
 
 export const useCakeConfigStore = create<CakeConfigStore>()(
