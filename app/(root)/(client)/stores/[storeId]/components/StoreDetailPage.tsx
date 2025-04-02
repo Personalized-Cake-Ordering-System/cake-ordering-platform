@@ -26,27 +26,30 @@ interface BakeryData {
   email: string;
   phone: string;
   address: string;
-  latitude: string;
-  longitude: string;
-  bank_account: string | null;
+  latitude?: string;
+  longitude?: string;
+  bank_account?: string | null;
   owner_name: string;
-  avatar_file_id: string;
-  avatar_file: FileData;
-  identity_card_number: string;
-  front_card_file_id: string;
-  front_card_file: FileData;
-  back_card_file_id: string;
-  back_card_file: FileData;
-  tax_code: string;
+  avatar_file?: {
+    file_url: string;
+  };
+  identity_card_number?: string;
+  front_card_file_id?: string;
+  front_card_file?: FileData;
+  back_card_file_id?: string;
+  back_card_file?: FileData;
+  tax_code?: string;
   status: string;
-  confirmed_at: string;
-  shop_image_files: FileData[];
+  confirmed_at?: string;
+  shop_image_files?: Array<{
+    file_url: string;
+  }>;
   id: string;
   created_at: string;
-  created_by: string;
-  updated_at: string | null;
-  updated_by: string | null;
-  is_deleted: boolean;
+  created_by?: string;
+  updated_at?: string | null;
+  updated_by?: string | null;
+  is_deleted?: boolean;
 }
 
 interface Product {
@@ -70,7 +73,7 @@ interface StoreInfo {
   bannerImages: string[];
   status: string;
   createdAt: string;
-  taxCode: string;
+  taxCode?: string;
 }
 
 export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
@@ -95,7 +98,7 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
         bannerImages: [
           ...(bakery.shop_image_files?.map(img => img.file_url) || []),
           bakery.avatar_file?.file_url,
-        ].filter(Boolean),
+        ].filter(Boolean) as string[],
         status: bakery.status,
         createdAt: new Date(bakery.created_at).toLocaleDateString(),
         taxCode: bakery.tax_code
@@ -216,19 +219,21 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
                 <Dialog key={index}>
                   <DialogTrigger>
                     <div className="aspect-square rounded-lg overflow-hidden hover:opacity-90 transition-opacity cursor-pointer">
-                      <img
+                      <Image
                         src={imageUrl}
                         alt={`Store image ${index + 1}`}
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
                       />
                     </div>
                   </DialogTrigger>
                   <DialogContent className="max-w-3xl">
-                    <div className="aspect-square w-full">
-                      <img
+                    <div className="aspect-square w-full relative">
+                      <Image
                         src={imageUrl}
                         alt={`Store image ${index + 1}`}
-                        className="w-full h-full object-contain"
+                        fill
+                        className="object-contain"
                       />
                     </div>
                   </DialogContent>

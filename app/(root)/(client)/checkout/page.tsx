@@ -293,7 +293,7 @@ const CheckoutPage = () => {
         deliveryMethod: orderDetails.orderInfo.deliveryMethod,
       });
     }
-  }, []);
+  }, [form]);
 
   React.useEffect(() => {
     const fetchCart = async () => {

@@ -70,17 +70,17 @@ export const Toast: React.FC<ToastProps> = ({
 
 export const ToastContainer: React.FC = () => {
     const [toasts, setToasts] = React.useState<Array<{ id: string; message: string; type: ToastType }>>([]);
-
+    const idCounterRef = React.useRef(0);
+    
     const showToast = (message: string, type: ToastType = 'info') => {
-        const id = Math.random().toString(36).substring(2, 9);
+        idCounterRef.current += 1;
+        const id = `toast-${Date.now()}-${idCounterRef.current}`;
         setToasts(prev => [...prev, { id, message, type }]);
     };
 
     const closeToast = (id: string) => {
         setToasts(prev => prev.filter(toast => toast.id !== id));
     };
-
-
 
     return (
         <div className="toast-container">
