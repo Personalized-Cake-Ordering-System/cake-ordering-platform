@@ -8,6 +8,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import Image from 'next/image';
 import axios from 'axios';
+import CakeCustomizer from '@/components/3d-custom/cake-customize';
 
 // API response interfaces
 interface FileData {
@@ -131,12 +132,16 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
       <Tabs defaultValue="info" className="w-full" value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid grid-cols-2 mb-6 rounded-lg bg-gray-100/80 p-1">
           <TabsTrigger value="info" className="flex items-center gap-2">
-            <Store className="w-4 h-4" />
+            <Store className="w-3 h-3" />
             Store Info
           </TabsTrigger>
           <TabsTrigger value="gallery" className="flex items-center gap-2">
-            <ImageIcon className="w-4 h-4" />
+            <ImageIcon className="w-3 h-3" />
             Gallery
+          </TabsTrigger>
+          <TabsTrigger value="customCake" className="flex items-center gap-2">
+            <ImageIcon className="w-3 h-3" />
+            Custom Cake
           </TabsTrigger>
         </TabsList>
 
@@ -241,6 +246,10 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
               ))}
             </div>
           </div>
+        </TabsContent>
+
+        <TabsContent value="customCake">
+          <CakeCustomizer storeId={storeInfo.id} />
         </TabsContent>
       </Tabs>
     </div>
