@@ -291,10 +291,31 @@ const CakeDetail = () => {
               {cakeData.available_cake_description}
             </p>
 
-            <div className="flex items-center space-x-4 mb-8">
-              <span className="text-3xl font-bold text-pink-600">
-                ${cakeData.available_cake_price.toFixed(2)}
-              </span>
+            <div className="space-y-4 mb-8">
+              <div className="flex items-center space-x-4">
+                <span className="text-3xl font-bold text-pink-600">
+                  {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(cakeData.available_cake_price)}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center space-x-2">
+                  <CalendarHeart className="h-5 w-5 text-pink-500" />
+                  <span className="text-gray-600 dark:text-gray-300">Size: 6 inches</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Clock className="h-5 w-5 text-pink-500" />
+                  <span className="text-gray-600 dark:text-gray-300">Serves: 8-10 people</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Truck className="h-5 w-5 text-pink-500" />
+                  <span className="text-gray-600 dark:text-gray-300">Free delivery</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <ShieldCheck className="h-5 w-5 text-pink-500" />
+                  <span className="text-gray-600 dark:text-gray-300">Quality guaranteed</span>
+                </div>
+              </div>
             </div>
           </motion.div>
 

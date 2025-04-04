@@ -14,20 +14,21 @@ export const StoreItem: React.FC<StoreItemProps> = ({
   speciality,
 }) => {
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm p-6 flex flex-col items-center justify-center transition-all hover:shadow-md cursor-pointer">
-      <div className="mb-3">{icon}</div>
-      <span className="text-gray-800 dark:text-gray-200 font-medium text-center">
+    <div className="group bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer border border-gray-100 dark:border-gray-800">
+      <div className="mb-4 transform transition-transform duration-300 group-hover:scale-110">
+        {icon}
+      </div>
+      <span className="text-gray-800 dark:text-gray-200 font-semibold text-lg text-center">
         {name}
       </span>
-      <div className="flex items-center mt-2">
+      <div className="flex items-center mt-3 space-x-0.5">
         {[...Array(5)].map((_, i) => (
           <svg
             key={i}
-            className={`w-4 h-4 ${
-              i < rating
-                ? "text-yellow-400"
-                : "text-gray-300 dark:text-gray-600"
-            }`}
+            className={`w-5 h-5 transition-colors duration-300 ${i < rating
+              ? "text-yellow-400"
+              : "text-gray-300 dark:text-gray-600"
+              }`}
             fill="currentColor"
             viewBox="0 0 20 20"
           >
@@ -35,7 +36,7 @@ export const StoreItem: React.FC<StoreItemProps> = ({
           </svg>
         ))}
       </div>
-      <span className="text-gray-500 dark:text-gray-400 text-xs mt-1">
+      <span className="text-gray-500 dark:text-gray-400 text-sm mt-2 font-medium">
         {speciality}
       </span>
     </div>

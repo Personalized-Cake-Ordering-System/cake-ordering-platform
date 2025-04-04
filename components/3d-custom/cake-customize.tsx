@@ -1083,7 +1083,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                     size: getOptionName(option),
                                     price: getOptionPrice(option),
                                     priceChange: getOptionPrice(option) - config.price,
-                                    feeds: '8-10' // You might want to add this to the API
+                                    feeds: '8-10'
                                 })}
                                 className={`flex flex-col items-center ${config.size === getOptionName(option) ? 'ring-2 ring-pink-500' : ''}`}
                             >
@@ -1092,7 +1092,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                 </div>
                                 <div className="mt-2 text-sm font-medium">{getOptionName(option)}</div>
                                 <div className="text-sm text-gray-500">
-                                    {getOptionPrice(option) > config.price ? '+' : ''}£{Math.abs(getOptionPrice(option) - config.price).toFixed(2)}
+                                    {getOptionPrice(option) > config.price ? '+' : ''}£{Math.abs(getOptionPrice(option) - config.price).toFixed(2)} VND
                                 </div>
                             </button>
                         ))}
@@ -1119,7 +1119,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                 </div>
                                 <div className="mt-2 text-xs font-medium text-center">{getOptionName(option)}</div>
                                 {getOptionPrice(option) > 0 && (
-                                    <div className="text-xs text-gray-500">£{getOptionPrice(option).toFixed(2)}</div>
+                                    <div className="text-xs text-gray-500">{getOptionPrice(option).toFixed(2)} VND</div>
                                 )}
                             </button>
                         ))}
@@ -1160,7 +1160,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                         />
                                         <p className="text-xs text-center mt-1">{getOptionName(option)}</p>
                                         {getOptionPrice(option) > 0 && (
-                                            <p className="text-xs text-gray-500">£{getOptionPrice(option).toFixed(2)}</p>
+                                            <p className="text-xs text-gray-500">{getOptionPrice(option).toFixed(2)} VND</p>
                                         )}
                                     </div>
                                 ))
@@ -1173,9 +1173,9 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                 const plaqueColourGroup = messageOptions.find(group => group.type === 'PLAQUE_COLOUR');
                 const pipingColourGroup = messageOptions.find(group => group.type === 'PIPING_COLOUR');
                 const messageTypeOptions: MessageOption[] = [
-                    { id: 'none', name: 'NONE', price: 0, icon: '✖️' },
-                    { id: 'piped', name: 'PIPED MESSAGE', price: 7.00, icon: '✍️' },
-                    { id: 'edible', name: 'EDIBLE IMAGE', price: 8.00, icon: '🖼️' }
+                    { id: 'none', name: 'KHÔNG', price: 0, icon: '✖️' },
+                    { id: 'piped', name: 'CHỮ VIẾT TAY', price: 7.00, icon: '✍️' },
+                    { id: 'edible', name: 'HÌNH ẢNH ĂN ĐƯỢC', price: 8.00, icon: '🖼️' }
                 ];
 
                 return (
@@ -1348,7 +1348,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                             )}
                                         </button>
                                         <p className="text-xs font-medium mt-2 text-center">{getOptionName(option)}</p>
-                                        <p className="text-xs text-gray-600">£{getOptionPrice(option).toFixed(2)}</p>
+                                        <p className="text-xs text-gray-600">{getOptionPrice(option).toFixed(2)} VND</p>
                                     </motion.div>
                                 ))
                             )}
@@ -1370,12 +1370,12 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                         <div className="w-1 h-8 bg-gradient-to-b from-amber-100 to-transparent"></div>
                                     </button>
                                     <p className="text-xs text-center mt-1">{option.name}</p>
-                                    <p className="text-xs font-bold">£{option.price}</p>
+                                    <p className="text-xs font-bold">{option.price} VND</p>
                                 </div>
                             ))}
                             <div className="col-span-3 mt-4">
                                 <Button variant="outline" onClick={handleRemoveCandles}>
-                                    Remove Candles
+                                    Xóa Nến
                                 </Button>
                             </div>
                         </div>
@@ -1516,7 +1516,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
         <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50"
+            className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50"
         >
             <motion.div
                 initial={{ y: 20, opacity: 0 }}
@@ -1532,8 +1532,9 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                     <motion.div
                         whileHover={{ scale: 1.02 }}
                         transition={{ type: "spring", stiffness: 300 }}
-                        className="relative aspect-square w-full max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-8"
+                        className="relative aspect-square w-full max-w-2xl mx-auto bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl p-8 border border-pink-100"
                     >
+                        <div className="absolute inset-0 bg-gradient-to-br from-pink-100/20 to-purple-100/20 rounded-3xl" />
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key={selectedPart || 'default'}
@@ -1555,28 +1556,28 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                     transition={{ delay: 0.3 }}
                     className="w-full md:w-[400px]"
                 >
-                    <div className="bg-white rounded-2xl shadow-xl">
+                    <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-pink-100">
                         <motion.div
                             whileHover={{ scale: 1.02 }}
-                            className="p-6 border-b border-gray-100"
+                            className="p-8 border-b border-pink-100"
                         >
                             <div className="flex justify-between items-center">
                                 <motion.h1
                                     initial={{ y: -20 }}
                                     animate={{ y: 0 }}
-                                    className="text-4xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent"
+                                    className="text-4xl font-bold bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 bg-clip-text text-transparent"
                                 >
-                                    BESPOKE CAKE
+                                    BÁNH CUSTOM
                                 </motion.h1>
                                 <motion.button
                                     whileHover={{ scale: 1.1 }}
                                     whileTap={{ scale: 0.9 }}
                                     onClick={handleResetConfig}
-                                    className="p-2 rounded-full hover:bg-gray-100"
+                                    className="p-2 rounded-full hover:bg-pink-50 transition-all"
                                     title="Reset Design"
                                 >
                                     <svg
-                                        className="w-5 h-5 text-gray-500"
+                                        className="w-5 h-5 text-pink-600"
                                         fill="none"
                                         stroke="currentColor"
                                         viewBox="0 0 24 24"
@@ -1593,9 +1594,9 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                             <motion.div
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
-                                className="text-2xl font-bold text-gray-900"
+                                className="text-3xl font-bold text-pink-600 mt-2"
                             >
-                                £{config.price.toFixed(2)}
+                                {config.price.toFixed(2)} VND
                             </motion.div>
                         </motion.div>
 
@@ -1603,7 +1604,6 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                             <div className="p-6">
                                 <AnimatePresence mode="wait">
                                     {!selectedPart ? (
-                                        // Main menu with animations
                                         <motion.div
                                             initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
@@ -1612,64 +1612,65 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                         >
                                             <MenuItem
                                                 icon="🍰"
-                                                title="CAKE"
+                                                title="BÁNH"
                                                 subtitle={`${config.size}`}
                                                 onClick={() => handlePartSelect('cake')}
                                                 gradient="from-pink-500 to-rose-500"
                                             />
                                             <MenuItem
                                                 icon="🧁"
-                                                title="DECORATION"
-                                                subtitle="CHOCOLATE BUTTERCREAM"
+                                                title="TRANG TRÍ"
+                                                subtitle="KEM SÔ CÔ LA"
                                                 onClick={() => handlePartSelect('outer-icing')}
                                                 gradient="from-purple-500 to-indigo-500"
                                             />
                                             <MenuItem
                                                 icon="✍️"
-                                                title="PIPING & PRINTING"
-                                                subtitle={config.message || "PIPED MESSAGE + WHITE CHOCOLATE PLAQUE"}
+                                                title="CHỮ & HÌNH ẢNH"
+                                                subtitle={config.message || "CHỮ VIẾT TAY + PLAQUE SÔ CÔ LA TRẮNG"}
                                                 onClick={() => handlePartSelect('message')}
                                                 gradient="from-blue-500 to-cyan-500"
                                             />
                                             <MenuItem
                                                 icon="🕯️"
-                                                title="FINISHING TOUCHES"
-                                                subtitle="6x PINK CANDLES + WHITE CHOCOLATE PLAQUE"
+                                                title="TRANG TRÍ CUỐI"
+                                                subtitle="6 NẾN HỒNG + PLAQUE SÔ CÔ LA TRẮNG"
                                                 onClick={() => handlePartSelect('candles')}
                                                 gradient="from-teal-500 to-emerald-500"
                                             />
                                             <MenuItem
                                                 icon="📝"
-                                                title="CAKE BOARD"
-                                                subtitle={`${boardOptions.find(b => b.id === config.board)?.name || 'Select board color'}`}
+                                                title="ĐẾ BÁNH"
+                                                subtitle={`${boardOptions.find(b => b.id === config.board)?.name || 'Chọn màu đế bánh'}`}
                                                 onClick={() => handlePartSelect('board')}
                                                 gradient="from-green-500 to-teal-500"
                                             />
                                             <MenuItem
                                                 icon="🍪"
-                                                title="MAKE IT EXTRA"
+                                                title="THÊM PHẦN"
                                                 subtitle={config.extras.length > 0
-                                                    ? `${config.extras.length} extras added`
-                                                    : "Add special toppings"}
+                                                    ? `Đã thêm ${config.extras.length} phần phụ`
+                                                    : "Thêm topping đặc biệt"}
                                                 onClick={() => handlePartSelect('extras')}
                                                 gradient="from-yellow-500 to-orange-500"
                                             />
                                         </motion.div>
                                     ) : (
-                                        // Customization panel with animations
                                         <motion.div
                                             initial={{ opacity: 0, x: 20 }}
                                             animate={{ opacity: 1, x: 0 }}
                                             exit={{ opacity: 0, x: -20 }}
                                         >
                                             <div className="flex items-center gap-2 mb-6">
-                                                <button
+                                                <motion.button
+                                                    whileHover={{ scale: 1.1 }}
+                                                    whileTap={{ scale: 0.9 }}
                                                     onClick={() => handlePartSelect(null)}
                                                     className="p-2 hover:bg-pink-50 rounded-full transition-colors"
                                                 >
                                                     <ArrowLeft className="w-6 h-6 text-pink-600" />
-                                                </button>
-                                                <h2 className="text-xl font-bold text-gray-900">
+                                                </motion.button>
+                                                <h2 className="text-2xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
                                                     {selectedPart.toUpperCase()}
                                                 </h2>
                                             </div>
@@ -1682,23 +1683,23 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
 
                         <motion.div
                             whileHover={{ scale: 1.02 }}
-                            className="p-4 border-t border-gray-100 flex gap-4"
+                            className="p-6 border-t border-pink-100 flex gap-4"
                         >
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={handleSaveDesign}
-                                className="flex-1 bg-white border-2 border-pink-600 text-pink-600 py-4 text-lg font-bold rounded-xl hover:bg-pink-50 transition-all"
+                                className="flex-1 bg-white border-2 border-pink-600 text-pink-600 py-4 text-lg font-bold rounded-xl hover:bg-pink-50 transition-all shadow-lg hover:shadow-xl"
                             >
-                                SAVE DESIGN
+                                LƯU THIẾT KẾ
                             </motion.button>
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={handleOrderCake}
-                                className="flex-1 bg-gradient-to-r from-pink-600 to-purple-600 text-white py-4 text-lg font-bold rounded-xl hover:from-pink-700 hover:to-purple-700 transition-all"
+                                className="flex-1 bg-gradient-to-r from-pink-600 to-purple-600 text-white py-4 text-lg font-bold rounded-xl hover:from-pink-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl"
                             >
-                                ORDER NOW
+                                ĐẶT HÀNG NGAY
                             </motion.button>
                         </motion.div>
                     </div>
@@ -1708,7 +1709,63 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
     );
 };
 
-// Add this CSS to your global styles
+// Update MenuItem component with enhanced styling
+const MenuItem = ({
+    icon,
+    title,
+    subtitle,
+    onClick,
+    gradient
+}: {
+    icon: string;
+    title: string;
+    subtitle: string;
+    onClick: () => void;
+    gradient: string;
+}) => {
+    return (
+        <motion.button
+            whileHover={{ scale: 1.02, backgroundColor: 'rgb(249, 250, 251)' }}
+            whileTap={{ scale: 0.98 }}
+            onClick={onClick}
+            className={`w-full flex items-center gap-4 p-4 rounded-xl transition-all hover:shadow-lg border border-pink-100`}
+        >
+            <motion.span
+                whileHover={{ rotate: [0, -10, 10, -10, 0] }}
+                transition={{ duration: 0.5 }}
+                className="text-3xl"
+            >
+                {icon}
+            </motion.span>
+            <div className="flex-1 text-left">
+                <motion.div
+                    className={`font-bold text-lg bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}
+                >
+                    {title}
+                </motion.div>
+                <motion.div
+                    initial={{ opacity: 0.5 }}
+                    animate={{ opacity: 1 }}
+                    className="text-sm text-gray-600"
+                >
+                    {subtitle}
+                </motion.div>
+            </div>
+            <motion.svg
+                whileHover={{ x: 5 }}
+                className="w-6 h-6 text-pink-400"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+            >
+                <path d="M9 18l6-6-6-6" />
+            </motion.svg>
+        </motion.button>
+    );
+};
+
+// Update global styles
 const globalStyles = `
     .custom-scrollbar {
         scrollbar-width: thin;
@@ -1731,62 +1788,16 @@ const globalStyles = `
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
         background-color: rgba(236, 72, 153, 0.5);
     }
-`;
 
-// Update MenuItem component
-const MenuItem = ({
-    icon,
-    title,
-    subtitle,
-    onClick,
-    gradient
-}: {
-    icon: string;
-    title: string;
-    subtitle: string;
-    onClick: () => void;
-    gradient: string;
-}) => {
-    return (
-        <motion.button
-            whileHover={{ scale: 1.02, backgroundColor: 'rgb(249, 250, 251)' }}
-            whileTap={{ scale: 0.98 }}
-            onClick={onClick}
-            className={`w-full flex items-center gap-4 p-4 rounded-xl transition-all`}
-        >
-            <motion.span
-                whileHover={{ rotate: [0, -10, 10, -10, 0] }}
-                transition={{ duration: 0.5 }}
-                className="text-2xl"
-            >
-                {icon}
-            </motion.span>
-            <div className="flex-1 text-left">
-                <motion.div
-                    className={`font-bold bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}
-                >
-                    {title}
-                </motion.div>
-                <motion.div
-                    initial={{ opacity: 0.5 }}
-                    animate={{ opacity: 1 }}
-                    className="text-sm text-gray-600"
-                >
-                    {subtitle}
-                </motion.div>
-            </div>
-            <motion.svg
-                whileHover={{ x: 5 }}
-                className="w-5 h-5 text-gray-400"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-            >
-                <path d="M9 18l6-6-6-6" />
-            </motion.svg>
-        </motion.button>
-    );
-};
+    @keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+        100% { transform: translateY(0px); }
+    }
+
+    .float-animation {
+        animation: float 3s ease-in-out infinite;
+    }
+`;
 
 export default CakeCustomizer;

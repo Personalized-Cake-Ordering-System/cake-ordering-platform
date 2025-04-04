@@ -1,14 +1,19 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MapPin, Phone, Mail, Calendar, Store, Image as ImageIcon } from 'lucide-react';
+import { MapPin, Phone, Mail, Calendar, Store, Image as ImageIcon, Heart, ShoppingCart, Minus, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import StoreHeader from './StoreHeader';
 import { useToast } from '@/components/ui/use-toast';
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import Image from 'next/image';
 import axios from 'axios';
 import CakeCustomizer from '@/components/3d-custom/cake-customize';
+import { useWishlist } from '@/app/store/useWishlist';
+import { useCart } from '@/app/store/useCart';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
 // API response interfaces
 interface FileData {
@@ -77,12 +82,91 @@ interface StoreInfo {
   taxCode?: string;
 }
 
+interface AvailableCake {
+  available_cake_price: number;
+  available_cake_name: string;
+  available_cake_description: string;
+  available_cake_type: string;
+  available_cake_quantity: number;
+  available_main_image_id: string;
+  available_cake_main_image: null;
+  available_cake_image_files: FileData[];
+  bakery_id: string;
+  id: string;
+  created_at: string;
+  created_by: string;
+  updated_at: string | null;
+  updated_by: string | null;
+  is_deleted: boolean;
+}
+
+interface ApiResponse {
+  status_code: number;
+  errors: any[];
+  meta_data: {
+    total_items_count: number;
+    page_size: number;
+    total_pages_count: number;
+    page_index: number;
+    has_next: boolean;
+    has_previous: boolean;
+  };
+  payload: AvailableCake[];
+}
+
 export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('info');
   const [storeInfo, setStoreInfo] = useState<StoreInfo | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [cakes, setCakes] = useState<AvailableCake[]>([]);
+  const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
+  const { addToWishlist, removeFromWishlist, items } = useWishlist();
   const { toast } = useToast();
+
+  // Add new state for filters
+  const [sortBy, setSortBy] = useState('newest');
+  const [filterBy, setFilterBy] = useState('all');
+
+  const [pagination, setPagination] = useState({
+    currentPage: 0,
+    pageSize: 9,
+    totalPages: 1,
+    totalItems: 0
+  });
+
+  // Filter and sort cakes
+  const filteredAndSortedCakes = useMemo(() => {
+    let result = [...cakes];
+
+    // Apply filter
+    if (filterBy === 'inStock') {
+      result = result.filter(cake => cake.available_cake_quantity > 0);
+    } else if (filterBy === 'outOfStock') {
+      result = result.filter(cake => cake.available_cake_quantity === 0);
+    }
+
+    // Apply sort
+    switch (sortBy) {
+      case 'priceAsc':
+        result.sort((a, b) => a.available_cake_price - b.available_cake_price);
+        break;
+      case 'priceDesc':
+        result.sort((a, b) => b.available_cake_price - a.available_cake_price);
+        break;
+      case 'newest':
+        result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        break;
+      case 'oldest':
+        result.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        break;
+      default:
+        break;
+    }
+
+    return result;
+  }, [cakes, sortBy, filterBy]);
 
   useEffect(() => {
     if (!bakery) return;
@@ -117,6 +201,70 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
     }
   }, [bakery, toast]);
 
+  useEffect(() => {
+    const fetchCakes = async () => {
+      try {
+        const response = await axios.get<ApiResponse>(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/bakeries/${bakery.id}/available_cakes`, {
+          params: {
+            'page-index': pagination.currentPage,
+            'page-size': pagination.pageSize,
+            'sort-by': sortBy,
+            'filter-by': filterBy
+          }
+        });
+        if (response.data.status_code === 200) {
+          setCakes(response.data.payload);
+          setPagination(prev => ({
+            ...prev,
+            totalPages: response.data.meta_data.total_pages_count,
+            totalItems: response.data.meta_data.total_items_count
+          }));
+        }
+      } catch (error) {
+        console.error("Error fetching cakes:", error);
+        toast({
+          title: "Error fetching cakes",
+          description: "There was a problem loading the available cakes",
+          variant: "destructive"
+        });
+      }
+    };
+
+    if (bakery?.id) {
+      fetchCakes();
+    }
+  }, [bakery?.id, toast, pagination.currentPage, pagination.pageSize, sortBy, filterBy]);
+
+  const handleWishlistToggle = (cake: AvailableCake) => {
+    const isInWishlist = items.some(item => item.id === cake.id);
+
+    if (isInWishlist) {
+      removeFromWishlist(cake.id);
+      toast({
+        title: "Success",
+        description: "Removed from wishlist",
+      });
+    } else {
+      addToWishlist({
+        id: cake.id,
+        name: cake.available_cake_name,
+        price: cake.available_cake_price,
+        image: cake.available_cake_image_files?.[0]?.file_url || '/placeholder-cake.jpg',
+      });
+      toast({
+        title: "Success",
+        description: "Added to wishlist",
+      });
+    }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPagination(prev => ({
+      ...prev,
+      currentPage: newPage
+    }));
+  };
+
   if (isLoading || !storeInfo) {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
@@ -130,85 +278,116 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
       <StoreHeader storeInfo={storeInfo} />
 
       <Tabs defaultValue="info" className="w-full" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-2 mb-6 rounded-lg bg-gray-100/80 p-1">
-          <TabsTrigger value="info" className="flex items-center gap-2">
-            <Store className="w-3 h-3" />
-            Store Info
+        <TabsList className="grid grid-cols-4 mb-6 rounded-lg bg-white p-1 shadow-sm border border-gray-100">
+          <TabsTrigger value="info" className="flex items-center gap-2 data-[state=active]:bg-custom-teal data-[state=active]:text-white transition-all duration-200">
+            <Store className="w-4 h-4" />
+            Thông tin cửa hàng
           </TabsTrigger>
-          <TabsTrigger value="gallery" className="flex items-center gap-2">
-            <ImageIcon className="w-3 h-3" />
-            Gallery
+          <TabsTrigger value="gallery" className="flex items-center gap-2 data-[state=active]:bg-custom-teal data-[state=active]:text-white transition-all duration-200">
+            <ImageIcon className="w-4 h-4" />
+            Hình ảnh cửa hàng
           </TabsTrigger>
-          <TabsTrigger value="customCake" className="flex items-center gap-2">
-            <ImageIcon className="w-3 h-3" />
-            Custom Cake
+          <TabsTrigger value="cakes" className="flex items-center gap-2 data-[state=active]:bg-custom-teal data-[state=active]:text-white transition-all duration-200">
+            <ImageIcon className="w-4 h-4" />
+            Bánh có sẵn
+          </TabsTrigger>
+          <TabsTrigger value="customCake" className="flex items-center gap-2 data-[state=active]:bg-custom-teal data-[state=active]:text-white transition-all duration-200">
+            <ImageIcon className="w-4 h-4" />
+            Tạo bánh
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="info" className="space-y-4">
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-white rounded-lg p-6 shadow-sm">
-              <h2 className="text-xl font-semibold mb-4 text-custom-teal">Store Information</h2>
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors">
-                  <Store className="w-5 h-5 text-custom-teal" />
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+              <h2 className="text-2xl font-semibold mb-6 text-custom-teal border-b border-gray-100 pb-4">Thông tin cửa hàng</h2>
+              <div className="space-y-6">
+                <div className="flex items-start gap-4 p-4 hover:bg-gray-50 rounded-lg transition-colors">
+                  <div className="p-2 bg-custom-teal/10 rounded-lg">
+                    <Store className="w-5 h-5 text-custom-teal" />
+                  </div>
                   <div>
-                    <p className="text-sm text-gray-500">Store Name</p>
-                    <p className="font-medium">{storeInfo.name}</p>
+                    <p className="text-sm font-medium text-gray-500 mb-1">Tên cửa hàng</p>
+                    <p className="text-lg font-semibold text-gray-900">{storeInfo.name}</p>
+                    <p className="text-sm text-gray-500 mt-2">Tiệm bánh cao cấp chuyên về bánh kem và bánh ngọt</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors">
-                  <MapPin className="w-5 h-5 text-custom-teal" />
+                <div className="flex items-start gap-4 p-4 hover:bg-gray-50 rounded-lg transition-colors">
+                  <div className="p-2 bg-custom-teal/10 rounded-lg">
+                    <MapPin className="w-5 h-5 text-custom-teal" />
+                  </div>
                   <div>
-                    <p className="text-sm text-gray-500">Address</p>
-                    <p className="font-medium">{storeInfo.address}</p>
+                    <p className="text-sm font-medium text-gray-500 mb-1">Địa chỉ</p>
+                    <p className="text-lg font-semibold text-gray-900">{storeInfo.address}</p>
+                    <p className="text-sm text-gray-500 mt-2">Nằm ở trung tâm thành phố, có chỗ đậu xe rộng rãi</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors">
-                  <Phone className="w-5 h-5 text-custom-teal" />
+                <div className="flex items-start gap-4 p-4 hover:bg-gray-50 rounded-lg transition-colors">
+                  <div className="p-2 bg-custom-teal/10 rounded-lg">
+                    <Phone className="w-5 h-5 text-custom-teal" />
+                  </div>
                   <div>
-                    <p className="text-sm text-gray-500">Contact</p>
-                    <p className="font-medium">{storeInfo.phone}</p>
+                    <p className="text-sm font-medium text-gray-500 mb-1">Thông tin liên hệ</p>
+                    <p className="text-lg font-semibold text-gray-900">{storeInfo.phone}</p>
+                    <p className="text-sm text-gray-500 mt-2">Mở cửa 7 ngày trong tuần, từ 9:00 sáng đến 8:00 tối</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors">
-                  <Mail className="w-5 h-5 text-custom-teal" />
+                <div className="flex items-start gap-4 p-4 hover:bg-gray-50 rounded-lg transition-colors">
+                  <div className="p-2 bg-custom-teal/10 rounded-lg">
+                    <Mail className="w-5 h-5 text-custom-teal" />
+                  </div>
                   <div>
-                    <p className="text-sm text-gray-500">Email</p>
-                    <p className="font-medium">{storeInfo.email}</p>
+                    <p className="text-sm font-medium text-gray-500 mb-1">Email</p>
+                    <p className="text-lg font-semibold text-gray-900">{storeInfo.email}</p>
+                    <p className="text-sm text-gray-500 mt-2">Để biết thêm thông tin, đặt hàng và yêu cầu đặc biệt</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg p-6 shadow-sm">
-              <h2 className="text-xl font-semibold mb-4 text-custom-teal">Additional Details</h2>
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors">
-                  <Calendar className="w-5 h-5 text-custom-teal" />
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+              <h2 className="text-2xl font-semibold mb-6 text-custom-teal border-b border-gray-100 pb-4">Thông tin bổ sung</h2>
+              <div className="space-y-6">
+                <div className="flex items-start gap-4 p-4 hover:bg-gray-50 rounded-lg transition-colors">
+                  <div className="p-2 bg-custom-teal/10 rounded-lg">
+                    <Calendar className="w-5 h-5 text-custom-teal" />
+                  </div>
                   <div>
-                    <p className="text-sm text-gray-500">Established</p>
-                    <p className="font-medium">{storeInfo.createdAt}</p>
+                    <p className="text-sm font-medium text-gray-500 mb-1">Thành lập</p>
+                    <p className="text-lg font-semibold text-gray-900">{storeInfo.createdAt}</p>
+                    <p className="text-sm text-gray-500 mt-2">Nhiều năm kinh nghiệm trong việc tạo ra những chiếc bánh ngon và đẹp mắt</p>
                   </div>
                 </div>
 
-                <div className="p-3 hover:bg-gray-50 rounded-lg transition-colors">
-                  <p className="text-sm text-gray-500 mb-2">Status</p>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${storeInfo.status === 'CONFIRMED'
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                    {storeInfo.status}
-                  </span>
+                <div className="flex items-start gap-4 p-4 hover:bg-gray-50 rounded-lg transition-colors">
+                  <div className="p-2 bg-custom-teal/10 rounded-lg">
+                    <Store className="w-5 h-5 text-custom-teal" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500 mb-1">Trạng thái cửa hàng</p>
+                    <span className={`px-4 py-2 rounded-full text-sm font-medium ${storeInfo.status === 'CONFIRMED'
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                      {storeInfo.status}
+                    </span>
+                    <p className="text-sm text-gray-500 mt-2">Tiệm bánh đã được xác minh và đáng tin cậy với đánh giá tốt từ khách hàng</p>
+                  </div>
                 </div>
 
                 {storeInfo.taxCode && (
-                  <div className="p-3 hover:bg-gray-50 rounded-lg transition-colors">
-                    <p className="text-sm text-gray-500">Tax Code</p>
-                    <p className="font-medium">{storeInfo.taxCode}</p>
+                  <div className="flex items-start gap-4 p-4 hover:bg-gray-50 rounded-lg transition-colors">
+                    <div className="p-2 bg-custom-teal/10 rounded-lg">
+                      <Store className="w-5 h-5 text-custom-teal" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500 mb-1">Mã số thuế</p>
+                      <p className="text-lg font-semibold text-gray-900">{storeInfo.taxCode}</p>
+                      <p className="text-sm text-gray-500 mt-2">Doanh nghiệp đã đăng ký với đầy đủ giấy tờ</p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -217,34 +396,239 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
         </TabsContent>
 
         <TabsContent value="gallery" className="space-y-4">
-          <div className="bg-white rounded-lg p-6 shadow-sm">
-            <h2 className="text-xl font-semibold mb-4 text-custom-teal">Store Gallery</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {storeInfo.bannerImages.map((imageUrl, index) => (
-                <Dialog key={index}>
-                  <DialogTrigger>
-                    <div className="aspect-square rounded-lg overflow-hidden hover:opacity-90 transition-opacity cursor-pointer">
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <h2 className="text-2xl font-semibold mb-6 text-custom-teal border-b border-gray-100 pb-4">Hình ảnh cửa hàng</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Main Image Display */}
+              <div className="lg:col-span-2">
+                <div className="aspect-square relative rounded-xl overflow-hidden">
+                  <Image
+                    src={selectedImage || storeInfo.bannerImages[0]}
+                    alt="Hình ảnh cửa hàng đã chọn"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              </div>
+
+              {/* Image Thumbnails */}
+              <div className="lg:col-span-1">
+                <div className="grid grid-cols-2 gap-4 h-full">
+                  {storeInfo.bannerImages.map((imageUrl, index) => (
+                    <div
+                      key={index}
+                      className={`aspect-square relative rounded-lg overflow-hidden cursor-pointer transition-all duration-200 ${selectedImage === imageUrl ? 'ring-2 ring-custom-teal' : 'hover:ring-2 hover:ring-gray-200'
+                        }`}
+                      onClick={() => setSelectedImage(imageUrl)}
+                    >
                       <Image
                         src={imageUrl}
-                        alt={`Store image ${index + 1}`}
+                        alt={`Hình ảnh cửa hàng ${index + 1}`}
                         fill
                         className="object-cover"
                       />
+                      {selectedImage === imageUrl && (
+                        <div className="absolute inset-0 bg-custom-teal/20" />
+                      )}
                     </div>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-3xl">
-                    <div className="aspect-square w-full relative">
-                      <Image
-                        src={imageUrl}
-                        alt={`Store image ${index + 1}`}
-                        fill
-                        className="object-contain"
-                      />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Image Navigation */}
+            <div className="mt-6 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500">Hình ảnh:</span>
+                <span className="text-sm font-medium text-gray-900">
+                  {storeInfo.bannerImages.findIndex(img => img === selectedImage) + 1} / {storeInfo.bannerImages.length}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const currentIndex = storeInfo.bannerImages.findIndex(img => img === selectedImage);
+                    const prevIndex = currentIndex > 0 ? currentIndex - 1 : storeInfo.bannerImages.length - 1;
+                    setSelectedImage(storeInfo.bannerImages[prevIndex]);
+                  }}
+                  className="border-custom-teal text-custom-teal hover:bg-custom-teal hover:text-white"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m15 18-6-6 6-6" />
+                  </svg>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const currentIndex = storeInfo.bannerImages.findIndex(img => img === selectedImage);
+                    const nextIndex = currentIndex < storeInfo.bannerImages.length - 1 ? currentIndex + 1 : 0;
+                    setSelectedImage(storeInfo.bannerImages[nextIndex]);
+                  }}
+                  className="border-custom-teal text-custom-teal hover:bg-custom-teal hover:text-white"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m9 18 6-6-6-6" />
+                  </svg>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="cakes" className="space-y-4">
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <h2 className="text-2xl font-semibold mb-6 text-custom-teal border-b border-gray-100 pb-4">Bánh có sẵn</h2>
+
+            {/* Filter and Sort Section */}
+            <div className="mb-6 flex flex-wrap gap-4 items-center">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500">Sắp xếp theo:</span>
+                <select
+                  className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-custom-teal"
+                  value={sortBy}
+                  onChange={(e) => {
+                    setSortBy(e.target.value);
+                    setPagination(prev => ({ ...prev, currentPage: 0 }));
+                  }}
+                >
+                  <option value="newest">Mới nhất</option>
+                  <option value="oldest">Cũ nhất</option>
+                  <option value="priceAsc">Giá tăng dần</option>
+                  <option value="priceDesc">Giá giảm dần</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500">Lọc theo:</span>
+                <select
+                  className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-custom-teal"
+                  value={filterBy}
+                  onChange={(e) => {
+                    setFilterBy(e.target.value);
+                    setPagination(prev => ({ ...prev, currentPage: 0 }));
+                  }}
+                >
+                  <option value="all">Tất cả</option>
+                  <option value="inStock">Còn hàng</option>
+                  <option value="outOfStock">Hết hàng</option>
+                </select>
+              </div>
+              <div className="ml-auto text-sm text-gray-500">
+                Hiển thị {cakes.length} trên tổng số {pagination.totalItems} sản phẩm
+              </div>
+            </div>
+
+            {/* Cakes Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {filteredAndSortedCakes.map((cake) => (
+                <div
+                  key={cake.id}
+                  className="bg-white rounded-xl shadow-sm overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 group border border-gray-100"
+                  onClick={() => router.push(`/cakes/${cake.id}`)}
+                >
+                  <div className="aspect-square relative overflow-hidden">
+                    <Image
+                      src={cake.available_cake_image_files[0]?.file_url || '/images/default-cake.png'}
+                      alt={cake.available_cake_name}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                    {/* Wishlist Button */}
+                    <div className="absolute top-4 right-4 z-10">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleWishlistToggle(cake);
+                        }}
+                        className={`h-10 w-10 rounded-full transition-all duration-200 backdrop-blur-sm ${items.some(item => item.id === cake.id)
+                          ? 'bg-pink-50 border-pink-500 hover:bg-pink-100'
+                          : 'bg-white/80 border-white hover:bg-white'
+                          }`}
+                      >
+                        <Heart
+                          className={`h-4 w-4 transition-colors duration-200 ${items.some(item => item.id === cake.id)
+                            ? 'fill-pink-500 text-pink-500'
+                            : 'text-gray-700'
+                            }`}
+                        />
+                      </Button>
                     </div>
-                  </DialogContent>
-                </Dialog>
+                  </div>
+                  <div className="p-5">
+                    <h3 className="text-xl font-semibold text-gray-900 group-hover:text-custom-teal transition-colors duration-200">{cake.available_cake_name}</h3>
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                        {cake.available_cake_type}
+                      </span>
+                      <span className={`text-sm px-3 py-1 rounded-full ${cake.available_cake_quantity > 0
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
+                        }`}>
+                        {cake.available_cake_quantity > 0
+                          ? `${cake.available_cake_quantity} sản phẩm có sẵn`
+                          : 'Hết hàng'}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-3 line-clamp-2">{cake.available_cake_description}</p>
+                    <div className="mt-4 flex items-center justify-between">
+                      <span className="text-xl font-bold text-custom-teal">
+                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(cake.available_cake_price)}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-custom-teal text-custom-teal hover:bg-custom-teal hover:text-white transition-colors duration-200"
+                      >
+                        Xem chi tiết
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
+
+            {/* Pagination */}
+            {pagination.totalPages > 1 && (
+              <div className="mt-8 flex justify-center">
+                <div className="flex space-x-1">
+                  <Button
+                    variant="outline"
+                    className="w-10 h-10 p-0 border-gray-300 dark:border-gray-700"
+                    onClick={() => handlePageChange(Math.max(0, pagination.currentPage - 1))}
+                    disabled={pagination.currentPage === 0}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+
+                  {Array.from({ length: pagination.totalPages }, (_, i) => (
+                    <Button
+                      key={i}
+                      variant="outline"
+                      className={`w-10 h-10 p-0 border-gray-300 dark:border-gray-700 ${pagination.currentPage === i ? "bg-custom-teal text-white" : ""
+                        }`}
+                      onClick={() => handlePageChange(i)}
+                    >
+                      {i + 1}
+                    </Button>
+                  ))}
+
+                  <Button
+                    variant="outline"
+                    className="w-10 h-10 p-0 border-gray-300 dark:border-gray-700"
+                    onClick={() => handlePageChange(Math.min(pagination.totalPages - 1, pagination.currentPage + 1))}
+                    disabled={pagination.currentPage === pagination.totalPages - 1}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </TabsContent>
 
