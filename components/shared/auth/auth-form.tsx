@@ -31,6 +31,7 @@ interface Props<T extends FieldValues> {
   defaultValues: T;
   onSubmit: (data: T) => Promise<{ success: boolean; error?: string }>;
   type: "SIGN_IN" | "SIGN_UP";
+  isLoading?: boolean;
 }
 
 const AuthForm = <T extends FieldValues>({
@@ -38,6 +39,7 @@ const AuthForm = <T extends FieldValues>({
   schema,
   defaultValues,
   onSubmit,
+  isLoading = false,
 }: Props<T>) => {
   const router = useRouter();
 
@@ -108,8 +110,8 @@ const AuthForm = <T extends FieldValues>({
             />
           ))}
 
-          <Button type="submit" className="form-btn">
-            {isSignIn ? "Sign In" : "Sign Up"}
+          <Button type="submit" className="form-btn" disabled={isLoading}>
+            {isLoading ? "Loading..." : (isSignIn ? "Sign In" : "Sign Up")}
           </Button>
         </form>
       </Form>
