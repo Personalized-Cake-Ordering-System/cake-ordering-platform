@@ -21,23 +21,25 @@ import {
 
 interface Order {
     id: string;
-    orderCode: string;
-    status: 'pending' | 'processing' | 'completed' | 'cancelled';
-    total: number;
-    createdAt: string;
-    items: {
-        id: string;
-        name: string;
-        quantity: number;
-        price: number;
-        imageUrl?: string;
-    }[];
-    deliveryAddress: string;
-    deliveryMethod: 'standard' | 'express';
+    order_code: string;
+    order_status: string;
+    total_customer_paid: number;
+    created_at: string;
+    shipping_address: string;
+    shipping_type: string;
+    shipping_fee: number;
+    total_product_price: number;
+    bakery: {
+        bakery_name: string;
+        address: string;
+    };
+    paid_at: string | null;
+    pickup_time: string;
+    payment_type: string;
 }
 
 type SortOption = 'newest' | 'oldest' | 'highest' | 'lowest' | 'status';
-type StatusFilter = 'all' | 'pending' | 'processing' | 'completed' | 'cancelled';
+type StatusFilter = 'all' | 'PENDING' | 'SHIPPING' | 'COMPLETED';
 
 const OrderHistoryPage = () => {
     const router = useRouter();
@@ -66,65 +68,19 @@ const OrderHistoryPage = () => {
                     return;
                 }
 
-                // TODO: Replace with actual API call
-                // const response = await fetch(`/api/orders?userId=${decodedToken.id}`);
-                // const data = await response.json();
-
-                // Mock data for now
-                const mockOrders: Order[] = [
-                    {
-                        id: '1',
-                        orderCode: 'ORD-2024-001',
-                        status: 'completed',
-                        total: 500000,
-                        createdAt: '2024-03-20T10:00:00Z',
-                        items: [
-                            {
-                                id: '1',
-                                name: 'Chocolate Cake',
-                                quantity: 1,
-                                price: 300000,
-                                imageUrl: '/imagecake3.jpg'
-                            },
-                            {
-                                id: '2',
-                                name: 'Vanilla Cupcake',
-                                quantity: 2,
-                                price: 100000,
-                                imageUrl: '/imagecake.jpg'
-                            }
-                        ],
-                        deliveryAddress: '123 Main St, District 1, Ho Chi Minh City',
-                        deliveryMethod: 'standard'
-                    },
-                    {
-                        id: '2',
-                        orderCode: 'ORD-2024-002',
-                        status: 'processing',
-                        total: 750000,
-                        createdAt: '2024-03-25T15:30:00Z',
-                        items: [
-                            {
-                                id: '3',
-                                name: 'Strawberry Cake',
-                                quantity: 1,
-                                price: 500000,
-                                imageUrl: '/imagecake1.jpeg'
-                            },
-                            {
-                                id: '4',
-                                name: 'Red Velvet Cupcake',
-                                quantity: 5,
-                                price: 250000,
-                                imageUrl: '/imagecake2.jpeg'
-                            }
-                        ],
-                        deliveryAddress: '456 Le Loi St, District 1, Ho Chi Minh City',
-                        deliveryMethod: 'express'
+                const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/customers/${decodedToken.id}/orders?pageIndex=${currentPage - 1}&pageSize=${itemsPerPage}`, {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'accept': '*/*'
                     }
-                ];
+                });
+                const data = await response.json();
 
-                setOrders(mockOrders);
+                if (data.status_code === 200) {
+                    setOrders(data.payload);
+                } else {
+                    setError('Failed to fetch orders');
+                }
                 setLoading(false);
             } catch (err) {
                 setError('Failed to fetch orders');
@@ -144,16 +100,27 @@ const OrderHistoryPage = () => {
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case 'completed':
+            case 'COMPLETED':
                 return 'bg-green-500/10 text-green-500';
-            case 'processing':
+            case 'SHIPPING':
                 return 'bg-blue-500/10 text-blue-500';
-            case 'pending':
+            case 'PENDING':
                 return 'bg-yellow-500/10 text-yellow-500';
-            case 'cancelled':
-                return 'bg-red-500/10 text-red-500';
             default:
                 return 'bg-gray-500/10 text-gray-500';
+        }
+    };
+
+    const getStatusText = (status: string) => {
+        switch (status) {
+            case 'COMPLETED':
+                return 'Đã hoàn thành';
+            case 'SHIPPING':
+                return 'Đang giao hàng';
+            case 'PENDING':
+                return 'Đang chờ xác nhận';
+            default:
+                return status;
         }
     };
 
@@ -165,16 +132,16 @@ const OrderHistoryPage = () => {
         return [...orders].sort((a, b) => {
             switch (sortBy) {
                 case 'newest':
-                    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+                    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
                 case 'oldest':
-                    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+                    return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
                 case 'highest':
-                    return b.total - a.total;
+                    return b.total_customer_paid - a.total_customer_paid;
                 case 'lowest':
-                    return a.total - b.total;
+                    return a.total_customer_paid - b.total_customer_paid;
                 case 'status':
-                    const statusOrder = { 'completed': 0, 'processing': 1, 'pending': 2, 'cancelled': 3 };
-                    return statusOrder[a.status] - statusOrder[b.status];
+                    const statusOrder: Record<string, number> = { 'COMPLETED': 0, 'SHIPPING': 1, 'PENDING': 2 };
+                    return (statusOrder[a.order_status] || 3) - (statusOrder[b.order_status] || 3);
                 default:
                     return 0;
             }
@@ -183,7 +150,7 @@ const OrderHistoryPage = () => {
 
     const filterOrders = (orders: Order[], status: StatusFilter) => {
         if (status === 'all') return orders;
-        return orders.filter(order => order.status === status);
+        return orders.filter(order => order.order_status === status);
     };
 
     const filteredOrders = filterOrders(orders, statusFilter);
@@ -218,7 +185,7 @@ const OrderHistoryPage = () => {
                         <Button
                             variant="outline"
                             className="mt-4"
-                            onClick={() => router.push('/login')}
+                            onClick={() => router.push('/sign-in')}
                         >
                             Đăng nhập
                         </Button>
@@ -236,9 +203,12 @@ const OrderHistoryPage = () => {
                 transition={{ duration: 0.5 }}
             >
                 <div className="flex items-center justify-between mb-8">
-                    <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                        Lịch sử đơn hàng
-                    </h1>
+                    <div>
+                        <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                            Lịch sử đơn hàng
+                        </h1>
+                        <p className="text-muted-foreground mt-2">Xem và quản lý đơn hàng của bạn</p>
+                    </div>
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-4">
                             <div className="flex items-center gap-2">
@@ -278,10 +248,9 @@ const OrderHistoryPage = () => {
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">Tất cả</SelectItem>
-                                        <SelectItem value="pending">Đang chờ</SelectItem>
-                                        <SelectItem value="processing">Đang xử lý</SelectItem>
-                                        <SelectItem value="completed">Đã hoàn thành</SelectItem>
-                                        <SelectItem value="cancelled">Đã hủy</SelectItem>
+                                        <SelectItem value="PENDING">Đang chờ xác nhận</SelectItem>
+                                        <SelectItem value="SHIPPING">Đang giao hàng</SelectItem>
+                                        <SelectItem value="COMPLETED">Đã hoàn thành</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -341,61 +310,62 @@ const OrderHistoryPage = () => {
                                             <div className="flex justify-between items-center">
                                                 <div>
                                                     <CardTitle className="text-xl font-bold mb-2">
-                                                        Đơn hàng #{order.orderCode}
+                                                        Đơn hàng #{order.order_code}
                                                     </CardTitle>
                                                     <div className="flex items-center gap-3">
                                                         <div className="flex items-center gap-1 text-muted-foreground">
                                                             <Calendar className="h-4 w-4" />
                                                             <span className="text-sm">
-                                                                {format(new Date(order.createdAt), 'dd/MM/yyyy')}
+                                                                {format(new Date(order.created_at), 'dd/MM/yyyy')}
                                                             </span>
                                                         </div>
                                                         <div className="flex items-center gap-1 text-muted-foreground">
                                                             <Clock className="h-4 w-4" />
                                                             <span className="text-sm">
-                                                                {format(new Date(order.createdAt), 'HH:mm')}
+                                                                {format(new Date(order.created_at), 'HH:mm')}
                                                             </span>
                                                         </div>
                                                     </div>
                                                 </div>
                                                 <Badge
-                                                    className={`${getStatusColor(order.status)} px-4 py-1.5 rounded-full font-medium`}
+                                                    className={`${getStatusColor(order.order_status)} px-4 py-1.5 rounded-full font-medium`}
                                                 >
-                                                    {order.status === 'completed' ? 'Đã hoàn thành' :
-                                                        order.status === 'processing' ? 'Đang xử lý' :
-                                                            order.status === 'pending' ? 'Đang chờ' :
-                                                                order.status === 'cancelled' ? 'Đã hủy' : order.status}
+                                                    {getStatusText(order.order_status)}
                                                 </Badge>
                                             </div>
                                         </CardHeader>
                                         <CardContent className="p-6">
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                 <div>
-                                                    <h4 className="font-semibold mb-3 text-lg">Sản phẩm</h4>
+                                                    <h4 className="font-semibold mb-3 text-lg">Thông tin đơn hàng</h4>
                                                     <div className="space-y-3">
-                                                        {order.items.map((item) => (
-                                                            <div key={item.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
-                                                                <div className="h-14 w-14 bg-muted rounded-lg overflow-hidden flex items-center justify-center">
-                                                                    {item.imageUrl ? (
-                                                                        <Image
-                                                                            src={item.imageUrl}
-                                                                            alt={item.name}
-                                                                            width={56}
-                                                                            height={56}
-                                                                            className="h-full w-full object-cover"
-                                                                        />
-                                                                    ) : (
-                                                                        <Package className="h-6 w-6 text-muted-foreground" />
-                                                                    )}
-                                                                </div>
-                                                                <div>
-                                                                    <p className="font-medium">{item.name}</p>
-                                                                    <p className="text-sm text-muted-foreground">
-                                                                        {item.quantity} x {formatVND(item.price)}
-                                                                    </p>
-                                                                </div>
+                                                        <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                                                            <div className="bg-primary/10 p-2 rounded-full">
+                                                                <Package className="h-4 w-4 text-primary" />
                                                             </div>
-                                                        ))}
+                                                            <div>
+                                                                <p className="text-sm font-medium">Tổng tiền sản phẩm</p>
+                                                                <p className="text-sm text-muted-foreground">{formatVND(order.total_product_price)}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                                                            <div className="bg-primary/10 p-2 rounded-full">
+                                                                <Package className="h-4 w-4 text-primary" />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-sm font-medium">Phí vận chuyển</p>
+                                                                <p className="text-sm text-muted-foreground">{formatVND(order.shipping_fee)}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                                                            <div className="bg-primary/10 p-2 rounded-full">
+                                                                <Package className="h-4 w-4 text-primary" />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-sm font-medium">Tổng thanh toán</p>
+                                                                <p className="text-sm text-muted-foreground">{formatVND(order.total_customer_paid)}</p>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div>
@@ -405,14 +375,22 @@ const OrderHistoryPage = () => {
                                                             <div className="bg-primary/10 p-2 rounded-full">
                                                                 <MapPin className="h-4 w-4 text-primary" />
                                                             </div>
-                                                            <p className="text-sm">{order.deliveryAddress}</p>
+                                                            <p className="text-sm">{order.shipping_address}</p>
                                                         </div>
                                                         <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted/50 transition-colors">
                                                             <div className="bg-primary/10 p-2 rounded-full">
                                                                 <Package className="h-4 w-4 text-primary" />
                                                             </div>
                                                             <p className="text-sm">
-                                                                {order.deliveryMethod === 'express' ? 'Giao hàng nhanh' : 'Giao hàng tiêu chuẩn'}
+                                                                {order.shipping_type === 'DELIVERY' ? 'Giao hàng tận nơi' : 'Nhận tại cửa hàng'}
+                                                            </p>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                                                            <div className="bg-primary/10 p-2 rounded-full">
+                                                                <Calendar className="h-4 w-4 text-primary" />
+                                                            </div>
+                                                            <p className="text-sm">
+                                                                Thời gian nhận: {format(new Date(order.pickup_time), 'dd/MM/yyyy HH:mm')}
                                                             </p>
                                                         </div>
                                                     </div>
@@ -421,7 +399,7 @@ const OrderHistoryPage = () => {
                                             <Separator className="my-6" />
                                             <div className="flex justify-between items-center">
                                                 <div className="text-xl font-bold text-primary">
-                                                    Tổng tiền: {formatVND(order.total)}
+                                                    Tổng tiền: {formatVND(order.total_customer_paid)}
                                                 </div>
                                                 <Button
                                                     variant="outline"
