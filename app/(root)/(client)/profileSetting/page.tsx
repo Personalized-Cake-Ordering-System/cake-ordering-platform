@@ -49,39 +49,59 @@ export default function ProfileSettings() {
     useEffect(() => {
         const fetchCustomerData = async () => {
             try {
-                const token = localStorage.getItem("token");
+                const token = localStorage.getItem("accessToken");
+                console.log("Token from localStorage:", token);
+
                 if (!token) {
+                    console.log("No token found, redirecting to sign-in");
                     router.push("/sign-in");
                     return;
                 }
 
                 // Get customer ID from token
-                const tokenPayload = JSON.parse(atob(token.split('.')[1]));
-                const customerId = tokenPayload.id;
+                try {
+                    const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+                    console.log("Token payload:", tokenPayload);
+                    const customerId = tokenPayload.id;
+                    console.log("Customer ID from token:", customerId);
 
-                const response = await fetch(
-                    `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/customers/${customerId}`,
-                    {
-                        headers: {
-                            "Authorization": `Bearer ${token}`
+                    const response = await fetch(
+                        `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/customers/${customerId}`,
+                        {
+                            headers: {
+                                "Authorization": `Bearer ${token}`
+                            }
                         }
+                    );
+
+                    console.log("API Response status:", response.status);
+                    const data = await response.json();
+                    console.log("API Response data:", data);
+
+                    if (!response.ok) {
+                        throw new Error("Failed to fetch customer data");
                     }
-                );
 
-                if (!response.ok) {
-                    throw new Error("Failed to fetch customer data");
+                    if (data.status_code === 200 && data.payload) {
+                        setCustomerData(data.payload);
+                        setFormData({
+                            name: data.payload.name,
+                            phone: data.payload.phone,
+                            address: data.payload.address,
+                            latitude: data.payload.latitude,
+                            longitude: data.payload.longitude,
+                            password: ""
+                        });
+                    } else {
+                        throw new Error("Invalid response format");
+                    }
+                } catch (error) {
+                    toast({
+                        title: "Error",
+                        description: "Failed to parse token",
+                        variant: "destructive",
+                    });
                 }
-
-                const data = await response.json();
-                setCustomerData(data.payload);
-                setFormData({
-                    name: data.payload.name,
-                    phone: data.payload.phone,
-                    address: data.payload.address,
-                    latitude: data.payload.latitude,
-                    longitude: data.payload.longitude,
-                    password: ""
-                });
             } catch (error) {
                 toast({
                     title: "Error",
@@ -101,7 +121,7 @@ export default function ProfileSettings() {
         setIsSaving(true);
 
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("accessToken");
             if (!token) {
                 router.push("/sign-in");
                 return;
@@ -127,10 +147,17 @@ export default function ProfileSettings() {
                 throw new Error("Failed to update profile");
             }
 
+            // Show success toast and wait a bit before redirecting
             toast({
                 title: "Success",
                 description: "Profile updated successfully",
             });
+
+            // Wait for 1 second to ensure toast is shown
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // Redirect to homepage after successful update
+            router.push("/");
         } catch (error) {
             toast({
                 title: "Error",
