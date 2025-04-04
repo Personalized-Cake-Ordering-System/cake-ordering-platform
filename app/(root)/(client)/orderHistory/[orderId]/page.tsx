@@ -55,7 +55,7 @@ interface Order {
         phone: string;
         address: string;
     };
-    transaction: {
+    transaction?: {
         amount: number;
         gate_way: string;
         transaction_date: string;
@@ -86,62 +86,73 @@ const OrderDetailsPage = ({ params }: { params: { orderId: string } }) => {
                     return;
                 }
 
-                // TODO: Replace with actual API call
-                // const response = await fetch(`/api/orders/${params.orderId}`);
-                // const data = await response.json();
+                const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/orders/${params.orderId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
 
-                // Mock data for now
-                const mockOrder: Order = {
-                    id: params.orderId,
-                    order_code: '202504040515492052',
-                    order_status: 'WAITING_BAKERY_CONFIRM',
-                    total_customer_paid: 65010,
-                    total_product_price: 10,
-                    shipping_fee: 65000,
-                    shipping_distance: 11.322,
-                    shipping_time: 0.6108333333333333,
-                    shipping_type: 'DELIVERY',
-                    commission_rate: 0.08,
-                    app_commission_fee: 5200.8,
-                    shop_revenue: 59809.2,
-                    order_note: '',
-                    pickup_time: '2025-04-04T05:15:48.26',
-                    payment_type: 'QR_CODE',
-                    phone_number: '09194777151',
-                    shipping_address: 'TP BIEN HOA, Quận 1, TP. Hồ Chí Minh',
-                    latitude: '10.7753882',
-                    longitude: '106.702825',
-                    paid_at: '2025-04-04T05:20:35.753737',
-                    order_details: [
-                        {
-                            id: 'a05ef986-41f3-4967-ad10-7c7235c7d76d',
-                            quantity: 1,
-                            sub_total_price: 10,
-                            cake_note: '',
-                            available_cake_id: '1b7a6556-06b5-4cac-9840-8e82428066cb'
-                        }
-                    ],
+                if (!response.ok) {
+                    throw new Error('Failed to fetch order details');
+                }
+
+                const data = await response.json();
+
+                if (data.status_code !== 200) {
+                    throw new Error(data.errors?.[0] || 'Failed to fetch order details');
+                }
+
+                const orderData = data.payload;
+                const formattedOrder: Order = {
+                    id: orderData.id,
+                    order_code: orderData.order_code,
+                    order_status: orderData.order_status,
+                    total_customer_paid: orderData.total_customer_paid,
+                    total_product_price: orderData.total_product_price,
+                    shipping_fee: orderData.shipping_fee,
+                    shipping_distance: orderData.shipping_distance,
+                    shipping_time: orderData.shipping_time,
+                    shipping_type: orderData.shipping_type,
+                    commission_rate: orderData.commission_rate,
+                    app_commission_fee: orderData.app_commission_fee,
+                    shop_revenue: orderData.shop_revenue,
+                    order_note: orderData.order_note,
+                    pickup_time: orderData.pickup_time,
+                    payment_type: orderData.payment_type,
+                    phone_number: orderData.phone_number,
+                    shipping_address: orderData.shipping_address,
+                    latitude: orderData.latitude,
+                    longitude: orderData.longitude,
+                    paid_at: orderData.paid_at,
+                    order_details: orderData.order_details.map((detail: any) => ({
+                        id: detail.id,
+                        quantity: detail.quantity,
+                        sub_total_price: detail.sub_total_price,
+                        cake_note: detail.cake_note,
+                        available_cake_id: detail.available_cake_id,
+                        shop_image_files: detail.available_cake?.shop_image_files?.[0]
+                    })),
                     customer: {
-                        name: 'David Lee',
-                        email: 'david.lee@example.com',
-                        phone: '0976543210',
-                        address: '654 Street, City, Country'
+                        name: orderData.customer.name,
+                        email: orderData.customer.email,
+                        phone: orderData.customer.phone,
+                        address: orderData.customer.address
                     },
                     bakery: {
-                        bakery_name: 'BreadTalk',
-                        email: 'breadtalk@gmail.com',
-                        phone: '0772244868',
-                        address: 'Quầy gate 10 - Khu cách ly ga đi quốc nội, Sân bay Tân Sơn Nhất, đường Trường Sơn, Phường 2, Tân Bình, Thành phố Hồ Chí Minh'
+                        bakery_name: orderData.bakery.bakery_name,
+                        email: orderData.bakery.email,
+                        phone: orderData.bakery.phone,
+                        address: orderData.bakery.address
                     },
-                    transaction: {
-                        amount: 65010,
-                        gate_way: 'TPBank',
-                        transaction_date: '2025-04-04 12:20:31',
-                        account_number: '00005992966'
-                    }
+                    transaction: orderData.transaction ? {
+                        amount: orderData.transaction.amount,
+                        gate_way: orderData.transaction.gate_way,
+                        transaction_date: orderData.transaction.transaction_date,
+                        account_number: orderData.transaction.account_number
+                    } : undefined
                 };
 
-                setOrder(mockOrder);
+                setOrder(formattedOrder);
                 setLoading(false);
             } catch (err) {
                 setError('Failed to fetch order details');
@@ -400,10 +411,10 @@ const OrderDetailsPage = ({ params }: { params: { orderId: string } }) => {
                                     <div className="space-y-1">
                                         <p className="text-sm font-medium">{order.payment_type === 'QR_CODE' ? 'Thanh toán QR Code' : 'Thanh toán trực tiếp'}</p>
                                         <p className="text-xs text-muted-foreground">
-                                            Ngân hàng: {order.transaction.gate_way}
+                                            Ngân hàng: {order.transaction?.gate_way}
                                         </p>
                                         <p className="text-xs text-muted-foreground">
-                                            Số tài khoản: {order.transaction.account_number}
+                                            Số tài khoản: {order.transaction?.account_number}
                                         </p>
                                         <p className="text-xs text-muted-foreground">
                                             Thời gian thanh toán: {format(new Date(order.paid_at), 'dd/MM/yyyy HH:mm')}

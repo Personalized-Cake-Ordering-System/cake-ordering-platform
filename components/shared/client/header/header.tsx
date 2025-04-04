@@ -74,6 +74,12 @@ const Header = () => {
     setIsLoggedIn(!!token);
   }, []);
 
+  const handleLogout = () => {
+    localStorage.clear();
+    setIsLoggedIn(false);
+    router.push('/');
+  };
+
   const messageCount = 1;
   const wishlistCount = 1;
   const cartCount = 1;
@@ -158,6 +164,12 @@ const Header = () => {
                       >
                         <ShoppingBag className="h-4 w-4" />
                         <span>Order History</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="flex items-center gap-2 text-red-500 hover:text-red-600"
+                        onClick={handleLogout}
+                      >
+                        <span>Logout</span>
                       </DropdownMenuItem>
                       {/* <DropdownMenuItem
                         className="flex items-center gap-2"

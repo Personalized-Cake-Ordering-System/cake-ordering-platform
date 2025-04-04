@@ -309,7 +309,7 @@ const CakeDetail = () => {
                 </div>
                 <div className="flex items-center space-x-2">
                   <Truck className="h-5 w-5 text-pink-500" />
-                  <span className="text-gray-600 dark:text-gray-300">Free delivery</span>
+                  <span className="text-gray-600 dark:text-gray-300">Delivery fee cheap</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <ShieldCheck className="h-5 w-5 text-pink-500" />
