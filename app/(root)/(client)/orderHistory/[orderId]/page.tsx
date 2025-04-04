@@ -14,28 +14,52 @@ import Image from 'next/image';
 
 interface Order {
     id: string;
-    orderCode: string;
-    status: 'pending' | 'processing' | 'completed' | 'cancelled';
-    total: number;
-    subtotal: number;
-    tax: number;
-    deliveryFee: number;
-    createdAt: string;
-    items: {
+    order_code: string;
+    order_status: string;
+    total_customer_paid: number;
+    total_product_price: number;
+    shipping_fee: number;
+    shipping_distance: number;
+    shipping_time: number;
+    shipping_type: string;
+    commission_rate: number;
+    app_commission_fee: number;
+    shop_revenue: number;
+    order_note: string;
+    pickup_time: string;
+    payment_type: string;
+    phone_number: string;
+    shipping_address: string;
+    latitude: string;
+    longitude: string;
+    paid_at: string;
+    order_details: {
         id: string;
-        name: string;
         quantity: number;
-        price: number;
-        imageUrl?: string;
-        note?: string;
+        sub_total_price: number;
+        cake_note: string;
+        available_cake_id: string;
+        shop_image_files?: {
+            file_url: string;
+        };
     }[];
-    deliveryAddress: string;
-    deliveryMethod: 'standard' | 'express';
-    paymentMethod: string;
-    customerInfo: {
+    customer: {
         name: string;
         email: string;
         phone: string;
+        address: string;
+    };
+    bakery: {
+        bakery_name: string;
+        email: string;
+        phone: string;
+        address: string;
+    };
+    transaction: {
+        amount: number;
+        gate_way: string;
+        transaction_date: string;
+        account_number: string;
     };
 }
 
@@ -69,37 +93,51 @@ const OrderDetailsPage = ({ params }: { params: { orderId: string } }) => {
                 // Mock data for now
                 const mockOrder: Order = {
                     id: params.orderId,
-                    orderCode: 'ORD-2024-001',
-                    status: 'completed',
-                    total: 500000,
-                    subtotal: 450000,
-                    tax: 36000,
-                    deliveryFee: 14000,
-                    createdAt: '2024-03-20T10:00:00Z',
-                    items: [
+                    order_code: '202504040515492052',
+                    order_status: 'WAITING_BAKERY_CONFIRM',
+                    total_customer_paid: 65010,
+                    total_product_price: 10,
+                    shipping_fee: 65000,
+                    shipping_distance: 11.322,
+                    shipping_time: 0.6108333333333333,
+                    shipping_type: 'DELIVERY',
+                    commission_rate: 0.08,
+                    app_commission_fee: 5200.8,
+                    shop_revenue: 59809.2,
+                    order_note: '',
+                    pickup_time: '2025-04-04T05:15:48.26',
+                    payment_type: 'QR_CODE',
+                    phone_number: '09194777151',
+                    shipping_address: 'TP BIEN HOA, Quận 1, TP. Hồ Chí Minh',
+                    latitude: '10.7753882',
+                    longitude: '106.702825',
+                    paid_at: '2025-04-04T05:20:35.753737',
+                    order_details: [
                         {
-                            id: '1',
-                            name: 'Bánh Sô-cô-la',
+                            id: 'a05ef986-41f3-4967-ad10-7c7235c7d76d',
                             quantity: 1,
-                            price: 300000,
-                            imageUrl: '/imagecake2.jpeg',
-                            note: 'Lời chúc mừng sinh nhật'
-                        },
-                        {
-                            id: '2',
-                            name: 'Bánh Cupcake Vani',
-                            quantity: 2,
-                            price: 100000,
-                            imageUrl: '/imagecake1.jpeg'
+                            sub_total_price: 10,
+                            cake_note: '',
+                            available_cake_id: '1b7a6556-06b5-4cac-9840-8e82428066cb'
                         }
                     ],
-                    deliveryAddress: '123 Đường Chính, Quận 1, Thành phố Hồ Chí Minh',
-                    deliveryMethod: 'standard',
-                    paymentMethod: 'Thẻ tín dụng',
-                    customerInfo: {
-                        name: 'Nguyễn Văn A',
-                        email: 'nguyenvana@example.com',
-                        phone: '+84 123 456 789'
+                    customer: {
+                        name: 'David Lee',
+                        email: 'david.lee@example.com',
+                        phone: '0976543210',
+                        address: '654 Street, City, Country'
+                    },
+                    bakery: {
+                        bakery_name: 'BreadTalk',
+                        email: 'breadtalk@gmail.com',
+                        phone: '0772244868',
+                        address: 'Quầy gate 10 - Khu cách ly ga đi quốc nội, Sân bay Tân Sơn Nhất, đường Trường Sơn, Phường 2, Tân Bình, Thành phố Hồ Chí Minh'
+                    },
+                    transaction: {
+                        amount: 65010,
+                        gate_way: 'TPBank',
+                        transaction_date: '2025-04-04 12:20:31',
+                        account_number: '00005992966'
                     }
                 };
 
@@ -123,13 +161,13 @@ const OrderDetailsPage = ({ params }: { params: { orderId: string } }) => {
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case 'completed':
+            case 'COMPLETED':
                 return 'bg-green-500/10 text-green-500';
-            case 'processing':
+            case 'PROCESSING':
                 return 'bg-blue-500/10 text-blue-500';
-            case 'pending':
+            case 'WAITING_BAKERY_CONFIRM':
                 return 'bg-yellow-500/10 text-yellow-500';
-            case 'cancelled':
+            case 'CANCELLED':
                 return 'bg-red-500/10 text-red-500';
             default:
                 return 'bg-gray-500/10 text-gray-500';
@@ -212,20 +250,20 @@ const OrderDetailsPage = ({ params }: { params: { orderId: string } }) => {
                             <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 p-6">
                                 <div className="flex justify-between items-center">
                                     <div>
-                                        <CardTitle className="text-xl font-bold">Đơn hàng #{order.orderCode}</CardTitle>
+                                        <CardTitle className="text-xl font-bold">Đơn hàng #{order.order_code}</CardTitle>
                                         <div className="flex items-center gap-2 mt-2">
                                             <Calendar className="h-4 w-4 text-primary" />
                                             <span className="text-sm text-muted-foreground">
-                                                {format(new Date(order.createdAt), 'MMM dd, yyyy')}
+                                                {format(new Date(order.paid_at), 'MMM dd, yyyy')}
                                             </span>
                                             <Clock className="h-4 w-4 text-primary ml-2" />
                                             <span className="text-sm text-muted-foreground">
-                                                {format(new Date(order.createdAt), 'hh:mm a')}
+                                                {format(new Date(order.paid_at), 'hh:mm a')}
                                             </span>
                                         </div>
                                     </div>
-                                    <Badge className={`${getStatusColor(order.status)} px-4 py-1 rounded-full font-medium`}>
-                                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                                    <Badge className={`${getStatusColor(order.order_status)} px-4 py-1 rounded-full font-medium`}>
+                                        {order.order_status.charAt(0).toUpperCase() + order.order_status.slice(1)}
                                     </Badge>
                                 </div>
                             </CardHeader>
@@ -234,17 +272,17 @@ const OrderDetailsPage = ({ params }: { params: { orderId: string } }) => {
                                     <div>
                                         <h3 className="font-semibold text-lg mb-4">Sản phẩm đã đặt</h3>
                                         <div className="space-y-4">
-                                            {order.items.map((item) => (
+                                            {order.order_details.map((item) => (
                                                 <motion.div
                                                     key={item.id}
                                                     className="flex gap-4 p-4 rounded-lg hover:bg-muted/50 transition-colors"
                                                     whileHover={{ scale: 1.01 }}
                                                 >
                                                     <div className="relative h-24 w-24 flex-shrink-0 rounded-lg overflow-hidden">
-                                                        {item.imageUrl ? (
+                                                        {item.available_cake_id ? (
                                                             <Image
-                                                                src={item.imageUrl}
-                                                                alt={item.name}
+                                                                src={item.shop_image_files?.file_url || ''}
+                                                                alt={item.available_cake_id}
                                                                 fill
                                                                 className="object-cover"
                                                             />
@@ -255,18 +293,18 @@ const OrderDetailsPage = ({ params }: { params: { orderId: string } }) => {
                                                         )}
                                                     </div>
                                                     <div className="flex-1">
-                                                        <h4 className="font-medium text-lg">{item.name}</h4>
-                                                        {item.note && (
+                                                        <h4 className="font-medium text-lg">{item.available_cake_id}</h4>
+                                                        {item.cake_note && (
                                                             <p className="text-sm text-muted-foreground mt-1">
-                                                                Ghi chú: {item.note}
+                                                                Ghi chú: {item.cake_note}
                                                             </p>
                                                         )}
                                                         <div className="flex justify-between items-center mt-2">
                                                             <p className="text-sm text-muted-foreground">
-                                                                {item.quantity} x {formatVND(item.price)}
+                                                                {item.quantity} x {formatVND(item.sub_total_price)}
                                                             </p>
                                                             <p className="font-medium text-primary">
-                                                                {formatVND(item.price * item.quantity)}
+                                                                {formatVND(item.sub_total_price * item.quantity)}
                                                             </p>
                                                         </div>
                                                     </div>
@@ -282,22 +320,16 @@ const OrderDetailsPage = ({ params }: { params: { orderId: string } }) => {
                                         <div className="space-y-3">
                                             <div className="flex justify-between text-sm">
                                                 <span className="text-muted-foreground">Tạm tính</span>
-                                                <span>{formatVND(order.subtotal)}</span>
+                                                <span>{formatVND(order.total_product_price)}</span>
                                             </div>
                                             <div className="flex justify-between text-sm">
-                                                <span className="text-muted-foreground">Thuế (8%)</span>
-                                                <span>{formatVND(order.tax)}</span>
-                                            </div>
-                                            <div className="flex justify-between text-sm">
-                                                <span className="text-muted-foreground">
-                                                    {order.deliveryMethod === 'express' ? 'Giao hàng nhanh' : 'Giao hàng tiêu chuẩn'}
-                                                </span>
-                                                <span>{formatVND(order.deliveryFee)}</span>
+                                                <span className="text-muted-foreground">Phí vận chuyển</span>
+                                                <span>{formatVND(order.shipping_fee)}</span>
                                             </div>
                                             <Separator className="my-2" />
                                             <div className="flex justify-between font-bold text-lg">
                                                 <span>Tổng cộng</span>
-                                                <span className="text-primary">{formatVND(order.total)}</span>
+                                                <span className="text-primary">{formatVND(order.total_customer_paid)}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -316,15 +348,15 @@ const OrderDetailsPage = ({ params }: { params: { orderId: string } }) => {
                                 <div className="space-y-3">
                                     <p className="text-sm flex items-center gap-2">
                                         <span className="text-muted-foreground">Họ tên:</span>
-                                        <span className="font-medium">{order.customerInfo.name}</span>
+                                        <span className="font-medium">{order.customer.name}</span>
                                     </p>
                                     <p className="text-sm flex items-center gap-2">
                                         <span className="text-muted-foreground">Email:</span>
-                                        <span className="font-medium">{order.customerInfo.email}</span>
+                                        <span className="font-medium">{order.customer.email}</span>
                                     </p>
                                     <p className="text-sm flex items-center gap-2">
                                         <span className="text-muted-foreground">Số điện thoại:</span>
-                                        <span className="font-medium">{order.customerInfo.phone}</span>
+                                        <span className="font-medium">{order.customer.phone}</span>
                                     </p>
                                 </div>
                             </CardContent>
@@ -337,13 +369,21 @@ const OrderDetailsPage = ({ params }: { params: { orderId: string } }) => {
                             <CardContent className="p-6">
                                 <div className="space-y-4">
                                     <div className="flex items-center gap-3">
-                                        <MapPin className="h-5 w-5 text-primary" />
-                                        <p className="text-sm">{order.deliveryAddress}</p>
-                                    </div>
-                                    <div className="flex items-center gap-3">
                                         <Truck className="h-5 w-5 text-primary" />
                                         <p className="text-sm">
-                                            {order.deliveryMethod === 'express' ? 'Giao hàng nhanh' : 'Giao hàng tiêu chuẩn'}
+                                            {order.shipping_type === 'DELIVERY' ? 'Giao hàng' : 'Nhận tại cửa hàng'}
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <Clock className="h-5 w-5 text-primary" />
+                                        <p className="text-sm">
+                                            Thời gian giao hàng dự kiến: {Math.round(order.shipping_time * 60)} phút
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <MapPin className="h-5 w-5 text-primary" />
+                                        <p className="text-sm">
+                                            Khoảng cách: {order.shipping_distance.toFixed(2)} km
                                         </p>
                                     </div>
                                 </div>
@@ -357,7 +397,18 @@ const OrderDetailsPage = ({ params }: { params: { orderId: string } }) => {
                             <CardContent className="p-6">
                                 <div className="flex items-center gap-3">
                                     <CreditCard className="h-5 w-5 text-primary" />
-                                    <p className="text-sm font-medium">{order.paymentMethod}</p>
+                                    <div className="space-y-1">
+                                        <p className="text-sm font-medium">{order.payment_type === 'QR_CODE' ? 'Thanh toán QR Code' : 'Thanh toán trực tiếp'}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            Ngân hàng: {order.transaction.gate_way}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                            Số tài khoản: {order.transaction.account_number}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                            Thời gian thanh toán: {format(new Date(order.paid_at), 'dd/MM/yyyy HH:mm')}
+                                        </p>
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
