@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Heart,
   Menu,
@@ -10,7 +10,17 @@ import {
   Search,
   ShoppingCart,
   Zap,
+  User,
+  Settings,
+  ShoppingBag,
 } from "lucide-react";
+import { useSession } from "next-auth/react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,6 +66,13 @@ interface NavItemType {
 
 const Header = () => {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('accessToken');
+    setIsLoggedIn(!!token);
+  }, []);
 
   const messageCount = 1;
   const wishlistCount = 1;
@@ -120,12 +137,45 @@ const Header = () => {
             {/* User navigation */}
             <div className="flex items-center space-x-6">
               <div className="hidden md:block">
-                <Link
-                  href="/sign-in"
-                  className="text-gray-800 hover:text-custom-teal dark:text-gray-300 dark:hover:text-custom-teal transition-colors duration-200 font-medium"
-                >
-                  Đăng nhập | Đăng ký
-                </Link>
+                {isLoggedIn ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                        <User className="h-5 w-5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-56" align="end" forceMount>
+                      <DropdownMenuItem
+                        className="flex items-center gap-2"
+                        onClick={() => router.push('/profileSetting')}
+                      >
+                        <User className="h-4 w-4" />
+                        <span>Profile</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="flex items-center gap-2"
+                        onClick={() => router.push('/orderHistory')}
+                      >
+                        <ShoppingBag className="h-4 w-4" />
+                        <span>Order History</span>
+                      </DropdownMenuItem>
+                      {/* <DropdownMenuItem
+                        className="flex items-center gap-2"
+                        onClick={() => router.push('/profile-settings')}
+                      >
+                        <Settings className="h-4 w-4" />
+                        <span>Settings</span>
+                      </DropdownMenuItem> */}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <Link
+                    href="/sign-in"
+                    className="text-gray-800 hover:text-custom-teal dark:text-gray-300 dark:hover:text-custom-teal transition-colors duration-200 font-medium"
+                  >
+                    Đăng nhập | Đăng ký
+                  </Link>
+                )}
               </div>
               <div className="flex items-center space-x-5">
                 <ModeToggleAnimate />

@@ -35,14 +35,14 @@ const WishlistPage = () => {
 
     return (
         <div className="container mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold mb-8">My Wishlist</h1>
+            <h1 className="text-3xl font-bold mb-8">Danh sách yêu thích của tôi</h1>
 
             {items.length === 0 ? (
                 <div className="text-center py-12">
-                    <p className="text-gray-500 mb-4">Your wishlist is empty</p>
+                    <p className="text-gray-500 mb-4">Danh sách yêu thích của bạn đang trống. Hãy thêm những chiếc bánh yêu thích của bạn vào đây!</p>
                     <Link href="/cakes">
                         <Button className="bg-pink-500 hover:bg-pink-600">
-                            Browse Cakes
+                            Xem các loại bánh ngon
                         </Button>
                     </Link>
                 </div>
@@ -72,13 +72,13 @@ const WishlistPage = () => {
                                     <div className="flex justify-between items-start mb-4">
                                         <h3 className="font-semibold text-xl">{item.name}</h3>
                                         <Badge variant="outline" className="bg-transparent border-pink-200 text-pink-500">
-                                            Wishlist
+                                            Đã lưu
                                         </Badge>
                                     </div>
 
                                     <div className="flex justify-between items-center mt-auto pt-4">
                                         <span className="text-xl font-bold text-pink-600">
-                                            ${item.price.toFixed(2)}
+                                            {item.price.toLocaleString('vi-VN')} VND
                                         </span>
                                         <div className="flex gap-2">
                                             <Button
@@ -92,7 +92,7 @@ const WishlistPage = () => {
                                             <Link href={`/cakes/${item.id}`}>
                                                 <Button className="bg-pink-500 hover:bg-pink-600">
                                                     <ShoppingCart className="h-5 w-5 mr-2" />
-                                                    View Details
+                                                    Xem chi tiết
                                                 </Button>
                                             </Link>
                                         </div>
