@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -376,9 +377,11 @@ const OrderHistoryPage = () => {
                                                             <div key={item.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
                                                                 <div className="h-14 w-14 bg-muted rounded-lg overflow-hidden flex items-center justify-center">
                                                                     {item.imageUrl ? (
-                                                                        <img
+                                                                        <Image
                                                                             src={item.imageUrl}
                                                                             alt={item.name}
+                                                                            width={56}
+                                                                            height={56}
                                                                             className="h-full w-full object-cover"
                                                                         />
                                                                     ) : (
