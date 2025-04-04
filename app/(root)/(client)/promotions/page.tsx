@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
+import Image from 'next/image';
 
 interface Voucher {
   id: string;
@@ -86,10 +87,11 @@ export default function PromotionsPage() {
               <div className="w-1/3 relative overflow-hidden">
                 {/* Bakery Image */}
                 <div className="absolute inset-0">
-                  <img
+                  <Image
                     src={voucher.bakery.shop_image_files[0]?.file_url || '/placeholder-bakery.jpg'}
                     alt={voucher.bakery.bakery_name}
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-primary/90 to-primary/60" />
                 </div>
