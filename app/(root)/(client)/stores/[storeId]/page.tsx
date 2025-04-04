@@ -69,9 +69,9 @@ export default async function BakeryPage({ params }: { params: Promise<{ storeId
   };
 
   const breadcrumbItems = [
-    { label: 'Dashboard', href: '/dashboard', isLast: false },
-    { label: 'Bakeries', href: '/dashboard/bakeries', isLast: false },
-    { label: 'Bakery Details', href: `/dashboard/bakeries/${(await params).storeId}`, isLast: true },
+    { label: 'Bảng điều khiển', href: '/dashboard', isLast: false },
+    { label: 'Tiệm bánh', href: '/dashboard/bakeries', isLast: false },
+    { label: 'Chi tiết tiệm bánh', href: `/dashboard/bakeries/${(await params).storeId}`, isLast: true },
   ];
 
   return (

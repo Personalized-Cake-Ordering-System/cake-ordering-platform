@@ -8,6 +8,25 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Copy, CheckCircle, Clock, Loader2 } from 'lucide-react';
+import SignalRNotificationComponent from './signalR';
+
+// Function to decode JWT token
+const decodeJWT = (token: string) => {
+    try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(
+            atob(base64)
+                .split('')
+                .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                .join('')
+        );
+        return JSON.parse(jsonPayload);
+    } catch (error) {
+        console.error('Error decoding JWT token:', error);
+        return null;
+    }
+};
 
 const LoadingQR = () => (
     <div className="w-[300px] h-[300px] mx-auto flex items-center justify-center bg-muted/10 rounded-lg">
@@ -21,6 +40,8 @@ const QRPaymentPage = () => {
     const [copied, setCopied] = useState(false);
     const [countdown, setCountdown] = useState(900); // 15 minutes in seconds
     const [isLoading, setIsLoading] = useState(true);
+    const [paymentSuccess, setPaymentSuccess] = useState(false);
+    const [userId, setUserId] = useState<string>('');
 
     // Add VND currency formatter
     const formatVND = (amount: number) => {
@@ -46,6 +67,21 @@ const QRPaymentPage = () => {
         const savedOrder = localStorage.getItem('currentOrder');
         if (savedOrder) {
             setOrderDetails(JSON.parse(savedOrder));
+        }
+
+        // Get JWT token from localStorage
+        const token = localStorage.getItem('accessToken');
+        if (token) {
+            console.log('JWT Token found in accessToken, decoding...');
+            const decodedToken = decodeJWT(token);
+            if (decodedToken && decodedToken.id) {
+                console.log('Decoded user ID:', decodedToken.id);
+                setUserId(decodedToken.id);
+            } else {
+                console.error('Failed to decode token or no ID found');
+            }
+        } else {
+            console.error('No JWT token found in accessToken');
         }
 
         // Set up countdown timer
@@ -80,6 +116,18 @@ const QRPaymentPage = () => {
         return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
     };
 
+    const handlePaymentSuccess = (orderCode: string) => {
+        console.log('Payment success handler called for order:', orderCode);
+        setPaymentSuccess(true);
+        console.log('Payment success detected for user:', userId, 'order:', orderCode);
+
+        // Add a small delay to ensure the success message is visible before redirecting
+        setTimeout(() => {
+            console.log('Redirecting to payment success page');
+            router.push('/payment-success');
+        }, 2000); // 2 second delay to show the success message
+    };
+
     if (!orderDetails) return null;
 
     return (
@@ -103,6 +151,14 @@ const QRPaymentPage = () => {
                     Back to Checkout
                 </Button>
             </motion.div>
+
+            {/* SignalR Notification Component */}
+            {userId && (
+                <SignalRNotificationComponent
+                    userId={userId}
+                    onPaymentSuccess={handlePaymentSuccess}
+                />
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* QR Code Section */}

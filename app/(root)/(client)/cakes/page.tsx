@@ -113,18 +113,18 @@ const MultiCakes = () => {
         className="mb-16 text-center"
       >
         <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 bg-clip-text text-transparent">
-          Explore Our Delicious Cakes
+          Khám Phá Bánh Ngọt Thơm Ngon
         </h1>
         <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-8">
-          Discover our handcrafted collection of beautiful cakes for every occasion.
-          From birthdays to weddings, weve got the perfect sweet treat for your celebration.
+          Khám phá bộ sưu tập bánh thủ công xinh đẹp của chúng tôi cho mọi dịp.
+          Từ sinh nhật đến đám cưới, chúng tôi có món ngọt hoàn hảo cho lễ kỷ niệm của bạn.
         </p>
         <div className="flex flex-wrap justify-center gap-4">
           <Button size="lg" className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">
-            Custom Order
+            Đặt Hàng Tùy Chỉnh
           </Button>
           <Button size="lg" variant="outline" className="border-pink-500 text-pink-500 hover:bg-pink-50 dark:hover:bg-pink-950">
-            See Bestsellers
+            Xem Bán Chạy Nhất
           </Button>
         </div>
       </motion.div>
@@ -136,7 +136,7 @@ const MultiCakes = () => {
         transition={{ duration: 0.6, delay: 0.2 }}
         className="mb-12"
       >
-        <h2 className="text-2xl font-bold mb-6 text-center">Categories</h2>
+        <h2 className="text-2xl font-bold mb-6 text-center">Danh Mục</h2>
         <div className="flex overflow-x-auto py-2 space-x-4 justify-center">
           <motion.button
             whileHover={{ scale: 1.05 }}
@@ -236,23 +236,39 @@ const MultiCakes = () => {
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       {cake.available_cake_description}
                     </p>
-                    <p className="mt-2">
-                      Available: {cake.available_cake_quantity}
-                    </p>
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${cake.available_cake_quantity > 0
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                        : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                        }`}>
+                        <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                          {cake.available_cake_quantity > 0 ? (
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          ) : (
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                          )}
+                        </svg>
+                        {cake.available_cake_quantity > 0
+                          ? `Còn ${cake.available_cake_quantity} chiếc`
+                          : 'Hết hàng'}
+                      </span>
+                    </div>
                   </CardContent>
 
                   <CardFooter className="flex justify-between items-center pt-0">
                     <div className="flex items-center">
                       <span className="text-lg font-bold text-pink-600">
-                        ${cake.available_cake_price.toFixed(2)}
+                        {cake.available_cake_price.toLocaleString('vi-VN')}₫
                       </span>
                     </div>
                     <Button
                       size="sm"
-                      className="rounded-full bg-pink-500 hover:bg-pink-600"
+                      className="rounded-full bg-pink-500 hover:bg-pink-600 transition-all duration-300 transform hover:scale-105"
                     >
-                      <ShoppingCart className="h-4 w-4 mr-2" />
-                      Add
+                      <span className="flex items-center gap-1">
+                        <ShoppingCart className="h-4 w-4" />
+                        Thêm Vào Giỏ
+                      </span>
                     </Button>
                   </CardFooter>
                 </Card>
@@ -273,24 +289,24 @@ const MultiCakes = () => {
           <div className="p-8 md:p-12 flex flex-col justify-center">
             <Badge className="mb-4 w-fit bg-white/20 hover:bg-white/30 text-white">New Feature</Badge>
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Design Your Dream Cake in 3D
+              Thiết Kế Bánh 3D Theo Ý Muốn
             </h2>
             <p className="text-white/80 mb-6">
-              Unleash your creativity with our interactive 3D cake designer. Customize every detail from flavors to decorations and see your creation come to life!
+              Thỏa sức sáng tạo với công cụ thiết kế bánh 3D tương tác của chúng tôi. Tùy chỉnh mọi chi tiết từ hương vị đến trang trí và xem tác phẩm của bạn hiện thực hóa!
             </p>
             <div className="flex flex-wrap gap-4">
               <Button
                 size="lg"
                 className="bg-white text-pink-600 hover:bg-gray-100"
               >
-                Start Designing
+                Bắt Đầu Thiết Kế
               </Button>
               <Button
                 size="lg"
                 variant="outline"
                 className="border-white text-white hover:bg-white/20"
               >
-                See Examples
+                Xem Ví Dụ
               </Button>
             </div>
           </div>
@@ -325,12 +341,12 @@ const MultiCakes = () => {
         transition={{ duration: 0.6, delay: 0.6 }}
         className="mb-16"
       >
-        <h2 className="text-2xl font-bold mb-8 text-center">Popular Combinations</h2>
+        <h2 className="text-2xl font-bold mb-8 text-center">Bộ Sưu Tập Phổ Biến</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
-            { name: "Birthday Bundle", desc: "Cake + Candles + Party Hats", icon: "🎂", color: "from-blue-500 to-purple-500" },
-            { name: "Wedding Collection", desc: "3-Tier Cake + Toppers + Cake Stand", icon: "💍", color: "from-pink-500 to-red-500" },
-            { name: "Celebration Pack", desc: "Cake + 12 Cupcakes + Gift Box", icon: "🎉", color: "from-green-500 to-teal-500" }
+            { name: "Bộ Sinh Nhật", desc: "Bánh + Nến + Mũ Tiệc", icon: "🎂", color: "from-blue-500 to-purple-500" },
+            { name: "Bộ Đám Cưới", desc: "Bánh 3 Tầng + Đồ Trang Trí + Giá Đỡ", icon: "💍", color: "from-pink-500 to-red-500" },
+            { name: "Bộ Kỷ Niệm", desc: "Bánh + 12 Bánh Cupcake + Hộp Quà", icon: "🎉", color: "from-green-500 to-teal-500" }
           ].map((item, index) => (
             <motion.div
               key={index}
@@ -341,7 +357,7 @@ const MultiCakes = () => {
               <h3 className="text-xl font-bold mb-2">{item.name}</h3>
               <p className="text-white/80 mb-4">{item.desc}</p>
               <Button variant="outline" className="border-white text-white hover:bg-white/20">
-                View Details
+                Xem Chi Tiết
               </Button>
             </motion.div>
           ))}
@@ -355,18 +371,18 @@ const MultiCakes = () => {
         transition={{ duration: 0.6, delay: 0.8 }}
         className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-8 md:p-12 text-center"
       >
-        <h2 className="text-2xl font-bold mb-4">Stay Updated</h2>
+        <h2 className="text-2xl font-bold mb-4">Cập Nhật Tin Tức</h2>
         <p className="text-gray-600 dark:text-gray-300 mb-6 max-w-2xl mx-auto">
-          Subscribe to our newsletter for exclusive offers, new cake designs, and baking tips.
+          Đăng ký nhận bản tin của chúng tôi để nhận ưu đãi độc quyền, thiết kế bánh mới và mẹo làm bánh.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
           <input
             type="email"
-            placeholder="Your email address"
+            placeholder="Địa chỉ email của bạn"
             className="flex-grow px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-pink-500 dark:bg-gray-700 dark:text-white"
           />
           <Button className="bg-pink-500 hover:bg-pink-600">
-            Subscribe
+            Đăng Ký
           </Button>
         </div>
       </motion.div>

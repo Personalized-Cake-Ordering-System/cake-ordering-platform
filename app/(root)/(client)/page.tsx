@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Store } from "lucide-react";
+import Link from "next/link";
 
 import { CakeItem } from "@/components/shared/client/home/cake-item";
 import { CategoryItem } from "@/components/shared/client/home/category-item";
@@ -69,9 +70,11 @@ const HomePage = async () => {
                 Khám phá các cửa hàng bánh chất lượng nhất tại Việt Nam
               </p>
             </div>
-            <Button className="bg-custom-teal hover:bg-custom-pink text-white transition-colors duration-300 shadow-md">
-              XEM TẤT CẢ
-            </Button>
+            <Link href="/stores">
+              <Button className="bg-custom-teal hover:bg-custom-pink text-white transition-colors duration-300 shadow-md">
+                XEM TẤT CẢ
+              </Button>
+            </Link>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
@@ -132,11 +135,10 @@ const HomePage = async () => {
             ].map((category, index) => (
               <button
                 key={category}
-                className={`font-medium pb-2 whitespace-nowrap ${
-                  index === 0
-                    ? "text-custom-teal dark:text-custom-teal border-b-2 border-custom-teal dark:border-custom-teal"
-                    : "text-gray-700 dark:text-gray-400 hover:text-custom-pink dark:hover:text-custom-pink transition-colors duration-300"
-                }`}
+                className={`font-medium pb-2 whitespace-nowrap ${index === 0
+                  ? "text-custom-teal dark:text-custom-teal border-b-2 border-custom-teal dark:border-custom-teal"
+                  : "text-gray-700 dark:text-gray-400 hover:text-custom-pink dark:hover:text-custom-pink transition-colors duration-300"
+                  }`}
               >
                 {category}
               </button>
@@ -148,6 +150,7 @@ const HomePage = async () => {
             {cakes.payload?.map((product) => (
               <CakeItem
                 key={product.id}
+                id={product.id}
                 discount={product.available_cake_quantity}
                 imageUrl={product.available_cake_image_files?.[0]?.file_url}
                 title={product.available_cake_type}
