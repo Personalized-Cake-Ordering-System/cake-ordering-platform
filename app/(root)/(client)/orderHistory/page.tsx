@@ -89,7 +89,7 @@ const OrderHistoryPage = () => {
         };
 
         fetchOrders();
-    }, []);
+    }, [currentPage]);
 
     const formatVND = (amount: number) => {
         return new Intl.NumberFormat('vi-VN', {

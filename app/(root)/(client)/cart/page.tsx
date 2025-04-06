@@ -191,9 +191,9 @@ const CartPage = () => {
           variants={containerVariants}
         >
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-3xl font-bold">Your Cart</h1>
+            <h1 className="text-3xl font-bold">Giỏ Hàng Của Bạn</h1>
             <Badge variant="outline" className="px-3 py-1 text-base">
-              {cartItems.length} {cartItems.length === 1 ? 'Item' : 'Items'}
+              {cartItems.length} {cartItems.length === 1 ? 'Sản Phẩm' : 'Sản Phẩm'}
             </Badge>
           </div>
 
@@ -209,11 +209,11 @@ const CartPage = () => {
               }}
             >
               <ShoppingBag className="w-16 h-16 text-muted-foreground mb-4" />
-              <h2 className="text-2xl font-medium mb-2">Your cart is empty</h2>
-              <p className="text-muted-foreground mb-6">Please go to our cakes collection to choose your favorite cake to buy.</p>
+              <h2 className="text-2xl font-medium mb-2">Giỏ hàng của bạn đang trống</h2>
+              <p className="text-muted-foreground mb-6">Vui lòng xem bộ sưu tập bánh của chúng tôi để chọn chiếc bánh yêu thích của bạn.</p>
               <Button asChild>
                 <Link href="/cakes">
-                  Browse Cakes
+                  Xem Bánh
                 </Link>
               </Button>
             </motion.div>
@@ -272,7 +272,7 @@ const CartPage = () => {
                                       <Trash2 className="w-5 h-5" />
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                      <p>Remove item</p>
+                                      <p>Xóa sản phẩm</p>
                                     </TooltipContent>
                                   </Tooltip>
                                 </TooltipProvider>
@@ -280,7 +280,7 @@ const CartPage = () => {
                             </div>
                             {item.cake_note && (
                               <p className="text-muted-foreground mt-1 mb-4 text-sm">
-                                Note: {item.cake_note}
+                                Ghi chú: {item.cake_note}
                               </p>
                             )}
                           </div>
@@ -311,14 +311,14 @@ const CartPage = () => {
                           </div>
                         </div>
                       </div>
-                      <div className="px-4 pb-4">
+                      {/* <div className="px-4 pb-4">
                         <Button variant="link" className="h-auto p-0 flex items-center text-primary" asChild>
                           <Link href={`/customizeCake?editId=${item.available_cake_id || item.custom_cake_id}`}>
-                            Edit custom cake
+                            Chỉnh sửa bánh tùy chỉnh
                             <ChevronRight className="w-4 h-4 ml-1" />
                           </Link>
                         </Button>
-                      </div>
+                      </div> */}
                     </Card>
                   </motion.div>
                 ))}
@@ -341,10 +341,10 @@ const CartPage = () => {
         >
           <Card className="sticky top-24 border-muted/50">
             <div className="p-6">
-              <h2 className="text-xl font-bold mb-4">Order Summary</h2>
+              <h2 className="text-xl font-bold mb-4">Tổng Đơn Hàng</h2>
               <div className="space-y-3 mb-4">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Subtotal ({cartItems.length} items)</span>
+                  <span className="text-muted-foreground">Tạm tính ({cartItems.length} sản phẩm)</span>
                   <span>{formatVND(cartItems.reduce((sum, item) => sum + item.sub_total_price, 0))}</span>
                 </div>
               </div>
@@ -363,13 +363,13 @@ const CartPage = () => {
                   disabled={cartItems.length === 0}
                   asChild
                 >
-                  <Link href="/checkout">Proceed to Checkout</Link>
+                  <Link href="/checkout">Tiến Hành Thanh Toán</Link>
                 </Button>
               </motion.div>
 
               <div className="flex justify-center mt-4">
                 <Button variant="link" className="text-sm" asChild>
-                  <Link href="/cakes/cakes">Continue Shopping</Link>
+                  <Link href="/cakes">Tiếp Tục Mua Sắm</Link>
                 </Button>
               </div>
             </div>
@@ -382,7 +382,7 @@ const CartPage = () => {
         <Dialog open={showCakeModal} onOpenChange={setShowCakeModal}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle>Cake Details</DialogTitle>
+              <DialogTitle>Chi Tiết Bánh</DialogTitle>
             </DialogHeader>
             <div className="relative w-full h-72">
               {selectedCake.main_image?.file_url ? (
@@ -405,17 +405,17 @@ const CartPage = () => {
             <div className="space-y-4 p-4">
               <div className='flex justify-between'>
                 <div>
-                  <h4 className="font-medium text-lg">Specifications:</h4>
+                  <h4 className="font-medium text-lg">Thông số:</h4>
                   <p className="text-sm text-muted-foreground">
-                    Name: {selectedCake.cake_name}<br />
-                    {selectedCake.cake_note && `Note: ${selectedCake.cake_note}`}
+                    Tên: {selectedCake.cake_name}<br />
+                    {selectedCake.cake_note && `Ghi chú: ${selectedCake.cake_note}`}
                   </p>
                 </div>
                 <div>
-                  <h4 className="font-medium text-lg">Price:</h4>
+                  <h4 className="font-medium text-lg">Giá:</h4>
                   <p className="text-sm text-muted-foreground">
                     {formatVND(selectedCake.sub_total_price)}<br />
-                    Quantity: {selectedCake.quantity}
+                    Số lượng: {selectedCake.quantity}
                   </p>
                 </div>
               </div>
