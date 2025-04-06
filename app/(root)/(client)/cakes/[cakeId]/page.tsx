@@ -54,25 +54,25 @@ const reviews = [
   {
     id: 1,
     name: 'Sarah Johnson',
-    date: '2 weeks ago',
+    date: '2 tuần trước',
     rating: 5,
-    comment: 'Absolutely delicious! The cake was moist and the chocolate flavor was rich without being overwhelming. Everyone at the party loved it!',
+    comment: 'Tuyệt vời! Bánh rất mềm và hương vị sô cô la đậm đà nhưng không quá ngọt. Mọi người trong bữa tiệc đều rất thích!',
     avatar: '/imagecake1.jpeg',
   },
   {
     id: 2,
     name: 'Michael Chen',
-    date: '1 month ago',
+    date: '1 tháng trước',
     rating: 4,
-    comment: 'Great cake and beautiful presentation. Delivery was on time and the cake arrived in perfect condition. Would order again.',
+    comment: 'Bánh ngon và trình bày đẹp mắt. Giao hàng đúng giờ và bánh đến trong tình trạng hoàn hảo. Sẽ đặt lại.',
     avatar: '/imagecake2.jpeg',
   },
   {
     id: 3,
     name: 'Emma Williams',
-    date: '2 months ago',
+    date: '2 tháng trước',
     rating: 5,
-    comment: 'The perfect celebration cake! Rich, decadent and absolutely worth every penny. My husband was thrilled with it for his birthday.',
+    comment: 'Chiếc bánh hoàn hảo cho dịp kỷ niệm! Thơm ngon, sang trọng và hoàn toàn xứng đáng với giá tiền. Chồng tôi rất thích món quà sinh nhật này.',
     avatar: '/imagecake.jpg',
   },
 ];
@@ -215,7 +215,7 @@ const CakeDetail = () => {
       <div className="container mx-auto p-8 flex items-center justify-center h-96">
         <div className="flex flex-col items-center space-y-4">
           <div className="w-12 h-12 border-4 border-pink-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-lg text-pink-600 font-medium">Loading cake details...</p>
+          <p className="text-lg text-pink-600 font-medium">Đang tải thông tin bánh...</p>
         </div>
       </div>
     );
@@ -225,8 +225,8 @@ const CakeDetail = () => {
   if (!cakeData) {
     return (
       <div className="container mx-auto p-8 text-center">
-        <h1 className="text-2xl font-bold mb-4">Cake not found</h1>
-        <Button onClick={() => router.back()}>Go Back</Button>
+        <h1 className="text-2xl font-bold mb-4">Không tìm thấy bánh</h1>
+        <Button onClick={() => router.back()}>Quay Lại</Button>
       </div>
     );
   }
@@ -246,7 +246,7 @@ const CakeDetail = () => {
           className="flex items-center text-gray-600 hover:text-pink-500 transition-colors duration-300"
         >
           <ChevronLeft className="mr-2 h-4 w-4" />
-          Back to Cakes
+          Quay lại danh sách bánh
         </Button>
       </motion.div>
 
@@ -301,19 +301,19 @@ const CakeDetail = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex items-center space-x-2">
                   <CalendarHeart className="h-5 w-5 text-pink-500" />
-                  <span className="text-gray-600 dark:text-gray-300">Size: 6 inches</span>
+                  <span className="text-gray-600 dark:text-gray-300">Kích thước: 15cm</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Clock className="h-5 w-5 text-pink-500" />
-                  <span className="text-gray-600 dark:text-gray-300">Serves: 8-10 people</span>
+                  <span className="text-gray-600 dark:text-gray-300">Phù hợp: 8-10 người</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Truck className="h-5 w-5 text-pink-500" />
-                  <span className="text-gray-600 dark:text-gray-300">Delivery fee cheap</span>
+                  <span className="text-gray-600 dark:text-gray-300">Phí giao hàng thấp</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <ShieldCheck className="h-5 w-5 text-pink-500" />
-                  <span className="text-gray-600 dark:text-gray-300">Quality guaranteed</span>
+                  <span className="text-gray-600 dark:text-gray-300">Đảm bảo chất lượng</span>
                 </div>
               </div>
             </div>
@@ -324,7 +324,7 @@ const CakeDetail = () => {
           {/* Quantity Section */}
           <motion.div variants={fadeIn} className="space-y-8">
             <div>
-              <h3 className="text-lg font-medium mb-3">Quantity</h3>
+              <h3 className="text-lg font-medium mb-3">Số lượng</h3>
               <div className="flex items-center space-x-3">
                 <Button
                   variant="outline"
@@ -357,7 +357,7 @@ const CakeDetail = () => {
                 disabled={cakeData.available_cake_quantity === 0}
               >
                 <ShoppingCart className="mr-2 h-5 w-5" />
-                {cakeData.available_cake_quantity === 0 ? 'Out of Stock' : 'Add to Cart'}
+                {cakeData.available_cake_quantity === 0 ? 'Hết hàng' : 'Thêm vào giỏ hàng'}
               </Button>
 
               <div className="flex gap-3">

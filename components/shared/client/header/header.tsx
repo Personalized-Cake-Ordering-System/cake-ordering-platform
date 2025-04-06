@@ -156,27 +156,27 @@ const Header = () => {
                         onClick={() => router.push('/profileSetting')}
                       >
                         <User className="h-4 w-4" />
-                        <span>Profile</span>
+                        <span>Hồ sơ</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="flex items-center gap-2"
                         onClick={() => router.push('/orderHistory')}
                       >
                         <ShoppingBag className="h-4 w-4" />
-                        <span>Order History</span>
+                        <span>Lịch sử đơn hàng</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="flex items-center gap-2 text-red-500 hover:text-red-600"
                         onClick={handleLogout}
                       >
-                        <span>Logout</span>
+                        <span>Đăng xuất</span>
                       </DropdownMenuItem>
                       {/* <DropdownMenuItem
                         className="flex items-center gap-2"
                         onClick={() => router.push('/profile-settings')}
                       >
                         <Settings className="h-4 w-4" />
-                        <span>Settings</span>
+                        <span>Cài đặt</span>
                       </DropdownMenuItem> */}
                     </DropdownMenuContent>
                   </DropdownMenu>
