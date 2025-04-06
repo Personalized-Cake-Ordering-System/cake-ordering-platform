@@ -904,7 +904,7 @@ const CheckoutPage = () => {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">
-                    {deliveryMethod === 'express' ? 'Express' : 'Standard'} Vận chuyển
+                    {deliveryMethod === 'express' ? 'Tại Cửa Hàng' : 'Giao Tận Nơi'}
                   </span>
                   <span>{formatVND(deliveryFee)}</span>
                 </div>
