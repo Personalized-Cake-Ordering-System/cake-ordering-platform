@@ -510,9 +510,9 @@ const CheckoutPage = () => {
                     name="fullName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Full Name</FormLabel>
+                        <FormLabel>Họ và Tên</FormLabel>
                         <FormControl>
-                          <Input placeholder="John Doe" {...field} />
+                          <Input placeholder="Thanh Tâm" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -538,7 +538,7 @@ const CheckoutPage = () => {
                     name="phone"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Phone Number</FormLabel>
+                        <FormLabel>Số điện thoại</FormLabel>
                         <FormControl>
                           <Input placeholder="(123) 456-7890" {...field} />
                         </FormControl>
@@ -681,7 +681,7 @@ const CheckoutPage = () => {
                   name="deliveryMethod"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-base mb-4 block">Delivery Method</FormLabel>
+                      <FormLabel className="text-base mb-4 block">Phương thức vận chuyển</FormLabel>
                       <FormControl>
                         <RadioGroup
                           value={field.value}
@@ -705,9 +705,9 @@ const CheckoutPage = () => {
                               <div className="flex items-start mb-1">
                                 <RadioGroupItem value="standard" id="standard" className="mt-1 mr-2" />
                                 <div>
-                                  <span className="font-medium">Urban Delivery</span>
+                                  <span className="font-medium">Tại cửa hàng</span>
                                   <p className="text-sm text-muted-foreground mt-1">
-                                    Delivery within 3-5 business days
+                                    Nhận bánh trực tiếp tại cửa hàng
                                   </p>
                                 </div>
                               </div>
@@ -732,9 +732,9 @@ const CheckoutPage = () => {
                               <div className="flex items-start mb-1">
                                 <RadioGroupItem value="express" id="express" className="mt-1 mr-2" />
                                 <div>
-                                  <span className="font-medium">Suburban Delivery</span>
+                                  <span className="font-medium">Giao tận nơi</span>
                                   <p className="text-sm text-muted-foreground mt-1">
-                                    Delivery within 1-2 business days
+                                    Shipper sẽ giao tận nhà
                                   </p>
                                 </div>
                               </div>
@@ -767,7 +767,7 @@ const CheckoutPage = () => {
                       Processing...
                     </>
                   ) : (
-                    `Complete Order ${formatVND(total)}`
+                    `Hoàn thành ${formatVND(total)}`
                   )}
                 </Button>
               </motion.div>
@@ -783,7 +783,7 @@ const CheckoutPage = () => {
           <Card className="sticky top-24 border-muted/50">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold">Order Summary</h2>
+                <h2 className="text-xl font-bold">Thông tin đơn hàng</h2>
                 <Badge variant="outline" className="px-3 py-1">
                   {cartItems.length} {cartItems.length === 1 ? 'Item' : 'Items'}
                 </Badge>
@@ -899,22 +899,18 @@ const CheckoutPage = () => {
               {/* Order calculation */}
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Subtotal</span>
+                  <span className="text-muted-foreground">Tổng cộng</span>
                   <span>{formatVND(subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Tax (8%)</span>
-                  <span>{formatVND(tax)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">
-                    {deliveryMethod === 'express' ? 'Express' : 'Standard'} Delivery
+                    {deliveryMethod === 'express' ? 'Express' : 'Standard'} Vận chuyển
                   </span>
                   <span>{formatVND(deliveryFee)}</span>
                 </div>
                 <Separator className="my-2" />
                 <div className="flex justify-between font-medium">
-                  <span>Total</span>
+                  <span>Tổng</span>
                   <span>{formatVND(total)}</span>
                 </div>
               </div>
@@ -923,15 +919,15 @@ const CheckoutPage = () => {
                 <div className="flex items-center rounded-lg bg-muted/50 p-3">
                   <MapPin className="h-5 w-5 mr-2 text-muted-foreground" />
                   <p className="text-sm">
-                    <span className="font-medium">Delivery Address:</span>{' '}
-                    {form.getValues('address') || 'Please fill out your address details'}
+                    <span className="font-medium">Địa chỉ giao hàng:</span>{' '}
+                    {form.getValues('address') || 'Vui lòng điền thông tin địa chỉ của bạn'}
                   </p>
                 </div>
 
                 <div className="flex items-center rounded-lg bg-muted/50 p-3">
                   <PackageCheck className="h-5 w-5 mr-2 text-muted-foreground" />
                   <p className="text-sm">
-                    <span className="font-medium">Estimated Delivery:</span>{' '}
+                    <span className="font-medium">Dự kiến:</span>{' '}
                     {/* {new Date(Date.now() + (deliveryMethod === 'express' ? 2 : 4) * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} */}
                   </p>
                 </div>
@@ -941,11 +937,11 @@ const CheckoutPage = () => {
                 <div className="flex flex-col space-y-3">
                   <div className="flex items-center space-x-2">
                     <ShieldCheck className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">Secure Checkout</span>
+                    <span className="text-sm text-muted-foreground">Thanh toán an toàn</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <AlertCircle className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">All sensitive data encrypted</span>
+                    <span className="text-sm text-muted-foreground">Tất cả dữ liệu nhạy cảm được mã hóa</span>
                   </div>
                 </div>
               </div>
