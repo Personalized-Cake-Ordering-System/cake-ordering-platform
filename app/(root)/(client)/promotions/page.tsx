@@ -60,7 +60,7 @@ export default function PromotionsPage() {
   return (
     <div className="container mx-auto px-4 py-8 bg-gray-50">
       <h1 className="text-4xl font-bold text-center mb-12 text-primary">
-        Gift Vouchers
+        Phiếu Quà Tặng
       </h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
         {vouchers.map((voucher) => (
@@ -112,7 +112,7 @@ export default function PromotionsPage() {
                         </div>
                         <div className="text-2xl font-bold">
                           <span className="bg-gradient-to-r from-white via-gray-100 to-white text-transparent bg-clip-text animate-[gradient_3s_ease-in-out_infinite] bg-[length:200%_200%]">
-                            OFF
+                            GIẢM
                           </span>
                         </div>
                       </div>
@@ -131,13 +131,13 @@ export default function PromotionsPage() {
                     variant={voucher.voucher_type === 'GLOBAL' ? 'default' : 'secondary'}
                     className="bg-gradient-to-r from-pink-500 to-purple-500 text-white hover:from-pink-600 hover:to-purple-600 transition-colors"
                   >
-                    {voucher.voucher_type}
+                    {voucher.voucher_type === 'GLOBAL' ? 'TOÀN HỆ THỐNG' : 'TIỆM BÁNH'}
                   </Badge>
                 </div>
 
                 <div className="space-y-3 mt-4">
                   <div className="flex items-center justify-between border-b border-dashed border-gray-200 pb-2">
-                    <span className="text-sm font-medium text-gray-600">Code:</span>
+                    <span className="text-sm font-medium text-gray-600">Mã:</span>
                     <div className="flex items-center gap-2">
                       <span className="font-mono font-bold px-3 py-1 rounded-md bg-gradient-to-r from-pink-500/10 to-purple-500/10 text-primary">
                         {voucher.code}
@@ -154,23 +154,23 @@ export default function PromotionsPage() {
                   </div>
 
                   <div className="flex items-center justify-between border-b border-dashed border-gray-200 pb-2">
-                    <span className="text-sm text-gray-600">Min. Order:</span>
+                    <span className="text-sm text-gray-600">Đơn tối thiểu:</span>
                     <span className="text-sm font-medium bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">
                       {voucher.min_order_amount.toLocaleString()} VND
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between border-b border-dashed border-gray-200 pb-2">
-                    <span className="text-sm text-gray-600">Max Discount:</span>
+                    <span className="text-sm text-gray-600">Giảm tối đa:</span>
                     <span className="text-sm font-medium bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">
                       {voucher.max_discount_amount.toLocaleString()} VND
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Valid Until:</span>
+                    <span className="text-sm text-gray-600">Có hiệu lực đến:</span>
                     <span className="text-sm font-medium bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">
-                      {format(new Date(voucher.expiration_date), 'MMM dd, yyyy')}
+                      {format(new Date(voucher.expiration_date), 'dd/MM/yyyy')}
                     </span>
                   </div>
 
