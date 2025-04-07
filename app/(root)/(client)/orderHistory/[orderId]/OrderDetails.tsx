@@ -681,6 +681,36 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                             </CardContent>
                         </Card>
 
+
+                        {/* Transaction Details */}
+                        {order.transaction && (
+                            <Card className="border-none shadow-lg hover:shadow-2xl transition-shadow duration-300">
+                                <CardHeader className="p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-t-lg">
+                                    <CardTitle className="text-lg font-bold">Chi tiết giao dịch</CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-6 bg-white rounded-b-lg">
+                                    <div className="space-y-3">
+                                        <p className="text-sm flex items-center gap-2">
+                                            <span className="text-gray-600">Số tiền:</span>
+                                            <span className="font-medium text-blue-700">{formatVND(order.transaction.amount)}</span>
+                                        </p>
+                                        <p className="text-sm flex items-center gap-2">
+                                            <span className="text-gray-600">Ngân hàng:</span>
+                                            <span className="font-medium text-blue-700">{order.transaction.gate_way}</span>
+                                        </p>
+                                        <p className="text-sm flex items-center gap-2">
+                                            <span className="text-gray-600">Ngày giao dịch:</span>
+                                            <span className="font-medium text-blue-700">{order.transaction.transaction_date}</span>
+                                        </p>
+                                        <p className="text-sm flex items-center gap-2">
+                                            <span className="text-gray-600">Số tài khoản:</span>
+                                            <span className="font-medium text-blue-700">{order.transaction.account_number}</span>
+                                        </p>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+
                         <div className="flex justify-end">
                             <Button
                                 variant="outline"
@@ -693,34 +723,6 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                     </div>
 
 
-                    {/* Transaction Details */}
-                    {order.transaction && (
-                        <Card className="border-none shadow-lg hover:shadow-2xl transition-shadow duration-300">
-                            <CardHeader className="p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-t-lg">
-                                <CardTitle className="text-lg font-bold">Chi tiết giao dịch</CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-6 bg-white rounded-b-lg">
-                                <div className="space-y-3">
-                                    <p className="text-sm flex items-center gap-2">
-                                        <span className="text-gray-600">Số tiền:</span>
-                                        <span className="font-medium text-blue-700">{formatVND(order.transaction.amount)}</span>
-                                    </p>
-                                    <p className="text-sm flex items-center gap-2">
-                                        <span className="text-gray-600">Ngân hàng:</span>
-                                        <span className="font-medium text-blue-700">{order.transaction.gate_way}</span>
-                                    </p>
-                                    <p className="text-sm flex items-center gap-2">
-                                        <span className="text-gray-600">Ngày giao dịch:</span>
-                                        <span className="font-medium text-blue-700">{order.transaction.transaction_date}</span>
-                                    </p>
-                                    <p className="text-sm flex items-center gap-2">
-                                        <span className="text-gray-600">Số tài khoản:</span>
-                                        <span className="font-medium text-blue-700">{order.transaction.account_number}</span>
-                                    </p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
                 </div>
 
                 <Modal isOpen={isFeedbackModalOpen} onClose={() => setIsFeedbackModalOpen(false)}>
