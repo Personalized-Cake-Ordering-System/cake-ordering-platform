@@ -110,6 +110,14 @@ export function NotificationDropdown() {
                 <div className="flex items-center justify-between px-2 py-1.5">
                     <span className="text-sm font-medium">Thông báo</span>
                     <div className="flex items-center gap-2">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7"
+                            onClick={() => window.location.href = "/notifications"}
+                        >
+                            Xem tất cả
+                        </Button>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="sm" className="h-7">
@@ -153,8 +161,8 @@ export function NotificationDropdown() {
                             )}
                             onClick={() => {
                                 handleMarkAsRead(notification.id);
-                                // Show notification details in a modal or new page
-                                window.location.href = `/notifications/${notification.id}`;
+                                // Navigate to notification details page
+                                // window.location.href = `/notifications/${notification.id}`;
                             }}
                         >
                             <div className="flex items-start justify-between w-full">
