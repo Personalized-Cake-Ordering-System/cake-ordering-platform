@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ModeToggleAnimate } from "@/components/shared/custom-ui/mode-toggle-animate";
 import { cn } from "@/lib/utils";
+import { NotificationDropdown } from "@/components/shared/notification/notification-dropdown";
 
 interface BadgeProps {
   count: number;
@@ -171,13 +172,6 @@ const Header = () => {
                       >
                         <span>Đăng xuất</span>
                       </DropdownMenuItem>
-                      {/* <DropdownMenuItem
-                        className="flex items-center gap-2"
-                        onClick={() => router.push('/profile-settings')}
-                      >
-                        <Settings className="h-4 w-4" />
-                        <span>Cài đặt</span>
-                      </DropdownMenuItem> */}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 ) : (
@@ -191,17 +185,11 @@ const Header = () => {
               </div>
               <div className="flex items-center space-x-5">
                 <ModeToggleAnimate />
-
-                <Link href="/messages" className="relative group">
-                  <MessageSquare className="h-6 w-6 text-gray-800 dark:text-gray-300 group-hover:text-custom-teal dark:group-hover:text-custom-teal transition-colors duration-200" />
-                  <NotificationBadge count={messageCount} />
-                </Link>
-
+                <NotificationDropdown />
                 <Link href="/wishlist" className="relative group">
                   <Heart className="h-6 w-6 text-gray-800 dark:text-gray-300 group-hover:text-custom-teal dark:group-hover:text-custom-teal transition-colors duration-200" />
                   <NotificationBadge count={wishlistCount} />
                 </Link>
-
                 <Link href="/cart" className="relative group">
                   <ShoppingCart className="h-6 w-6 text-gray-800 dark:text-gray-300 group-hover:text-custom-teal dark:group-hover:text-custom-teal transition-colors duration-200" />
                   <NotificationBadge count={cartCount} />
