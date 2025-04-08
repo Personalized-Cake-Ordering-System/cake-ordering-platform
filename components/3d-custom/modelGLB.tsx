@@ -227,8 +227,8 @@ export function ModelGLB({ modelPath = '/cake3.glb', config, addToCart, editCart
                         }
                     } else if (child.name === 'toppings') {
                         // Handle toppings visibility
-                        newMaterial.visible = config.extras.length > 0;
-                        if (config.extras.length > 0) {
+                        newMaterial.visible = Array.isArray(config.extras) && config.extras.length > 0;
+                        if (Array.isArray(config.extras) && config.extras.length > 0) {
                             // Apply topping colors based on selected extras
                             const toppingColor = new THREE.Color();
                             config.extras.forEach(extra => {
