@@ -102,7 +102,67 @@ const CartPage = () => {
       change,
       newQuantity: item.quantity + change
     });
-    // TODO: Implement quantity update API call
+
+    const accessToken = localStorage.getItem('accessToken');
+    if (!accessToken) {
+      toast.error('Please login to update cart');
+      return;
+    }
+
+    try {
+      const newQuantity = item.quantity + change;
+      if (newQuantity < 1) {
+        toast.error('Quantity cannot be less than 1');
+        return;
+      }
+
+      // Prepare the cart payload
+      const cartPayload = {
+        bakeryId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        order_note: "",
+        phone_number: "",
+        shipping_address: "",
+        latitude: "",
+        longitude: "",
+        pickup_time: new Date().toISOString(),
+        shipping_type: "DELIVERY",
+        payment_type: "QR_CODE",
+        voucher_code: "",
+        cartItems: [{
+          cake_name: item.cake_name,
+          main_image_id: item.main_image?.id || "",
+          main_image: item.main_image || null,
+          quantity: newQuantity,
+          cake_note: item.cake_note || "",
+          sub_total_price: (item.sub_total_price / item.quantity) * newQuantity, // Recalculate subtotal
+          available_cake_id: item.available_cake_id || null,
+          custom_cake_id: item.custom_cake_id || null
+        }]
+      };
+
+      const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/carts', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify(cartPayload)
+      });
+
+      const data = await response.json();
+
+      if (data.status_code === 200) {
+        // Fetch fresh cart data after successful update
+        await fetchCart();
+        toast.success('Cart updated successfully');
+      } else {
+        console.error('Failed to update cart:', data);
+        toast.error(data.errors?.[0] || 'Failed to update cart');
+      }
+    } catch (error) {
+      console.error('Error updating cart:', error);
+      toast.error('Failed to update cart');
+    }
   };
 
   const handleRemoveItem = async (item: CartItem) => {
@@ -228,10 +288,10 @@ const CartPage = () => {
                     layout
                     className="group"
                   >
-                    <Card className="overflow-hidden border-muted/50 hover:border-primary/30 transition-all duration-500 hover:shadow-lg hover:shadow-primary/5">
-                      <div className="flex flex-col sm:flex-row p-4 gap-4">
+                    <Card className="group overflow-hidden border-muted/50 hover:border-primary/30 transition-all duration-500 hover:shadow-xl hover:shadow-primary/10 bg-gradient-to-br from-white to-muted/10">
+                      <div className="flex flex-col sm:flex-row p-6 gap-6">
                         <motion.div
-                          className="relative w-full sm:w-1/4 h-40 sm:h-auto rounded-md overflow-hidden bg-muted/30 cursor-pointer"
+                          className="relative w-full sm:w-1/4 h-48 sm:h-48 rounded-xl overflow-hidden bg-muted/30 cursor-pointer shadow-lg group-hover:shadow-xl transition-all duration-500"
                           whileHover={{ scale: 1.05 }}
                           transition={{ type: "spring", stiffness: 300, damping: 20 }}
                           onClick={() => {
@@ -244,32 +304,51 @@ const CartPage = () => {
                               src={getImageUrl(item.main_image.file_url) || '/placeholder-cake.jpg'}
                               alt={item.cake_name}
                               fill
-                              className="object-cover transition-transform hover:scale-105"
+                              className="object-cover transition-transform duration-500 group-hover:scale-110"
                               onError={handleImageError}
                               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                               unoptimized
                               priority
                             />
                           ) : (
-                            <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-pink-100 to-purple-100">
                               <ShoppingBag className="w-12 h-12 text-muted-foreground" />
                             </div>
                           )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                         </motion.div>
                         <div className="flex flex-col sm:flex-1 justify-between">
                           <div>
                             <div className="flex items-start justify-between">
-                              <h3 className="text-xl font-medium">{item.cake_name}</h3>
+                              <div>
+                                <h3 className="text-xl font-medium">
+                                  {item.cake_name}
+                                </h3>
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                  {item.available_cake_id && (
+                                    <Badge variant="outline" className="text-xs bg-gradient-to-r from-pink-500/10 to-purple-500/10 border-pink-500/20 text-pink-700">
+                                      Bánh Có Sẵn
+                                    </Badge>
+                                  )}
+                                  {item.custom_cake_id && (
+                                    <Badge variant="outline" className="text-xs bg-gradient-to-r from-purple-500/10 to-blue-500/10 border-purple-500/20 text-purple-700">
+                                      Bánh Tùy Chỉnh
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
                               <motion.button
                                 whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={() => handleRemoveItem(item)}
-                                className="text-muted-foreground hover:text-destructive transition-colors"
+                                className="text-muted-foreground hover:text-destructive transition-colors relative group/btn"
                               >
                                 <TooltipProvider>
                                   <Tooltip>
                                     <TooltipTrigger>
-                                      <Trash2 className="w-5 h-5" />
+                                      <div className="p-2 rounded-full hover:bg-destructive/10 transition-colors">
+                                        <Trash2 className="w-5 h-5" />
+                                      </div>
                                     </TooltipTrigger>
                                     <TooltipContent>
                                       <p>Xóa sản phẩm</p>
@@ -278,47 +357,60 @@ const CartPage = () => {
                                 </TooltipProvider>
                               </motion.button>
                             </div>
-                            {item.cake_note && (
-                              <p className="text-muted-foreground mt-1 mb-4 text-sm">
-                                Ghi chú: {item.cake_note}
-                              </p>
-                            )}
+
+                            <div className="mt-4 space-y-3 bg-muted/5 p-4 rounded-lg border border-muted/10">
+                              {item.cake_note && (
+                                <div className="flex items-start gap-2">
+                                  <span className="text-muted-foreground text-sm font-medium min-w-[80px]">Ghi chú:</span>
+                                  <p className="text-sm">{item.cake_note}</p>
+                                </div>
+                              )}
+
+                              <div className="flex items-start gap-2">
+                                <span className="text-muted-foreground text-sm font-medium min-w-[80px]">Giá một cái:</span>
+                                <p className="text-sm font-medium text-primary">{formatVND(item.sub_total_price / item.quantity)}</p>
+                              </div>
+
+                              <div className="flex items-start gap-2">
+                                <span className="text-muted-foreground text-sm font-medium min-w-[80px]">Tổng phụ:</span>
+                                <p className="text-sm font-medium text-primary">{formatVND(item.sub_total_price)}</p>
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex justify-between items-center">
-                            <div className="flex items-center space-x-1 border rounded-md">
-                              <motion.button
-                                whileHover={{ backgroundColor: 'rgba(0, 0, 0, 0.05)' }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={() => handleQuantityChange(item, -1)}
-                                className="p-2"
-                                disabled={item.quantity <= 1}
-                              >
-                                <Minus className="w-4 h-4" />
-                              </motion.button>
-                              <span className="px-4">{item.quantity}</span>
-                              <motion.button
-                                whileHover={{ backgroundColor: 'rgba(0, 0, 0, 0.05)' }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={() => handleQuantityChange(item, 1)}
-                                className="p-2"
-                              >
-                                <Plus className="w-4 h-4" />
-                              </motion.button>
+
+                          <div className="flex justify-between items-center mt-4 pt-4 border-t border-dashed">
+                            <div className="flex items-center gap-3">
+                              <span className="text-sm text-muted-foreground">Số lượng:</span>
+                              <div className="flex items-center space-x-1 border rounded-full bg-muted/5 p-1">
+                                <motion.button
+                                  whileHover={{ backgroundColor: 'rgba(0, 0, 0, 0.05)' }}
+                                  whileTap={{ scale: 0.95 }}
+                                  onClick={() => handleQuantityChange(item, -1)}
+                                  className="p-2 rounded-full hover:bg-background transition-colors"
+                                  disabled={item.quantity <= 1}
+                                >
+                                  <Minus className="w-4 h-4" />
+                                </motion.button>
+                                <span className="px-4 font-medium">{item.quantity}</span>
+                                <motion.button
+                                  whileHover={{ backgroundColor: 'rgba(0, 0, 0, 0.05)' }}
+                                  whileTap={{ scale: 0.95 }}
+                                  onClick={() => handleQuantityChange(item, 1)}
+                                  className="p-2 rounded-full hover:bg-background transition-colors"
+                                >
+                                  <Plus className="w-4 h-4" />
+                                </motion.button>
+                              </div>
                             </div>
                             <div className="text-right">
-                              <div className="text-lg font-bold">{formatVND(item.sub_total_price)}</div>
+                              <div className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-600">
+                                {formatVND(item.sub_total_price)}
+                              </div>
+                              <p className="text-sm text-muted-foreground">Tổng cộng</p>
                             </div>
                           </div>
                         </div>
                       </div>
-                      {/* <div className="px-4 pb-4">
-                        <Button variant="link" className="h-auto p-0 flex items-center text-primary" asChild>
-                          <Link href={`/customizeCake?editId=${item.available_cake_id || item.custom_cake_id}`}>
-                            Chỉnh sửa bánh tùy chỉnh
-                            <ChevronRight className="w-4 h-4 ml-1" />
-                          </Link>
-                        </Button>
-                      </div> */}
                     </Card>
                   </motion.div>
                 ))}
@@ -367,11 +459,11 @@ const CartPage = () => {
                 </Button>
               </motion.div>
 
-              <div className="flex justify-center mt-4">
+              {/* <div className="flex justify-center mt-4">
                 <Button variant="link" className="text-sm" asChild>
                   <Link href="/cakes">Tiếp Tục Mua Sắm</Link>
                 </Button>
-              </div>
+              </div> */}
             </div>
           </Card>
         </motion.div>
@@ -380,46 +472,103 @@ const CartPage = () => {
       {/* Cake Modal */}
       {showCakeModal && selectedCake && (
         <Dialog open={showCakeModal} onOpenChange={setShowCakeModal}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Chi Tiết Bánh</DialogTitle>
+          <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden bg-white">
+            <DialogHeader className="p-6 pb-0">
+              <DialogTitle className="text-2xl font-bold text-gray-800">
+                Chi Tiết Bánh
+              </DialogTitle>
             </DialogHeader>
-            <div className="relative w-full h-72">
-              {selectedCake.main_image?.file_url ? (
-                <Image
-                  src={getImageUrl(selectedCake.main_image.file_url) || '/placeholder-cake.jpg'}
-                  alt={selectedCake.cake_name}
-                  fill
-                  className="object-cover rounded-md"
-                  onError={handleImageError}
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  unoptimized
-                  priority
-                />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center bg-white rounded-md shadow-md">
-                  <ShoppingBag className="w-12 h-12 text-muted-foreground" />
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="relative w-full"
+            >
+              <div className="relative w-full h-80">
+                {selectedCake.main_image?.file_url ? (
+                  <div className="relative w-full h-full">
+                    <Image
+                      src={getImageUrl(selectedCake.main_image.file_url) || '/placeholder-cake.jpg'}
+                      alt={selectedCake.cake_name}
+                      fill
+                      className="object-cover"
+                      onError={handleImageError}
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      unoptimized
+                      priority
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                  </div>
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                    <ShoppingBag className="w-16 h-16 text-gray-400" />
+                  </div>
+                )}
+              </div>
+
+              <div className="p-6 space-y-6 bg-white">
+                <div className="space-y-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="text-xl font-semibold text-gray-800">
+                        {selectedCake.cake_name}
+                      </h3>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {selectedCake.available_cake_id && (
+                          <Badge variant="outline" className="text-xs bg-pink-50 border-pink-200 text-pink-700">
+                            Bánh Có Sẵn
+                          </Badge>
+                        )}
+                        {selectedCake.custom_cake_id && (
+                          <Badge variant="outline" className="text-xs bg-purple-50 border-purple-200 text-purple-700">
+                            Bánh Tùy Chỉnh
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-primary">
+                        {formatVND(selectedCake.sub_total_price)}
+                      </div>
+                      <p className="text-sm text-gray-500">Tổng cộng</p>
+                    </div>
+                  </div>
+
+                  <Separator className="my-4 bg-gray-200" />
+
+                  <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-sm text-gray-500">Giá một cái</h4>
+                      <p className="font-medium text-gray-900">
+                        {formatVND(selectedCake.sub_total_price / selectedCake.quantity)}
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-sm text-gray-500">Số lượng</h4>
+                      <p className="font-medium text-gray-900">{selectedCake.quantity}</p>
+                    </div>
+                    {selectedCake.cake_note && (
+                      <div className="col-span-2 space-y-2">
+                        <h4 className="font-medium text-sm text-gray-500">Ghi chú</h4>
+                        <p className="text-sm text-gray-700 bg-white p-3 rounded-lg border border-gray-200">
+                          {selectedCake.cake_note}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              )}
-            </div>
-            <div className="space-y-4 p-4">
-              <div className='flex justify-between'>
-                <div>
-                  <h4 className="font-medium text-lg">Thông số:</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Tên: {selectedCake.cake_name}<br />
-                    {selectedCake.cake_note && `Ghi chú: ${selectedCake.cake_note}`}
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-lg">Giá:</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {formatVND(selectedCake.sub_total_price)}<br />
-                    Số lượng: {selectedCake.quantity}
-                  </p>
+
+                <div className="flex justify-end gap-2 pt-4 border-t border-gray-200">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowCakeModal(false)}
+                    className="rounded-full px-6 text-gray-700 hover:bg-gray-100"
+                  >
+                    Đóng
+                  </Button>
                 </div>
               </div>
-            </div>
+            </motion.div>
           </DialogContent>
         </Dialog>
       )}
