@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
@@ -88,8 +87,8 @@ export default function PromotionsPage() {
                 {/* Bakery Image */}
                 <div className="absolute inset-0">
                   <Image
-                    src={voucher.bakery.shop_image_files[0]?.file_url || '/placeholder-bakery.jpg'}
-                    alt={voucher.bakery.bakery_name}
+                    src={voucher.bakery?.shop_image_files?.[0]?.file_url || '/placeholder-bakery.jpg'}
+                    alt={voucher.bakery?.bakery_name || 'Bakery'}
                     fill
                     className="object-cover"
                   />
@@ -125,7 +124,7 @@ export default function PromotionsPage() {
               <div className="w-2/3 p-6">
                 <div className="flex justify-between items-start mb-4">
                   <h3 className="text-xl font-semibold text-gray-800">
-                    {voucher.bakery.bakery_name}
+                    {voucher.bakery?.bakery_name || 'Unknown Bakery'}
                   </h3>
                   <Badge
                     variant={voucher.voucher_type === 'GLOBAL' ? 'default' : 'secondary'}
