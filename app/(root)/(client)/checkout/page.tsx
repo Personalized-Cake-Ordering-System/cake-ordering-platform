@@ -781,16 +781,16 @@ const CheckoutPage = () => {
           className="w-full lg:w-1/3 "
         >
           <Card className="sticky top-24 border-muted/50">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
+            <div className="p-4">
+              <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold">Thông tin đơn hàng</h2>
-                <Badge variant="outline" className="px-3 py-1">
+                <Badge variant="outline" className="px-2 py-0.5">
                   {cartItems.length} {cartItems.length === 1 ? 'Item' : 'Items'}
                 </Badge>
               </div>
 
               {/* Mobile view - collapsible order summary */}
-              <div className="lg:hidden mb-4">
+              <div className="lg:hidden mb-3">
                 <Collapsible
                   open={isOrderSummaryOpen}
                   onOpenChange={setIsOrderSummaryOpen}
@@ -852,11 +852,11 @@ const CheckoutPage = () => {
 
               {/* Desktop view - always visible order items */}
               <div className="hidden lg:block">
-                <ScrollArea className="h-[calc(100vh-480px)] min-h-[150px]">
-                  <div className="space-y-4 pr-4">
+                <ScrollArea className="max-h-[120px]">
+                  <div className="space-y-2 pr-4">
                     {cartItems.map((item) => (
-                      <div key={item.available_cake_id || item.custom_cake_id} className="flex gap-3">
-                        <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border">
+                      <div key={item.available_cake_id || item.custom_cake_id} className="flex gap-2">
+                        <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-md border">
                           {item.main_image?.file_url ? (
                             <Image
                               src={getImageUrl(item.main_image.file_url) || '/placeholder-cake.jpg'}
@@ -879,12 +879,12 @@ const CheckoutPage = () => {
                             </div>
                           )}
                         </div>
-                        <div className="flex flex-1 flex-col justify-center">
-                          <h3 className="font-medium">{item.cake_name}</h3>
-                          <p className="text-sm text-muted-foreground line-clamp-1">
+                        <div className="flex flex-1 flex-col justify-between py-1">
+                          <h3 className="font-medium text-sm">{item.cake_name}</h3>
+                          <p className="text-xs text-muted-foreground line-clamp-1">
                             {item.cake_note || 'No special notes'}
                           </p>
-                          <div className="mt-auto text-sm font-medium">
+                          <div className="text-sm font-medium">
                             {formatVND(item.sub_total_price)}
                           </div>
                         </div>
@@ -894,54 +894,52 @@ const CheckoutPage = () => {
                 </ScrollArea>
               </div>
 
-              <Separator className="my-6" />
+              <Separator className="my-3" />
 
               {/* Order calculation */}
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Tổng cộng</span>
                   <span>{formatVND(subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">
-                    {deliveryMethod === 'express' ? 'Tại Cửa Hàng' : 'Giao Tận Nơi'}
+                    {deliveryMethod === 'express' ? 'Giao Tận Nơi' : 'Tại Cửa Hàng'}
                   </span>
                   <span>{formatVND(deliveryFee)}</span>
                 </div>
-                <Separator className="my-2" />
+                <Separator className="my-1.5" />
                 <div className="flex justify-between font-medium">
                   <span>Tổng</span>
                   <span>{formatVND(total)}</span>
                 </div>
               </div>
 
-              <div className="mt-6 space-y-4">
-                <div className="flex items-center rounded-lg bg-muted/50 p-3">
-                  <MapPin className="h-5 w-5 mr-2 text-muted-foreground" />
-                  <p className="text-sm">
-                    <span className="font-medium">Địa chỉ giao hàng:</span>{' '}
-                    {form.getValues('address') || 'Vui lòng điền thông tin địa chỉ của bạn'}
-                  </p>
+              <div className="mt-3 space-y-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <span className="font-medium">Địa chỉ giao hàng:</span>
+                  <span className="text-muted-foreground">
+                    {form.getValues('address') ? `${form.getValues('address')}, TP BIEN HOA` : 'Vui lòng điền thông tin địa chỉ của bạn'}
+                  </span>
                 </div>
 
-                <div className="flex items-center rounded-lg bg-muted/50 p-3">
-                  <PackageCheck className="h-5 w-5 mr-2 text-muted-foreground" />
-                  <p className="text-sm">
-                    <span className="font-medium">Dự kiến:</span>{' '}
-                    {/* {new Date(Date.now() + (deliveryMethod === 'express' ? 2 : 4) * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} */}
-                  </p>
+                <div className="flex items-center gap-2 text-sm">
+                  <PackageCheck className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <span className="font-medium">Dự kiến:</span>
+                  <span className="text-muted-foreground">Trong vòng 2-3 ngày</span>
                 </div>
               </div>
 
-              <div className="mt-6">
-                <div className="flex flex-col space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <ShieldCheck className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">Thanh toán an toàn</span>
+              <div className="mt-3">
+                <div className="flex flex-col space-y-1.5">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    <span>Thanh toán an toàn</span>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <AlertCircle className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">Tất cả dữ liệu nhạy cảm được mã hóa</span>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    <span>Tất cả dữ liệu nhạy cảm được mã hóa</span>
                   </div>
                 </div>
               </div>
