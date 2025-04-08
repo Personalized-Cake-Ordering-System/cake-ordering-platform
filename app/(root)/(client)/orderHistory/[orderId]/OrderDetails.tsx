@@ -137,7 +137,7 @@ const FeedbackForm = ({ orderId, orderDetailId, availableCakeId, bakeryId }: Fee
                 bakery_id: bakeryId
             });
 
-            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/cake_reviews/${customerId}`, {
+            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/cake_reviews`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
