@@ -218,7 +218,7 @@ const CartPage = () => {
   // Add error handling for image loading
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     const target = e.target as HTMLImageElement;
-    target.src = '/placeholder-cake.jpg'; // Fallback image
+    target.src = '/imagecake.jpg'; // Fallback image
   };
 
   if (loading) {
