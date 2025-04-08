@@ -526,12 +526,12 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                     text: config.message,
                     message_type: config.messageType === 'edible' ? 'IMAGE' : config.messageType === 'piped' ? 'TEXT' : 'NONE',
                     image_id: config.uploadedImage ? "3fa85f64-5717-4562-b3fc-2c963f66afa6" : null,
-                    cake_message_option_ids: messageOptionIds
+                    cake_message_option_ids: selectedMessageType?.id
                 },
                 part_selections: [
                     {
                         part_type: "SIZE",
-                        part_option_id: config.size
+                        part_option_id: partOptions.find(group => group.type === 'Size')?.items.find(item => item.name === config.size)?.id || ''
                     },
                     {
                         part_type: "SPONGE",
@@ -545,11 +545,11 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                 decoration_selections: [
                     {
                         decoration_type: "OUTER_ICING",
-                        decoration_option_id: config.outerIcing
+                        decoration_option_id: decorationOptions.find(group => group.items.some(item => item.id === config.outerIcing))?.items.find(item => item.id === config.outerIcing)?.id || ''
                     }
                 ],
                 extra_selections: Array.isArray(config.extras) ? config.extras.map(id => ({
-                    extra_type: "TOPPING",
+                    extra_type: extraOptions.find(group => group.items.some(item => item.id === id))?.type,
                     extra_option_id: id
                 })) : []
             };
