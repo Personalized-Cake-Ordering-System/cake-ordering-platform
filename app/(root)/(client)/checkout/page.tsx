@@ -42,6 +42,7 @@ import { CheckoutFormValues } from './types';
 import { createOrder } from './api';
 import { cartService } from '@/app/services/cartService';
 import { ShoppingBag } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 type GeocodingResponse = {
   results: Array<{
@@ -112,6 +113,7 @@ type CartItem = {
   main_image?: {
     file_url: string;
   };
+  bakery_id?: string;
 };
 
 const CheckoutPage = () => {
@@ -214,59 +216,160 @@ const CheckoutPage = () => {
       const geocodeResult = await geocodeAddress(fullAddress);
 
       if (geocodeResult) {
-        const orderData = {
-          bakery_id: "11f56ffc-6e29-4528-8e05-dadbc618dd5a",
-          order_note: data.specialInstructions || '',
-          phone_number: data.phone,
-          shipping_address: fullAddress,
-          latitude: geocodeResult.location.lat.toString(),
-          longitude: geocodeResult.location.lng.toString(),
-          pickup_time: new Date().toISOString(),
-          shipping_type: "DELIVERY",
-          payment_type: "QR_CODE",
-          voucher_code: "",
-          order_detail_create_models: cartItems.map((item) => ({
-            available_cake_id: item.available_cake_id,
-            custom_cake_id: item.custom_cake_id,
-            cake_note: item.cake_note || '',
-            quantity: item.quantity,
-            price: item.sub_total_price / item.quantity
-          })),
-        };
+        // Extract bakery_id from the first cart item
+        // If cart is empty, we can't proceed
+        if (cartItems.length === 0) {
+          toast.error('Your cart is empty');
+          setIsProcessing(false);
+          return;
+        }
 
-        const response = await createOrder(orderData);
+        // Get the bakery_id from the first cart item
+        // This assumes all items in the cart are from the same bakery
+        const bakery_id = cartItems[0].bakery_id;
 
-        if (response.status_code === 200) {
-          const { total_customer_paid, order_code } = response.payload;
-          const qrLink = `https://img.vietqr.io/image/TPBank-00005992966-qr_only.jpg?amount=${total_customer_paid}&addInfo=${order_code}`;
+        // Log the bakery_id for debugging
+        console.log('Bakery ID from first cart item:', bakery_id);
+        console.log('All cart items:', cartItems);
 
-          // Store order details in localStorage
-          const orderDetails = {
-            customerInfo: {
-              fullName: data.fullName,
-              email: data.email,
-              phone: data.phone,
-              address: fullAddress,
-            },
-            orderInfo: {
-              items: cartItems,
-              subtotal,
-              tax,
-              deliveryMethod: data.deliveryMethod,
-              deliveryFee,
-              total: total_customer_paid,
-              orderCode: order_code,
-            },
-            qrLink
+        if (!bakery_id) {
+          // Try to get bakery_id from the cart response payload
+          const accessToken = localStorage.getItem('accessToken');
+          if (accessToken) {
+            try {
+              const response = await cartService.getCart(accessToken);
+              const cartBakeryId = response.payload.bakeryId;
+              console.log('Bakery ID from cart response:', cartBakeryId);
+
+              if (cartBakeryId) {
+                // Use the bakery_id from the cart response
+                const orderData = {
+                  bakery_id: cartBakeryId,
+                  order_note: data.specialInstructions || '',
+                  phone_number: data.phone,
+                  shipping_address: fullAddress,
+                  latitude: geocodeResult.location.lat.toString(),
+                  longitude: geocodeResult.location.lng.toString(),
+                  pickup_time: new Date().toISOString(),
+                  shipping_type: "DELIVERY",
+                  payment_type: "QR_CODE",
+                  voucher_code: "",
+                  order_detail_create_models: cartItems.map((item) => ({
+                    available_cake_id: item.available_cake_id,
+                    custom_cake_id: item.custom_cake_id,
+                    cake_note: item.cake_note || '',
+                    quantity: item.quantity,
+                    price: item.sub_total_price / item.quantity
+                  })),
+                };
+
+                console.log(orderData);
+
+                const response = await createOrder(orderData);
+
+                if (response.status_code === 200) {
+                  const { total_customer_paid, order_code } = response.payload;
+                  const qrLink = `https://img.vietqr.io/image/TPBank-00005992966-qr_only.jpg?amount=${total_customer_paid}&addInfo=${order_code}`;
+
+                  // Store order details in localStorage
+                  const orderDetails = {
+                    customerInfo: {
+                      fullName: data.fullName,
+                      email: data.email,
+                      phone: data.phone,
+                      address: fullAddress,
+                    },
+                    orderInfo: {
+                      items: cartItems,
+                      subtotal,
+                      tax,
+                      deliveryMethod: data.deliveryMethod,
+                      deliveryFee,
+                      total: total_customer_paid,
+                      orderCode: order_code,
+                    },
+                    qrLink
+                  };
+
+                  localStorage.setItem('currentOrder', JSON.stringify(orderDetails));
+
+                  // Redirect to QR payment page
+                  router.push('/qr-payment');
+                } else {
+                  console.error('Order creation failed:', response.errors);
+                  setIsProcessing(false);
+                }
+              } else {
+                toast.error('Unable to determine bakery information');
+                setIsProcessing(false);
+                return;
+              }
+            } catch (error) {
+              console.error('Error fetching cart for bakery_id:', error);
+              toast.error('Unable to determine bakery information');
+              setIsProcessing(false);
+              return;
+            }
+          } else {
+            toast.error('Unable to determine bakery information');
+            setIsProcessing(false);
+            return;
+          }
+        } else {
+          const orderData = {
+            bakery_id: bakery_id,
+            order_note: data.specialInstructions || '',
+            phone_number: data.phone,
+            shipping_address: fullAddress,
+            latitude: geocodeResult.location.lat.toString(),
+            longitude: geocodeResult.location.lng.toString(),
+            pickup_time: new Date().toISOString(),
+            shipping_type: "DELIVERY",
+            payment_type: "QR_CODE",
+            voucher_code: "",
+            order_detail_create_models: cartItems.map((item) => ({
+              available_cake_id: item.available_cake_id,
+              custom_cake_id: item.custom_cake_id,
+              cake_note: item.cake_note || '',
+              quantity: item.quantity,
+              price: item.sub_total_price / item.quantity
+            })),
           };
 
-          localStorage.setItem('currentOrder', JSON.stringify(orderDetails));
+          const response = await createOrder(orderData);
 
-          // Redirect to QR payment page
-          router.push('/qr-payment');
-        } else {
-          console.error('Order creation failed:', response.errors);
-          setIsProcessing(false);
+          if (response.status_code === 200) {
+            const { total_customer_paid, order_code } = response.payload;
+            const qrLink = `https://img.vietqr.io/image/TPBank-00005992966-qr_only.jpg?amount=${total_customer_paid}&addInfo=${order_code}`;
+
+            // Store order details in localStorage
+            const orderDetails = {
+              customerInfo: {
+                fullName: data.fullName,
+                email: data.email,
+                phone: data.phone,
+                address: fullAddress,
+              },
+              orderInfo: {
+                items: cartItems,
+                subtotal,
+                tax,
+                deliveryMethod: data.deliveryMethod,
+                deliveryFee,
+                total: total_customer_paid,
+                orderCode: order_code,
+              },
+              qrLink
+            };
+
+            localStorage.setItem('currentOrder', JSON.stringify(orderDetails));
+
+            // Redirect to QR payment page
+            router.push('/qr-payment');
+          } else {
+            console.error('Order creation failed:', response.errors);
+            setIsProcessing(false);
+          }
         }
       } else {
         console.error('Failed to geocode address:', fullAddress);
@@ -311,6 +414,12 @@ const CheckoutPage = () => {
         const response = await cartService.getCart(accessToken);
         console.log('Cart API Response:', response);
         console.log('Cart Items:', response.payload.cartItems);
+
+        // Check if bakery_id is present in cart items
+        if (response.payload.cartItems && response.payload.cartItems.length > 0) {
+          console.log('First cart item bakery_id:', response.payload.cartItems[0].bakery_id);
+        }
+
         setCartItems(response.payload.cartItems as CartItem[]);
       } catch (err) {
         console.error('Error fetching cart:', err);
@@ -347,7 +456,7 @@ const CheckoutPage = () => {
   // Add handleImageError function
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     const target = e.target as HTMLImageElement;
-    target.src = '/placeholder-cake.jpg'; // Fallback image
+    target.src = '/imagecake.jpg'; // Fallback image
   };
 
   if (loading) {

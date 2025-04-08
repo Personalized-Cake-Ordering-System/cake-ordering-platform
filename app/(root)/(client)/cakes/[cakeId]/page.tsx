@@ -48,6 +48,7 @@ interface ApiCake {
     id: string;
   }[];
   id: string;
+  bakery_id?: string;
 }
 
 const reviews = [
@@ -144,7 +145,7 @@ const CakeDetail = () => {
       }
 
       const cartPayload = {
-        bakeryId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        bakeryId: cakeData.bakery_id || "",
         order_note: "",
         phone_number: "",
         shipping_address: "",
@@ -162,7 +163,8 @@ const CakeDetail = () => {
           cake_note: "",
           sub_total_price: cakeData.available_cake_price * quantity,
           available_cake_id: cakeData.id,
-          custom_cake_id: null
+          custom_cake_id: null,
+          bakery_id: cakeData.bakery_id || ""
         }]
       };
 

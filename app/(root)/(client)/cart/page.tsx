@@ -118,7 +118,7 @@ const CartPage = () => {
 
       // Prepare the cart payload
       const cartPayload = {
-        bakeryId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        bakeryId: item.bakery_id || "",
         order_note: "",
         phone_number: "",
         shipping_address: "",
@@ -136,7 +136,8 @@ const CartPage = () => {
           cake_note: item.cake_note || "",
           sub_total_price: (item.sub_total_price / item.quantity) * newQuantity, // Recalculate subtotal
           available_cake_id: item.available_cake_id || null,
-          custom_cake_id: item.custom_cake_id || null
+          custom_cake_id: item.custom_cake_id || null,
+          bakery_id: item.bakery_id || ""
         }]
       };
 
@@ -150,6 +151,7 @@ const CartPage = () => {
       });
 
       const data = await response.json();
+      console.log(data);
 
       if (data.status_code === 200) {
         // Fetch fresh cart data after successful update
