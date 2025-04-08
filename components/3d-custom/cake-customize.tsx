@@ -485,13 +485,12 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
             console.log('Order button clicked');
             console.log('Current cake config:', config);
 
+            // Get the access token from localStorage
             const accessToken = localStorage.getItem('accessToken');
             if (!accessToken) {
-                console.log('No access token found - user not logged in');
-                toast.error('Please login to order a cake');
+                toast.error('You need to be logged in to add items to cart');
                 return;
             }
-            console.log('Access token found');
 
             // Get message options from API response
             const messageTypeGroup = messageOptions.find(group => group.type === 'MESSAGE_TYPE');
@@ -581,7 +580,63 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
             const data = await response.json();
             console.log('API response:', data);
 
-            // Add to cart using the cart service
+            // Prepare the cart data according to the API requirements
+            const cartData = {
+                bakeryId: storeId,
+                order_note: "",
+                phone_number: "",
+                shipping_address: "",
+                latitude: "",
+                longitude: "",
+                pickup_time: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Default to tomorrow
+                shipping_type: "DELIVERY",
+                payment_type: "CASH",
+                voucher_code: "",
+                cartItems: [
+                    {
+                        cake_name: `Custom ${config.size} Cake`,
+                        main_image_id: data.payload.image_id || "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                        main_image: data.payload.image || {
+                            id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                            created_at: new Date().toISOString(),
+                            created_by: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                            updated_at: new Date().toISOString(),
+                            updated_by: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                            is_deleted: false,
+                            file_name: "custom-cake.jpg",
+                            file_url: "https://example.com/custom-cake.jpg"
+                        },
+                        quantity: 1,
+                        cake_note: `${config.sponge} sponge with ${config.filling} filling and ${config.outerIcing} icing`,
+                        sub_total_price: config.price,
+                        available_cake_id: null,
+                        custom_cake_id: data.payload.id
+                    }
+                ]
+            };
+
+            console.log('Adding to cart with data:', cartData);
+
+            // Make the API call to add to cart
+            const cartResponse = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/carts', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify(cartData)
+            });
+
+            if (!cartResponse.ok) {
+                const errorData = await cartResponse.json();
+                console.error('Error adding to cart:', errorData);
+                throw new Error('Failed to add item to cart');
+            }
+
+            const cartResult = await cartResponse.json();
+            console.log('Cart API response:', cartResult);
+
+            // Also add to local cart state for UI updates
             const cartItem = {
                 id: data.payload.id,
                 quantity: 1,
@@ -595,7 +650,6 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                     extras: Array.isArray(config.extras) ? config.extras : []
                 }
             };
-            console.log('Adding to cart:', cartItem);
 
             addToCart(cartItem);
             toast.success('Cake added to cart successfully!');
