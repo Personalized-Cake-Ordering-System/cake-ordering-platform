@@ -54,6 +54,7 @@ type ExtraOption = {
     available: boolean;
     icon: string;
     color: string;
+    type: string;
 }
 
 // Add these new option arrays
@@ -122,7 +123,8 @@ const extraOptions: ExtraOption[] = [
         price: 4.00,
         available: true,
         icon: '🍪',
-        color: 'bg-amber-200'
+        color: 'bg-amber-200',
+        type: 'Candles'
     },
     {
         id: 'caramelised-white',
@@ -130,7 +132,8 @@ const extraOptions: ExtraOption[] = [
         price: 3.00,
         available: true,
         icon: '🍫',
-        color: 'bg-amber-100'
+        color: 'bg-amber-100',
+        type: 'CakeBoard'
     },
     {
         id: 'oreo-crumbs',
@@ -138,7 +141,8 @@ const extraOptions: ExtraOption[] = [
         price: 2.00,
         available: true,
         icon: '🖤',
-        color: 'bg-gray-900'
+        color: 'bg-gray-900',
+        type: 'Candles'
     },
     {
         id: 'biscoff-crumbs',
@@ -146,7 +150,8 @@ const extraOptions: ExtraOption[] = [
         price: 2.00,
         available: true,
         icon: '🍪',
-        color: 'bg-amber-400'
+        color: 'bg-amber-400',
+        type: 'Candles'
     },
     {
         id: 'malted-cornflakes',
@@ -154,7 +159,8 @@ const extraOptions: ExtraOption[] = [
         price: 3.00,
         available: true,
         icon: '🥣',
-        color: 'bg-yellow-200'
+        color: 'bg-yellow-200',
+        type: 'Candles'
     },
     {
         id: 'pinata',
@@ -162,7 +168,8 @@ const extraOptions: ExtraOption[] = [
         price: 12.00,
         available: true,
         icon: '🎨',
-        color: 'bg-gradient-to-r from-pink-400 to-purple-400'
+        color: 'bg-gradient-to-r from-pink-400 to-purple-400',
+        type: 'Candles'
     }
 ];
 
@@ -1052,7 +1059,13 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                         {/* Candle body */}
                                         <motion.div
                                             className={`w-2 h-16 rounded-full shadow-lg transform -translate-y-1 
-                                                bg-gradient-to-b from-${selectedCandle.color.toLowerCase()}-300 to-${selectedCandle.color.toLowerCase()}-200`}
+                                                bg-gradient-to-b ${selectedCandle.color.toLowerCase() === 'blue'
+                                                    ? 'from-blue-300 to-blue-200'
+                                                    : selectedCandle.color.toLowerCase() === 'pink'
+                                                        ? 'from-pink-300 to-pink-200'
+                                                        : selectedCandle.color.toLowerCase() === 'white'
+                                                            ? 'from-gray-200 to-gray-100'
+                                                            : 'from-gray-300 to-gray-200'}`}
                                             whileHover={{ scale: 1.1 }}
                                         />
                                     </motion.div>
@@ -1527,11 +1540,20 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                             whileTap={{ scale: 0.98 }}
                                             onClick={() => {
                                                 if (Array.isArray(config.extras)) {
-                                                    const extrasWithoutCandles = config.extras.filter(id => !id.includes('candles'));
+                                                    // Remove any existing items of the same type
+                                                    const extrasWithoutType = config.extras.filter(id => {
+                                                        const item = extraOptions.find(group =>
+                                                            group.items.some(item => item.id === id)
+                                                        )?.items.find(item => item.id === id);
+                                                        return item?.type !== option.type;
+                                                    });
+
                                                     setConfig(prev => ({
                                                         ...prev,
-                                                        extras: [...extrasWithoutCandles, option.id],
-                                                        candles: option.id
+                                                        extras: [...extrasWithoutType, option.id],
+                                                        // Update the specific type in config
+                                                        ...(option.type === 'Candles' ? { candles: option.id } : {}),
+                                                        ...(option.type === 'CakeBoard' ? { board: option.id } : {})
                                                     }));
                                                 }
                                             }}
@@ -1599,11 +1621,20 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                             whileTap={{ scale: 0.98 }}
                                             onClick={() => {
                                                 if (Array.isArray(config.extras)) {
-                                                    const extrasWithoutBoard = config.extras.filter(id => !id.includes('board'));
+                                                    // Remove any existing items of the same type
+                                                    const extrasWithoutType = config.extras.filter(id => {
+                                                        const item = extraOptions.find(group =>
+                                                            group.items.some(item => item.id === id)
+                                                        )?.items.find(item => item.id === id);
+                                                        return item?.type !== option.type;
+                                                    });
+
                                                     setConfig(prev => ({
                                                         ...prev,
-                                                        extras: [...extrasWithoutBoard, option.id],
-                                                        board: option.id
+                                                        extras: [...extrasWithoutType, option.id],
+                                                        // Update the specific type in config
+                                                        ...(option.type === 'Candles' ? { candles: option.id } : {}),
+                                                        ...(option.type === 'CakeBoard' ? { board: option.id } : {})
                                                     }));
                                                 }
                                             }}
