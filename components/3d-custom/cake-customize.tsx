@@ -604,13 +604,14 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                             updated_by: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
                             is_deleted: false,
                             file_name: "custom-cake.jpg",
-                            file_url: "https://example.com/custom-cake.jpg"
+                            file_url: "/imagecake.jpg"
                         },
                         quantity: 1,
                         cake_note: `${config.sponge} sponge with ${config.filling} filling and ${config.outerIcing} icing`,
                         sub_total_price: config.price,
                         available_cake_id: null,
-                        custom_cake_id: data.payload.id
+                        custom_cake_id: data.payload.id,
+                        bakery_id: storeId
                     }
                 ]
             };

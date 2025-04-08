@@ -20,6 +20,7 @@ export interface CartItem {
     sub_total_price: number;
     available_cake_id: string;
     custom_cake_id: string;
+    bakery_id?: string;
 }
 
 export interface Cart {
