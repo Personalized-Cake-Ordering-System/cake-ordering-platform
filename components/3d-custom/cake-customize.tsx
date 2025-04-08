@@ -433,31 +433,21 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
 
     // Update price handling to maintain number type
     const handleOptionSelect = (optionType: 'outerIcing' | 'filling' | 'candles' | 'board', optionId: string) => {
+        // Get the current option's price before updating
+        const currentOption = extraOptions.find(group => group.type === optionType)?.items.find(option => option.id === config[optionType]);
+        const currentPrice = currentOption?.price || 0;
+
+        // Get the new option's price
+        const newOption = extraOptions.find(group => group.type === optionType)?.items.find(option => option.id === optionId);
+        const newPrice = newOption?.price || 0;
+
         // Update the configuration
         setConfig(prev => ({
             ...prev,
-            [optionType]: optionId
+            [optionType]: optionId,
+            // Only update price if there's a change in price
+            price: prev.price - currentPrice + newPrice
         }));
-
-        // Handle price updates for candles and board
-        if (optionType === 'candles' && !config.candles) {
-            const selectedCandle = extraOptions.find(group => group.type === 'Candles')?.items.find(option => option.id === optionId);
-            if (selectedCandle) {
-                setConfig(prev => ({
-                    ...prev,
-                    price: prev.price + selectedCandle.price
-                }));
-            }
-        }
-        if (optionType === 'board' && !config.board) {
-            const selectedBoard = extraOptions.find(group => group.type === 'CakeBoard')?.items.find(option => option.id === optionId);
-            if (selectedBoard) {
-                setConfig(prev => ({
-                    ...prev,
-                    price: prev.price + selectedBoard.price
-                }));
-            }
-        }
     };
 
     // Update the candles removal handler
