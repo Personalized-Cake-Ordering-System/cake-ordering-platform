@@ -251,21 +251,30 @@ interface ApiOptionGroup {
     items: ApiItem[];
 }
 
+// Add this type near the top with other types
+type BoardShape = 'round' | 'square';
+
+// Update the boardOptions array
+const boardOptions = [
+    { id: 'round-board', name: 'ROUND BOARD', color: 'bg-white', shape: 'round' as BoardShape },
+    { id: 'square-board', name: 'SQUARE BOARD', color: 'bg-white', shape: 'square' as BoardShape }
+];
+
 const getInitialCakeConfig = (): CakeConfig => {
     if (typeof window === 'undefined') {
         // Return default config when running on server
         return {
-            size: '8"',
-            price: 95.99,
-            sponge: 'vanilla',
-            outerIcing: 'pink-vanilla',
-            filling: 'white-vanilla',
+            size: '',
+            price: 0,
+            sponge: '',
+            outerIcing: '',
+            filling: '',
             topping: null,
             message: '',
             candles: null,
-            board: 'white',
+            board: 'round-board', // Set default board
             goo: null,
-            extras: [],
+            extras: ['round-board'], // Include board in extras
             messageType: 'none',
             plaqueColor: 'white',
             uploadedImage: null,
@@ -286,23 +295,41 @@ const getInitialCakeConfig = (): CakeConfig => {
 
     // Return default config if no saved config exists
     return {
-        size: '8"',
-        price: 95.99,
+        size: '',
+        price: 0,
         sponge: 'vanilla',
         outerIcing: 'pink-vanilla',
         filling: 'white-vanilla',
         topping: null,
         message: '',
         candles: null,
-        board: 'white',
+        board: 'round-board', // Set default board
         goo: null,
-        extras: [],
+        extras: ['round-board'], // Include board in extras
         messageType: 'none',
         plaqueColor: 'white',
         uploadedImage: null,
         imageUrl: null,
         pipingColor: 'white'
     };
+};
+
+// Add these new animation variants
+const selectedVariants = {
+    selected: {
+        scale: [1, 1.05, 1],
+        boxShadow: "0 0 0 3px rgba(236, 72, 153, 0.4)",
+        transition: {
+            duration: 0.3
+        }
+    },
+    unselected: {
+        scale: 1,
+        boxShadow: "0 0 0 0px rgba(236, 72, 153, 0)",
+        transition: {
+            duration: 0.2
+        }
+    }
 };
 
 const CakeCustomizer = ({ storeId }: { storeId: string }) => {
@@ -338,18 +365,18 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
     // Add a function to reset the configuration
     const handleResetConfig = () => {
         const defaultConfig: CakeConfig = {
-            size: '8"',
-            price: 95.99,
+            size: '',
+            price: 0,
             sponge: 'vanilla',
             outerIcing: 'pink-vanilla',
             filling: 'white-vanilla',
             topping: null,
             message: '',
             candles: null,
-            board: 'white',
+            board: 'round-board', // Set default board
             goo: null,
-            extras: [],
-            messageType: 'none' as 'none' | 'piped' | 'edible',
+            extras: ['round-board'], // Include board in extras
+            messageType: 'none',
             plaqueColor: 'white',
             uploadedImage: null,
             imageUrl: null,
@@ -379,12 +406,6 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
         { id: 'white-candles', name: '6x WHITE CANDLES', color: 'bg-gray-100', price: 4.99 }
     ];
 
-    const boardOptions = [
-        { id: 'white', name: 'WHITE BOARD', color: 'bg-white', border: 'border' },
-        { id: 'pink', name: 'PINK BOARD', color: 'bg-pink-200' },
-        { id: 'blue', name: 'BLUE BOARD', color: 'bg-cyan-200' }
-    ];
-
     // Add these options with the other option arrays
     const sizeOptions: SizeOption[] = [
         { id: '6-inch', name: '6-INCH', size: '6"', price: 83.99, priceChange: -12.00, feeds: '8-10' },
@@ -405,18 +426,30 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
 
     // Update price handling to maintain number type
     const handleOptionSelect = (optionType: 'outerIcing' | 'filling' | 'candles' | 'board', optionId: string) => {
-        setConfig({
-            ...config,
+        // Update the configuration
+        setConfig(prev => ({
+            ...prev,
             [optionType]: optionId
-        });
+        }));
 
+        // Handle price updates for candles and board
         if (optionType === 'candles' && !config.candles) {
-            const selectedOption = candleOptions.find(option => option.id === optionId);
-            setConfig(prev => ({ ...prev, price: prev.price + (selectedOption?.price || 0) }));
+            const selectedCandle = extraOptions.find(group => group.type === 'Candles')?.items.find(option => option.id === optionId);
+            if (selectedCandle) {
+                setConfig(prev => ({
+                    ...prev,
+                    price: prev.price + selectedCandle.price
+                }));
+            }
         }
-
-        if (optionType === 'filling' || optionType === 'outerIcing' || optionType === 'board') {
-            setTimeout(() => setSelectedPart(null), 500);
+        if (optionType === 'board' && !config.board) {
+            const selectedBoard = extraOptions.find(group => group.type === 'CakeBoard')?.items.find(option => option.id === optionId);
+            if (selectedBoard) {
+                setConfig(prev => ({
+                    ...prev,
+                    price: prev.price + selectedBoard.price
+                }));
+            }
         }
     };
 
@@ -515,10 +548,10 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                         decoration_option_id: config.outerIcing
                     }
                 ],
-                extra_selections: config.extras.map(extraId => ({
+                extra_selections: Array.isArray(config.extras) ? config.extras.map(id => ({
                     extra_type: "TOPPING",
-                    extra_option_id: extraId
-                }))
+                    extra_option_id: id
+                })) : []
             };
             console.log('Prepared request body:', requestBody);
 
@@ -551,7 +584,8 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                     ...config,
                     name: `Custom ${config.size} Cake`,
                     description: `${config.sponge} sponge with ${config.filling} filling and ${config.outerIcing} icing`,
-                    type: 'custom'
+                    type: 'custom',
+                    extras: Array.isArray(config.extras) ? config.extras : []
                 }
             };
             console.log('Adding to cart:', cartItem);
@@ -609,13 +643,13 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                 type: config.goo,
                 name: gooOptions.find(o => o.id === config.goo)?.name
             } : null,
-            extras: config.extras.map(id => {
+            extras: Array.isArray(config.extras) ? config.extras.map(id => {
                 const extra = extraOptions.flatMap(group => group.items).find(item => item.id === id);
                 return {
                     type: id,
                     name: extra?.name
                 };
-            }),
+            }) : [],
             decoration: {
                 type: config.outerIcing,
                 name: icingOptions.find(o => o.id === config.outerIcing)?.name
@@ -654,6 +688,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
     // Add these handler functions with proper types
     const handleSizeSelect = (option: SizeOption) => {
         setConfig({
+            ...config,
             size: option.size,
             price: option.price
         });
@@ -661,6 +696,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
 
     const handleSpongeSelect = (option: SpongeOption) => {
         setConfig({
+            ...config,
             sponge: option.id,
             price: config.price + (option.price || 0)
         });
@@ -668,38 +704,42 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
 
     const handleFillingSelect = (option: FillingOption) => {
         setConfig({
+            ...config,
             filling: option.id
         });
     };
 
     const handleGooSelect = (option: GooOption) => {
         setConfig({
+            ...config,
             goo: option.id,
             price: config.price + option.price
         });
     };
 
     const handleExtraSelect = (option: ExtraOption) => {
-        const extras = config.extras.includes(option.id)
-            ? config.extras.filter(id => id !== option.id)
-            : [...config.extras, option.id];
-
-        const price = config.price + (config.extras.includes(option.id) ? -option.price : option.price);
+        const currentExtras = Array.isArray(config.extras) ? config.extras : [];
+        const newExtras = currentExtras.includes(option.id)
+            ? currentExtras.filter(id => id !== option.id)
+            : [...currentExtras, option.id];
 
         setConfig({
-            extras,
-            price
+            ...config,
+            extras: newExtras,
+            price: config.price + (newExtras.includes(option.id) ? option.price : -option.price)
         });
     };
 
-    const handleMessageTypeSelect = (option: MessageOption) => {
+    const handleMessageSelect = (option: MessageOption) => {
         setConfig({
+            ...config,
             messageType: option.id,
+            // Reset related fields when changing message type
             message: option.id === 'none' ? '' : config.message,
-            price: config.price + option.price - (
-                config.messageType === 'piped' ? 7.00 :
-                    config.messageType === 'edible' ? 8.00 : 0
-            )
+            uploadedImage: option.id === 'none' ? null : config.uploadedImage,
+            price: option.id === 'none'
+                ? config.price - (config.messageType === 'piped' ? 7.00 : config.messageType === 'edible' ? 8.00 : 0)
+                : config.price + option.price - (config.messageType === 'piped' ? 7.00 : config.messageType === 'edible' ? 8.00 : 0)
         });
     };
 
@@ -820,7 +860,18 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
             if (data.errors && data.errors.length > 0) {
                 throw new Error(data.errors[0].message);
             }
-            setPartOptions(data.payload);
+
+            // Process the data to match our expected format
+            const processedData = data.payload.map(group => ({
+                type: group.type,
+                items: group.items.map(item => ({
+                    ...item,
+                    // Ensure color is in the correct format for our UI
+                    color: item.color ? `bg-${item.color.toLowerCase()}` : 'bg-gray-200'
+                }))
+            }));
+
+            setPartOptions(processedData);
         } catch (error) {
             console.error('Error fetching part options:', error);
             setError({
@@ -854,32 +905,51 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
         }
     };
 
-    // Render cake visualization
+    // Add a function to get the selected option from part options
+    const getSelectedOption = (type: string, selectedId: string | null) => {
+        const group = partOptions.find(g => g.type === type);
+        return group?.items.find(item => item.id === selectedId);
+    };
+
+    // Update the renderCake function
     const renderCake = () => {
-        const outerIcingColor = icingOptions.find(option => option.id === config.outerIcing)?.color || 'bg-pink-200';
-        const spongeColor = spongeOptions.find(option => option.id === config.sponge)?.color || 'bg-amber-50';
-        const gooColor = gooOptions.find(option => option.id === config.goo)?.color;
-        const showCandles = config.candles !== null;
+        // Get selected options from extraOptions
+        const selectedCandle = extraOptions.find(group => group.type === 'Candles')?.items.find(item => item.id === config.candles);
+        const selectedBoard = extraOptions.find(group => group.type === 'CakeBoard')?.items.find(item => item.id === config.board) || {
+            id: 'round-board',
+            name: 'Round Cake Board',
+            color: 'white',
+            price: 10000
+        }; // Provide default board if none selected
+
+        // Get selected options
+        const selectedSponge = getSelectedOption('Sponge', config.sponge);
+        const selectedFilling = getSelectedOption('Filling', config.filling);
+        const selectedIcing = getSelectedOption('Icing', config.outerIcing);
+        const selectedGoo = getSelectedOption('Goo', config.goo);
+
+        // Get colors from selected options and ensure they're safe for class names
+        const spongeColor = selectedSponge ? convertColorToTailwind(selectedSponge.color).replace('bg-', '') : 'amber-50';
+        const fillingColor = selectedFilling ? convertColorToTailwind(selectedFilling.color).replace('bg-', '') : 'white';
+        const icingColor = selectedIcing ? convertColorToTailwind(selectedIcing.color).replace('bg-', '') : 'pink-200';
+        const gooColor = selectedGoo ? convertColorToTailwind(selectedGoo.color).replace('bg-', '') : null;
+
         const showMessage = config.message !== '';
 
         // Special preview for message customization
         if (selectedPart === 'message' as SelectedPart) {
-            const selectedFilling = fillingIcingOptions.find(option => option.id === config.filling);
-            const fillingColor = selectedFilling?.color || 'bg-pink-200';
+            const messageColor = config.messageType === 'piped'
+                ? convertColorToTailwind(config.plaqueColor).replace('bg-', '')
+                : 'white';
+            const textColor = config.messageType === 'piped'
+                ? convertColorToTailwind(config.pipingColor).replace('bg-', '')
+                : 'pink-400';
 
             return (
                 <div className="relative w-full aspect-square flex items-center justify-center">
-                    {/* Large circular preview */}
                     <div className="relative w-[80%] aspect-square rounded-full">
-                        {/* Outer ring - using filling color */}
-                        <div className={`absolute inset-0 rounded-full ${fillingColor} shadow-lg`}>
-                            {/* Center content - plaque color */}
-                            <div className={`absolute inset-[15%] rounded-full flex items-center justify-center
-                                ${config.messageType === 'piped'
-                                    ? plaqueColors.find(c => c.id === config.plaqueColor)?.color || 'bg-amber-50'
-                                    : 'bg-white'
-                                }`}
-                            >
+                        <div className={`absolute inset-0 rounded-full bg-${fillingColor} shadow-lg`}>
+                            <div className={`absolute inset-[15%] rounded-full flex items-center justify-center bg-${messageColor}`}>
                                 {config.messageType === 'edible' && config.uploadedImage ? (
                                     <Image
                                         src={config.uploadedImage}
@@ -889,49 +959,70 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                         height={200}
                                     />
                                 ) : (
-                                    <div className="text-center text-pink-400 italic p-8">
+                                    <div className={`text-center text-${textColor} italic p-8`}>
                                         {config.message || "Your message will be piped here..."}
                                     </div>
                                 )}
                             </div>
                         </div>
                     </div>
-
-                    {/* Size indicator */}
                     <div className="absolute bottom-4 right-4 text-2xl font-bold">
                         {config.size}
                     </div>
-
                     {renderCakeControls()}
                 </div>
             );
         }
 
-        // Regular cake preview for other sections
         return (
             <div className={`transition-transform duration-300 ${isZoomed ? 'scale-150' : 'scale-100'}`}>
                 <div className="relative flex justify-center items-center">
                     <div className="relative w-full max-w-md aspect-square">
+                        {/* Cake Board */}
+                        {selectedBoard && (
+                            <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-[140%]">
+                                <div className="relative">
+                                    {/* Main board with gradient */}
+                                    <div
+                                        className={`h-4 ${selectedBoard.name.toLowerCase().includes('square') ? 'rounded-2xl' : 'rounded-full'} 
+                                            bg-gradient-to-b from-white to-gray-50 transition-all duration-300`}
+                                        style={{
+                                            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1)'
+                                        }}
+                                    >
+                                        {/* Add subtle sheen effect */}
+                                        <div className={`absolute inset-0 ${selectedBoard.name.toLowerCase().includes('square') ? 'rounded-2xl' : 'rounded-full'}
+                                            bg-gradient-to-r from-white/40 via-transparent to-white/40 transition-all duration-300`} />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Cake base */}
-                        <div className="absolute bottom-0 w-full h-3/4 flex">
+                        <div className="absolute bottom-6 w-full h-3/4 flex">
                             {/* Left side (sponge layers) */}
-                            <div className={`w-1/2 h-full ${spongeColor} flex flex-col`}>
-                                {/* Sponge layers */}
+                            <div className={`w-1/2 h-full flex flex-col`}>
                                 {Array(5).fill(0).map((_, i) => (
                                     <React.Fragment key={i}>
-                                        <div className={`flex-1 ${spongeColor}`} />
-                                        {gooColor && <div className={`h-1 ${gooColor}`} />}
+                                        <div className={`flex-1 bg-${spongeColor}`} />
+                                        {gooColor && <div className={`h-1 bg-${gooColor}`} />}
                                     </React.Fragment>
                                 ))}
                             </div>
 
                             {/* Right side (icing) */}
-                            <div className={`w-1/2 h-full ${outerIcingColor}`} />
+                            <div className={`w-1/2 h-full bg-${icingColor}`}>
+                                {/* Add decorative icing details */}
+                                <div className="absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-white/20 to-transparent" />
+                            </div>
+
+                            {/* Filling preview */}
+                            <div className={`absolute left-1/2 transform -translate-x-1/2 top-0 bottom-0 w-2 bg-${fillingColor}`} />
                         </div>
 
-                        {/* Candles with improved styling and animations */}
-                        {showCandles && (
-                            <div className="absolute w-full flex justify-center -top-2">
+                        {/* Candles */}
+                        {selectedCandle && (
+                            <div className="absolute w-full flex justify-center -top-4">
                                 {Array(6).fill(0).map((_, i) => (
                                     <motion.div
                                         key={i}
@@ -940,7 +1031,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                         transition={{ delay: i * 0.1 }}
                                         className="mx-3 flex flex-col items-center"
                                     >
-                                        {/* Flame animation */}
+                                        {/* Flame with animation */}
                                         <motion.div
                                             animate={{
                                                 scale: [1, 1.2, 1],
@@ -952,7 +1043,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                                 repeat: Infinity,
                                                 repeatType: "reverse"
                                             }}
-                                            className="relative w-4 h-6"
+                                            className="relative w-3 h-4"
                                         >
                                             <div className="absolute inset-0 bg-amber-400 rounded-full blur-sm opacity-50" />
                                             <div className="absolute inset-0 bg-amber-300 rounded-full" />
@@ -960,11 +1051,8 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
 
                                         {/* Candle body */}
                                         <motion.div
-                                            className={`w-3 h-24 rounded-full shadow-lg transform -translate-y-1
-                                                ${config.candles === 'pink-candles' ? 'bg-gradient-to-b from-pink-300 to-pink-200' :
-                                                    config.candles === 'blue-candles' ? 'bg-gradient-to-b from-blue-300 to-blue-200' :
-                                                        'bg-gradient-to-b from-gray-100 to-white'}
-                                            `}
+                                            className={`w-2 h-16 rounded-full shadow-lg transform -translate-y-1 
+                                                bg-gradient-to-b from-${selectedCandle.color.toLowerCase()}-300 to-${selectedCandle.color.toLowerCase()}-200`}
                                             whileHover={{ scale: 1.1 }}
                                         />
                                     </motion.div>
@@ -972,39 +1060,25 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                             </div>
                         )}
 
-                        {/* Extras */}
-                        {config.extras.length > 0 && (
-                            <div className="absolute inset-x-0 top-1/2 flex justify-center">
-                                <div className="relative w-3/4 flex flex-wrap justify-center gap-2">
-                                    {config.extras.map((extraId, index) => {
-                                        const extra = extraOptions.flatMap(group => group.items).find(item => item.id === extraId);
-                                        if (!extra) return null;
-
-                                        return (
-                                            <motion.div
-                                                key={extraId}
-                                                initial={{ scale: 0, opacity: 0 }}
-                                                animate={{ scale: 1, opacity: 1 }}
-                                                transition={{ delay: index * 0.1 }}
-                                                className="absolute"
-                                                style={{
-                                                    top: `${Math.sin(index * (Math.PI / 3)) * 30}%`,
-                                                    left: `${Math.cos(index * (Math.PI / 3)) * 30}%`,
-                                                }}
-                                            >
-                                                <div className={`w-8 h-8 rounded-full ${extra.color} shadow-lg`} />
-                                            </motion.div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        )}
-
                         {/* Message */}
                         {(showMessage || selectedPart === 'message') && (
                             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                                <div className="w-32 h-32 bg-white/90 rounded-full flex justify-center items-center text-sm text-pink-400 p-4 text-center shadow-sm">
-                                    {config.message || "Your message here..."}
+                                <div className={`w-32 h-32 rounded-full flex justify-center items-center text-sm p-4 text-center shadow-sm
+                                    ${config.messageType === 'piped'
+                                        ? `bg-${config.plaqueColor} text-${config.pipingColor}`
+                                        : 'bg-white/90 text-pink-400'}`}
+                                >
+                                    {config.messageType === 'edible' && config.uploadedImage ? (
+                                        <Image
+                                            src={config.uploadedImage}
+                                            alt="Uploaded design"
+                                            width={120}
+                                            height={120}
+                                            className="rounded-full object-cover"
+                                        />
+                                    ) : (
+                                        config.message || "Your message here..."
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -1021,24 +1095,70 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
         );
     };
 
-    // Add helper functions for data handling
-    const getOptionColor = (option: ApiItem): string => {
-        return option.color || 'bg-gray-200';
+    // Update the convertColorToTailwind function
+    const convertColorToTailwind = (color: string): string => {
+        if (!color) return 'bg-gray-200';
+
+        // Remove any 'bg-' prefix if it exists in the API response
+        const normalizedColor = color.toLowerCase().trim().replace('bg-', '');
+
+        // Map API color names to Tailwind classes
+        const colorMap: Record<string, string> = {
+            'white': 'bg-white',
+            'brown': 'bg-amber-800',
+            'dark brown': 'bg-brown-900',
+            'yellow': 'bg-yellow-300',
+            'red': 'bg-red-500',
+            'pink': 'bg-pink-400',
+            'blue': 'bg-blue-400',
+            'orange': 'bg-orange-400',
+            'chocolate': 'bg-amber-800',
+            'vanilla': 'bg-yellow-100',
+            'various': 'bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400'
+        };
+
+        // Check for exact matches first
+        if (colorMap[normalizedColor]) {
+            return colorMap[normalizedColor];
+        }
+
+        // Handle compound colors
+        if (normalizedColor.includes('light')) {
+            const baseColor = normalizedColor.replace('light ', '');
+            if (colorMap[baseColor]) {
+                return colorMap[baseColor].replace('500', '300').replace('400', '200');
+            }
+        }
+        if (normalizedColor.includes('dark')) {
+            const baseColor = normalizedColor.replace('dark ', '');
+            if (colorMap[baseColor]) {
+                return colorMap[baseColor].replace('500', '700').replace('400', '600');
+            }
+        }
+
+        // If no match found, try to create a Tailwind class from the color name
+        return `bg-${normalizedColor}-400`;
     };
 
-    const getOptionPrice = (option: ApiItem): number => {
-        return option.price || 0;
+    // Update the getColorPreviewStyles function
+    const getColorPreviewStyles = (color: string) => {
+        const baseStyle = "w-full h-32 rounded-lg shadow-md transition-transform duration-300";
+
+        // Handle empty or invalid color
+        if (!color) return `${baseStyle} bg-gray-200`;
+
+        // Remove any 'bg-' prefix if it exists
+        const cleanColor = color.replace('bg-', '');
+
+        if (cleanColor.toLowerCase() === 'various') {
+            return `${baseStyle} bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400`;
+        }
+
+        const colorClass = convertColorToTailwind(cleanColor);
+        return `${baseStyle} ${colorClass}`;
     };
 
-    const getOptionName = (option: ApiItem): string => {
-        return option.name || 'Unnamed Option';
-    };
-
-    const getOptionImage = (option: ApiItem): string | null => {
-        return option.image?.file_url || null;
-    };
-
-    // Update the renderCustomizationPanel function
+    // Update the renderCustomizationPanel function's option cards
     const renderCustomizationPanel = () => {
         if (!selectedPart) return null;
 
@@ -1073,105 +1193,476 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
             case 'cake':
                 return (
                     <div className="space-y-6">
-                        {/* Size options from API */}
-                        {partOptions.find(group => group.type === 'Size')?.items.map((option) => (
-                            <button
-                                key={option.id}
-                                onClick={() => handleSizeSelect({
-                                    id: option.id,
-                                    name: getOptionName(option),
-                                    size: getOptionName(option),
-                                    price: getOptionPrice(option),
-                                    priceChange: getOptionPrice(option) - config.price,
-                                    feeds: '8-10'
-                                })}
-                                className={`flex flex-col items-center ${config.size === getOptionName(option) ? 'ring-2 ring-pink-500' : ''}`}
-                            >
-                                <div className={`w-20 h-20 rounded-full border-2 ${config.size === getOptionName(option) ? 'border-pink-500' : 'border-gray-200'} flex items-center justify-center text-lg font-bold`}>
-                                    {getOptionName(option)}
-                                </div>
-                                <div className="mt-2 text-sm font-medium">{getOptionName(option)}</div>
-                                <div className="text-sm text-gray-500">
-                                    {getOptionPrice(option) > config.price ? '+' : ''}£{Math.abs(getOptionPrice(option) - config.price).toFixed(2)} VND
-                                </div>
-                            </button>
-                        ))}
+                        {/* Size options */}
+                        <div className="mb-8">
+                            <h3 className="font-bold mb-4 text-2xl bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
+                                KÍCH THƯỚC
+                            </h3>
+                            <div className="grid grid-cols-3 gap-4">
+                                {partOptions.find(group => group.type === 'Size')?.items.map((option) => (
+                                    <motion.button
+                                        key={option.id}
+                                        variants={selectedVariants}
+                                        animate={config.size === option.name ? "selected" : "unselected"}
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={() => handleSizeSelect({
+                                            id: option.id,
+                                            name: option.name,
+                                            size: option.name,
+                                            price: option.price,
+                                            priceChange: option.price - config.price,
+                                            feeds: option.name === 'Large' ? '30-40' : '8-10'
+                                        })}
+                                        className={`relative flex flex-col items-center p-4 rounded-xl border-2 
+                                            ${config.size === option.name
+                                                ? 'border-pink-500 bg-gradient-to-br from-pink-50 to-purple-50'
+                                                : 'border-gray-200 hover:border-pink-300'} 
+                                            transition-all duration-300 transform`}
+                                    >
+                                        <div className="text-2xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
+                                            {option.name}
+                                        </div>
+                                        <div className="text-sm text-gray-600 mt-2">{option.description}</div>
+                                        <div className="text-pink-600 font-bold mt-2 text-lg">
+                                            {option.price.toLocaleString()} VND
+                                        </div>
+                                        {config.size === option.name && (
+                                            <motion.div
+                                                initial={{ scale: 0 }}
+                                                animate={{ scale: 1 }}
+                                                className="absolute -top-2 -right-2 bg-pink-500 text-white rounded-full p-1"
+                                            >
+                                                <Check className="w-4 h-4" />
+                                            </motion.div>
+                                        )}
+                                    </motion.button>
+                                ))}
+                            </div>
+                        </div>
 
-                        {/* Sponge options from API */}
-                        {partOptions.find(group => group.type === 'Sponge')?.items.map((option) => (
-                            <button
-                                key={option.id}
-                                onClick={() => handleSpongeSelect({
-                                    id: option.id,
-                                    name: getOptionName(option),
-                                    color: getOptionColor(option),
-                                    price: getOptionPrice(option)
-                                })}
-                                className="flex flex-col items-center"
-                            >
-                                <div className={`w-16 h-16 ${getOptionColor(option)} rounded border ${config.sponge === option.id ? 'ring-2 ring-pink-500' : 'ring-1 ring-gray-200'}`}>
-                                    <div className="h-full flex flex-col">
-                                        <div className="flex-1 border-b border-white/20"></div>
-                                        <div className="flex-1 border-b border-white/20"></div>
-                                        <div className="flex-1 border-b border-white/20"></div>
-                                        <div className="flex-1"></div>
-                                    </div>
-                                </div>
-                                <div className="mt-2 text-xs font-medium text-center">{getOptionName(option)}</div>
-                                {getOptionPrice(option) > 0 && (
-                                    <div className="text-xs text-gray-500">{getOptionPrice(option).toFixed(2)} VND</div>
-                                )}
-                            </button>
-                        ))}
+                        {/* Sponge options */}
+                        <div className="mb-8">
+                            <h3 className="font-bold mb-4 text-2xl text-pink-500">
+                                BÁNH BỘT
+                            </h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                {partOptions.find(group => group.type === 'Sponge')?.items.map((option) => (
+                                    <motion.button
+                                        key={option.id}
+                                        variants={selectedVariants}
+                                        animate={config.sponge === option.id ? "selected" : "unselected"}
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={() => handleSpongeSelect({
+                                            id: option.id,
+                                            name: option.name,
+                                            color: option.color,
+                                            price: option.price
+                                        })}
+                                        className={`relative flex flex-col p-4 rounded-xl border-2
+                                            ${config.sponge === option.id
+                                                ? 'border-pink-500 bg-gradient-to-br from-pink-50 to-purple-50'
+                                                : 'border-gray-200 hover:border-pink-300'}
+                                            transition-all duration-300`}
+                                    >
+                                        <div className="w-full mb-3">
+                                            {option.image ? (
+                                                <Image
+                                                    src={option.image.file_url}
+                                                    alt={option.name}
+                                                    width={200}
+                                                    height={200}
+                                                    className="rounded-lg object-cover w-full h-32"
+                                                />
+                                            ) : (
+                                                <div
+                                                    className={getColorPreviewStyles(option.color)}
+                                                    title={`Color: ${option.color}`}
+                                                />
+                                            )}
+                                        </div>
+                                        <div className="text-left w-full">
+                                            <div className="font-medium text-gray-900">{option.name}</div>
+                                            <div className="text-sm text-gray-600 mt-1">{option.description}</div>
+                                            <div className="text-pink-500 font-bold mt-2">
+                                                {option.price.toLocaleString()} VND
+                                            </div>
+                                        </div>
+                                        {config.sponge === option.id && (
+                                            <motion.div
+                                                initial={{ scale: 0 }}
+                                                animate={{ scale: 1 }}
+                                                className="absolute -top-2 -right-2 bg-pink-500 text-white rounded-full p-1"
+                                            >
+                                                <Check className="w-4 h-4" />
+                                            </motion.div>
+                                        )}
+                                    </motion.button>
+                                ))}
+                            </div>
+                        </div>
 
-                        {/* Filling options from API */}
-                        {partOptions.find(group => group.type === 'Filling')?.items.map((option) => (
-                            <button
-                                key={option.id}
-                                onClick={() => handleFillingSelect({
-                                    id: option.id,
-                                    name: getOptionName(option),
-                                    color: getOptionColor(option),
-                                    price: getOptionPrice(option),
-                                    icon: '≡'
-                                })}
-                                className="flex flex-col items-center"
-                            >
-                                <div className={`w-20 h-20 relative ${getOptionColor(option)} ${config.filling === option.id ? 'ring-2 ring-pink-500' : 'ring-1 ring-gray-200'}`} />
-                                <p className="text-[10px] font-medium mt-2 text-center max-w-[80px]">
-                                    {getOptionName(option)}
-                                </p>
-                            </button>
-                        ))}
+                        {/* Filling options */}
+                        <div className="mb-8">
+                            <h3 className="font-bold mb-4 text-2xl text-pink-500">
+                                NHÂN BÁNH
+                            </h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                {partOptions.find(group => group.type === 'Filling')?.items.map((option) => (
+                                    <motion.button
+                                        key={option.id}
+                                        variants={selectedVariants}
+                                        animate={config.filling === option.id ? "selected" : "unselected"}
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={() => handleFillingSelect({
+                                            id: option.id,
+                                            name: option.name,
+                                            color: option.color,
+                                            price: option.price,
+                                            icon: '≡'
+                                        })}
+                                        className={`relative flex flex-col p-4 rounded-xl border-2
+                                            ${config.filling === option.id
+                                                ? 'border-pink-500 bg-gradient-to-br from-pink-50 to-purple-50'
+                                                : 'border-gray-200 hover:border-pink-300'}
+                                            transition-all duration-300`}
+                                    >
+                                        <div className="w-full mb-3">
+                                            {option.image ? (
+                                                <Image
+                                                    src={option.image.file_url}
+                                                    alt={option.name}
+                                                    width={200}
+                                                    height={200}
+                                                    className="rounded-lg object-cover w-full h-32"
+                                                />
+                                            ) : (
+                                                <div
+                                                    className={getColorPreviewStyles(option.color)}
+                                                    style={{
+                                                        backgroundColor: option.color.toLowerCase() === 'white' ? '#ffffff' : undefined
+                                                    }}
+                                                />
+                                            )}
+                                        </div>
+                                        <div className="text-left w-full">
+                                            <div className="font-medium text-gray-900">{option.name}</div>
+                                            <div className="text-sm text-gray-600 mt-1">{option.description}</div>
+                                            <div className="text-pink-500 font-bold mt-2">
+                                                {option.price.toLocaleString()} VND
+                                            </div>
+                                        </div>
+                                        {config.filling === option.id && (
+                                            <motion.div
+                                                initial={{ scale: 0 }}
+                                                animate={{ scale: 1 }}
+                                                className="absolute -top-2 -right-2 bg-pink-500 text-white rounded-full p-1"
+                                            >
+                                                <Check className="w-4 h-4" />
+                                            </motion.div>
+                                        )}
+                                    </motion.button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Goo options */}
+                        <div className="mb-8">
+                            <h3 className="font-bold mb-4 text-2xl text-pink-500">
+                                NƯỚC SỐT
+                            </h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                {partOptions.find(group => group.type === 'Goo')?.items.map((option) => (
+                                    <motion.button
+                                        key={option.id}
+                                        variants={selectedVariants}
+                                        animate={config.goo === option.id ? "selected" : "unselected"}
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={() => handleGooSelect({
+                                            id: option.id,
+                                            name: option.name,
+                                            color: option.color,
+                                            price: option.price
+                                        })}
+                                        className={`relative flex flex-col p-4 rounded-xl border-2
+                                            ${config.goo === option.id
+                                                ? 'border-pink-500 bg-gradient-to-br from-pink-50 to-purple-50'
+                                                : 'border-gray-200 hover:border-pink-300'}
+                                            transition-all duration-300`}
+                                    >
+                                        <div className="w-full mb-3">
+                                            {option.image ? (
+                                                <Image
+                                                    src={option.image.file_url}
+                                                    alt={option.name}
+                                                    width={200}
+                                                    height={200}
+                                                    className="rounded-lg object-cover w-full h-32"
+                                                />
+                                            ) : (
+                                                <div
+                                                    className={getColorPreviewStyles(option.color)}
+                                                    style={{
+                                                        backgroundColor: option.color.toLowerCase() === 'white' ? '#ffffff' : undefined
+                                                    }}
+                                                />
+                                            )}
+                                        </div>
+                                        <div className="text-left w-full">
+                                            <div className="font-medium text-gray-900">{option.name}</div>
+                                            <div className="text-sm text-gray-600 mt-1">{option.description}</div>
+                                            <div className="text-pink-500 font-bold mt-2">
+                                                {option.price.toLocaleString()} VND
+                                            </div>
+                                        </div>
+                                        {config.goo === option.id && (
+                                            <motion.div
+                                                initial={{ scale: 0 }}
+                                                animate={{ scale: 1 }}
+                                                className="absolute -top-2 -right-2 bg-pink-500 text-white rounded-full p-1"
+                                            >
+                                                <Check className="w-4 h-4" />
+                                            </motion.div>
+                                        )}
+                                    </motion.button>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 );
 
             case 'outer-icing':
                 return (
-                    <div>
-                        <h3 className="font-bold mb-2">OUTER ICING</h3>
-                        <div className="grid grid-cols-4 gap-2">
-                            {decorationOptions.map(group =>
+                    <div className="space-y-6">
+                        <h3 className="font-bold mb-6 text-2xl bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
+                            TRANG TRÍ
+                        </h3>
+                        <div className="grid grid-cols-2 gap-4">
+                            {decorationOptions.map(group => (
                                 group.items.map(option => (
-                                    <div key={option.id} className="flex flex-col items-center">
-                                        <button
-                                            className={`w-12 h-12 ${getOptionColor(option)} ${config.outerIcing === option.id ? 'ring-2 ring-pink-500' : 'ring-1 ring-gray-200'} rounded`}
-                                            onClick={() => handleOptionSelect('outerIcing', option.id)}
-                                        />
-                                        <p className="text-xs text-center mt-1">{getOptionName(option)}</p>
-                                        {getOptionPrice(option) > 0 && (
-                                            <p className="text-xs text-gray-500">{getOptionPrice(option).toFixed(2)} VND</p>
+                                    <motion.button
+                                        key={option.id}
+                                        variants={selectedVariants}
+                                        animate={config.outerIcing === option.id ? "selected" : "unselected"}
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={() => handleOptionSelect('outerIcing', option.id)}
+                                        className={`relative flex flex-col p-4 rounded-xl border-2
+                                            ${config.outerIcing === option.id
+                                                ? 'border-pink-500 bg-gradient-to-br from-pink-50 to-purple-50'
+                                                : 'border-gray-200 hover:border-pink-300'}
+                                            transition-all duration-300`}
+                                    >
+                                        <div className="w-full mb-3">
+                                            {option.image ? (
+                                                <Image
+                                                    src={option.image.file_url}
+                                                    alt={option.name}
+                                                    width={200}
+                                                    height={200}
+                                                    className="rounded-lg object-cover w-full h-32"
+                                                />
+                                            ) : (
+                                                <div
+                                                    className={getColorPreviewStyles(option.color)}
+                                                    title={option.name}
+                                                >
+                                                    <div className="absolute inset-0 flex items-center justify-center">
+                                                        <span className="text-4xl opacity-50">
+                                                            {option.name.includes('Drip') ? '💧' :
+                                                                option.name.includes('Sprinkles') ? '✨' :
+                                                                    option.name.includes('TallSkirt') ? '👗' : '🎨'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="text-left w-full">
+                                            <div className="font-medium text-gray-900">{option.name}</div>
+                                            <div className="text-pink-500 font-bold mt-2">
+                                                {option.price.toLocaleString()} VND
+                                            </div>
+                                        </div>
+                                        {config.outerIcing === option.id && (
+                                            <motion.div
+                                                initial={{ scale: 0 }}
+                                                animate={{ scale: 1 }}
+                                                className="absolute -top-2 -right-2 bg-pink-500 text-white rounded-full p-1"
+                                            >
+                                                <Check className="w-4 h-4" />
+                                            </motion.div>
                                         )}
-                                    </div>
+                                    </motion.button>
                                 ))
-                            )}
+                            ))}
+                        </div>
+                        <div className="mt-6 text-center text-sm text-gray-500">
+                            Chọn kiểu trang trí cho bánh của bạn
+                        </div>
+                    </div>
+                );
+
+            case 'extras':
+                return (
+                    <div>
+                        <h3 className="font-bold mb-6 text-2xl bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
+                            THÊM PHẦN
+                        </h3>
+                        <div className="space-y-8">
+                            {/* Candles Section */}
+                            <div className="space-y-4">
+                                <h4 className="font-semibold text-xl text-gray-800 pl-2 border-l-4 border-pink-500">
+                                    NẾN TRANG TRÍ 🕯️
+                                </h4>
+                                <div className="grid grid-cols-1 gap-4">
+                                    {extraOptions.find(group => group.type === 'Candles')?.items.map(option => (
+                                        <motion.button
+                                            key={option.id}
+                                            variants={selectedVariants}
+                                            animate={config.candles === option.id ? "selected" : "unselected"}
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                            onClick={() => {
+                                                if (Array.isArray(config.extras)) {
+                                                    const extrasWithoutCandles = config.extras.filter(id => !id.includes('candles'));
+                                                    setConfig(prev => ({
+                                                        ...prev,
+                                                        extras: [...extrasWithoutCandles, option.id],
+                                                        candles: option.id
+                                                    }));
+                                                }
+                                            }}
+                                            className={`relative flex items-center p-6 rounded-xl border-2 w-full
+                                                ${config.candles === option.id
+                                                    ? 'border-pink-500 bg-gradient-to-br from-pink-50 to-purple-50'
+                                                    : 'border-gray-200 hover:border-pink-300'}
+                                                transition-all duration-300`}
+                                        >
+                                            <div className="flex-1 flex items-center gap-6">
+                                                <div className={`relative w-24 h-24 rounded-lg overflow-hidden 
+                                                    ${option.image
+                                                        ? ''
+                                                        : `bg-gradient-to-br from-${option.color.toLowerCase()}-200 to-white`}`
+                                                }>
+                                                    {option.image ? (
+                                                        <Image
+                                                            src={option.image.file_url}
+                                                            alt={option.name}
+                                                            fill
+                                                            className="object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center text-4xl">
+                                                            🕯️
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <div className="font-bold text-lg text-gray-900">{option.name}</div>
+                                                    <div className="text-sm text-gray-600 mt-1">
+                                                        {option.description}
+                                                    </div>
+                                                    <div className="text-pink-600 font-bold mt-2 text-xl">
+                                                        {option.price.toLocaleString()} VND
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {config.candles === option.id && (
+                                                <motion.div
+                                                    initial={{ scale: 0 }}
+                                                    animate={{ scale: 1 }}
+                                                    className="absolute -top-2 -right-2 bg-pink-500 text-white rounded-full p-2"
+                                                >
+                                                    <Check className="w-5 h-5" />
+                                                </motion.div>
+                                            )}
+                                        </motion.button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Cake Board Section */}
+                            <div className="space-y-4">
+                                <h4 className="font-semibold text-xl text-gray-800 pl-2 border-l-4 border-pink-500">
+                                    ĐẾ BÁNH 🎂
+                                </h4>
+                                <div className="grid grid-cols-1 gap-4">
+                                    {extraOptions.find(group => group.type === 'CakeBoard')?.items.map(option => (
+                                        <motion.button
+                                            key={option.id}
+                                            variants={selectedVariants}
+                                            animate={config.board === option.id ? "selected" : "unselected"}
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                            onClick={() => {
+                                                if (Array.isArray(config.extras)) {
+                                                    const extrasWithoutBoard = config.extras.filter(id => !id.includes('board'));
+                                                    setConfig(prev => ({
+                                                        ...prev,
+                                                        extras: [...extrasWithoutBoard, option.id],
+                                                        board: option.id
+                                                    }));
+                                                }
+                                            }}
+                                            className={`relative flex items-center p-6 rounded-xl border-2 w-full
+                                                ${config.board === option.id
+                                                    ? 'border-pink-500 bg-gradient-to-br from-pink-50 to-purple-50'
+                                                    : 'border-gray-200 hover:border-pink-300'}
+                                                transition-all duration-300`}
+                                        >
+                                            <div className="flex-1 flex items-center gap-6">
+                                                <div className={`relative w-24 h-24 rounded-lg overflow-hidden 
+                                                    ${option.image
+                                                        ? ''
+                                                        : `bg-gradient-to-br from-${option.color.toLowerCase()}-100 to-white`}`
+                                                }>
+                                                    {option.image ? (
+                                                        <Image
+                                                            src={option.image.file_url}
+                                                            alt={option.name}
+                                                            fill
+                                                            className="object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center text-4xl">
+                                                            🎂
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <div className="font-bold text-lg text-gray-900">{option.name}</div>
+                                                    <div className="text-sm text-gray-600 mt-1">
+                                                        {option.description}
+                                                    </div>
+                                                    <div className="text-pink-600 font-bold mt-2 text-xl">
+                                                        {option.price.toLocaleString()} VND
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {config.board === option.id && (
+                                                <motion.div
+                                                    initial={{ scale: 0 }}
+                                                    animate={{ scale: 1 }}
+                                                    className="absolute -top-2 -right-2 bg-pink-500 text-white rounded-full p-2"
+                                                >
+                                                    <Check className="w-5 h-5" />
+                                                </motion.div>
+                                            )}
+                                        </motion.button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="mt-6 text-center text-sm text-gray-500">
+                            Chọn một loại nến và một loại đế bánh để hoàn thiện chiếc bánh của bạn
                         </div>
                     </div>
                 );
 
             case 'message':
-                const plaqueColourGroup = messageOptions.find(group => group.type === 'PLAQUE_COLOUR');
-                const pipingColourGroup = messageOptions.find(group => group.type === 'PIPING_COLOUR');
                 const messageTypeOptions: MessageOption[] = [
                     { id: 'none', name: 'KHÔNG', price: 0, icon: '✖️' },
                     { id: 'piped', name: 'CHỮ VIẾT TAY', price: 7.00, icon: '✍️' },
@@ -1180,34 +1671,56 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
 
                 return (
                     <div className="space-y-6">
-                        <h3 className="font-bold mb-4">PRINTING & PIPING</h3>
+                        <h3 className="font-bold mb-4 text-2xl bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
+                            THÔNG ĐIỆP
+                        </h3>
 
                         {/* Message Type Selection */}
                         <div className="grid grid-cols-3 gap-4 mb-6">
                             {messageTypeOptions.map(option => (
-                                <button
+                                <motion.button
                                     key={option.id}
-                                    onClick={() => handleMessageTypeSelect(option)}
-                                    className="flex flex-col items-center"
+                                    variants={selectedVariants}
+                                    animate={config.messageType === option.id ? "selected" : "unselected"}
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={() => handleMessageSelect(option)}
+                                    className={`relative flex flex-col items-center p-4 rounded-xl border-2
+                                        ${config.messageType === option.id
+                                            ? 'border-pink-500 bg-gradient-to-br from-pink-50 to-purple-50'
+                                            : 'border-gray-200 hover:border-pink-300'}
+                                        transition-all duration-300`}
                                 >
-                                    <div className={`w-16 h-16 bg-white rounded-lg border-2 flex items-center justify-center
-                                        ${config.messageType === option.id ? 'border-pink-500' : 'border-gray-200'}`}
-                                    >
-                                        <span className="text-2xl">{option.icon}</span>
+                                    <div className="text-3xl mb-2">{option.icon}</div>
+                                    <div className="text-sm font-medium text-center">{option.name}</div>
+                                    <div className="text-pink-600 font-bold mt-1 text-sm">
+                                        {option.price > 0 ? `${option.price.toLocaleString()} VND` : 'Miễn phí'}
                                     </div>
-                                    <div className="mt-2 text-xs font-medium text-center">{option.name}</div>
-                                </button>
+                                    {config.messageType === option.id && (
+                                        <motion.div
+                                            initial={{ scale: 0 }}
+                                            animate={{ scale: 1 }}
+                                            className="absolute -top-2 -right-2 bg-pink-500 text-white rounded-full p-1"
+                                        >
+                                            <Check className="w-4 h-4" />
+                                        </motion.div>
+                                    )}
+                                </motion.button>
                             ))}
                         </div>
 
                         {/* Message Content */}
                         {config.messageType !== 'none' && (
-                            <div className="space-y-4">
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="space-y-4"
+                            >
                                 {config.messageType === 'edible' ? (
                                     <div className="space-y-4">
                                         <div className="flex flex-col items-center space-y-2">
                                             <label className="text-sm font-medium text-gray-700">
-                                                Upload Design Image
+                                                Tải lên hình ảnh của bạn
                                             </label>
                                             <input
                                                 type="file"
@@ -1218,10 +1731,10 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                             />
                                             <label
                                                 htmlFor="design-upload"
-                                                className="cursor-pointer p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-pink-500 transition-colors"
+                                                className="cursor-pointer p-6 border-2 border-dashed border-gray-300 rounded-xl hover:border-pink-500 transition-colors w-full"
                                             >
                                                 {config.uploadedImage ? (
-                                                    <div className="relative w-32 h-32">
+                                                    <div className="relative w-full aspect-square">
                                                         <Image
                                                             src={config.uploadedImage}
                                                             alt="Uploaded design"
@@ -1233,7 +1746,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                                                 e.preventDefault();
                                                                 handleImageRemove();
                                                             }}
-                                                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                                                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
                                                         >
                                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1241,11 +1754,11 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                                         </button>
                                                     </div>
                                                 ) : (
-                                                    <div className="text-center">
+                                                    <div className="text-center py-8">
                                                         <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                                         </svg>
-                                                        <p className="mt-2 text-sm text-gray-600">Click to upload your design</p>
+                                                        <p className="mt-2 text-sm text-gray-600">Nhấn để tải lên thiết kế của bạn</p>
                                                     </div>
                                                 )}
                                             </label>
@@ -1255,104 +1768,93 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                     <div className="space-y-4">
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Your Message (max 30 characters)
+                                                Thông điệp của bạn (tối đa 30 ký tự)
                                             </label>
                                             <input
                                                 type="text"
                                                 value={config.message}
                                                 onChange={handleMessageChange}
                                                 maxLength={30}
-                                                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                                                placeholder="Enter your message..."
+                                                className="w-full p-3 border-2 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
+                                                placeholder="Nhập thông điệp của bạn..."
                                             />
                                         </div>
 
                                         {/* Plaque Color Selection */}
-                                        {plaqueColourGroup?.items.map(option => (
-                                            <div key={option.id} className="flex items-center space-x-2">
-                                                <input
-                                                    type="radio"
-                                                    id={`plaque-${option.id}`}
-                                                    name="plaque-color"
-                                                    value={option.id}
-                                                    checked={config.plaqueColor === option.id}
-                                                    onChange={() => handlePlaqueColorChange(option.id)}
-                                                    className="h-4 w-4 text-pink-600 focus:ring-pink-500"
-                                                />
-                                                <label htmlFor={`plaque-${option.id}`} className="text-sm text-gray-700">
-                                                    {option.name}
-                                                </label>
+                                        <div className="space-y-2">
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Màu nền
+                                            </label>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                {plaqueColors.map(color => (
+                                                    <motion.button
+                                                        key={color.id}
+                                                        variants={selectedVariants}
+                                                        animate={config.plaqueColor === color.id ? "selected" : "unselected"}
+                                                        whileHover={{ scale: 1.02 }}
+                                                        whileTap={{ scale: 0.98 }}
+                                                        onClick={() => handlePlaqueColorChange(color.id)}
+                                                        className={`relative flex items-center space-x-3 p-3 rounded-xl border-2
+                                                            ${config.plaqueColor === color.id
+                                                                ? 'border-pink-500 bg-gradient-to-br from-pink-50 to-purple-50'
+                                                                : 'border-gray-200 hover:border-pink-300'}
+                                                            transition-all duration-300`}
+                                                    >
+                                                        <div className={`w-8 h-8 rounded-lg ${color.color}`} />
+                                                        <span className="text-sm">{color.name}</span>
+                                                        {config.plaqueColor === color.id && (
+                                                            <motion.div
+                                                                initial={{ scale: 0 }}
+                                                                animate={{ scale: 1 }}
+                                                                className="absolute -top-2 -right-2 bg-pink-500 text-white rounded-full p-1"
+                                                            >
+                                                                <Check className="w-4 h-4" />
+                                                            </motion.div>
+                                                        )}
+                                                    </motion.button>
+                                                ))}
                                             </div>
-                                        ))}
+                                        </div>
 
                                         {/* Piping Color Selection */}
-                                        {pipingColourGroup?.items.map(option => (
-                                            <div key={option.id} className="flex items-center space-x-2">
-                                                <input
-                                                    type="radio"
-                                                    id={`piping-${option.id}`}
-                                                    name="piping-color"
-                                                    value={option.id}
-                                                    checked={config.pipingColor === option.id}
-                                                    onChange={() => setConfig(prev => ({ ...prev, pipingColor: option.id }))}
-                                                    className="h-4 w-4 text-pink-600 focus:ring-pink-500"
-                                                />
-                                                <label htmlFor={`piping-${option.id}`} className="text-sm text-gray-700">
-                                                    {option.name}
-                                                </label>
+                                        <div className="space-y-2">
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Màu chữ
+                                            </label>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                {messageOptions.find(group => group.type === 'PIPING_COLOUR')?.items.map(option => (
+                                                    <motion.button
+                                                        key={option.id}
+                                                        variants={selectedVariants}
+                                                        animate={config.pipingColor === option.id ? "selected" : "unselected"}
+                                                        whileHover={{ scale: 1.02 }}
+                                                        whileTap={{ scale: 0.98 }}
+                                                        onClick={() => setConfig(prev => ({ ...prev, pipingColor: option.id }))}
+                                                        className={`relative flex items-center space-x-3 p-3 rounded-xl border-2
+                                                            ${config.pipingColor === option.id
+                                                                ? 'border-pink-500 bg-gradient-to-br from-pink-50 to-purple-50'
+                                                                : 'border-gray-200 hover:border-pink-300'}
+                                                            transition-all duration-300`}
+                                                    >
+                                                        <div className={`w-8 h-8 rounded-lg ${convertColorToTailwind(option.color)}`} />
+                                                        <span className="text-sm">{option.name}</span>
+                                                        {config.pipingColor === option.id && (
+                                                            <motion.div
+                                                                initial={{ scale: 0 }}
+                                                                animate={{ scale: 1 }}
+                                                                className="absolute -top-2 -right-2 bg-pink-500 text-white rounded-full p-1"
+                                                            >
+                                                                <Check className="w-4 h-4" />
+                                                            </motion.div>
+                                                        )}
+                                                    </motion.button>
+                                                ))}
                                             </div>
-                                        ))}
+                                        </div>
                                     </div>
                                 )}
-                            </div>
+                            </motion.div>
                         )}
-                    </div>
-                );
-
-            case 'extras':
-                return (
-                    <div>
-                        <h3 className="font-bold mb-4">MAKE IT EXTRA</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            {extraOptions.flatMap(group =>
-                                group.items.map(option => (
-                                    <motion.div
-                                        key={option.id}
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        className="flex flex-col items-center"
-                                    >
-                                        <button
-                                            onClick={() => handleExtraSelect({
-                                                id: option.id,
-                                                name: getOptionName(option),
-                                                price: getOptionPrice(option),
-                                                available: true,
-                                                icon: '🍪',
-                                                color: getOptionColor(option)
-                                            })}
-                                            disabled={!option.is_default}
-                                            className={`relative w-full aspect-square rounded-lg transition-all 
-                                                ${config.extras.includes(option.id)
-                                                    ? 'ring-2 ring-pink-500'
-                                                    : 'ring-1 ring-gray-200'
-                                                } ${!option.is_default ? 'opacity-50' : 'hover:shadow-lg'}`}
-                                        >
-                                            {getOptionImage(option) && (
-                                                <Image
-                                                    src={getOptionImage(option)!}
-                                                    alt={getOptionName(option)}
-                                                    fill
-                                                    className="object-cover rounded-lg"
-                                                />
-                                            )}
-                                        </button>
-                                        <p className="text-xs font-medium mt-2 text-center">{getOptionName(option)}</p>
-                                        <p className="text-xs text-gray-600">{getOptionPrice(option).toFixed(2)} VND</p>
-                                    </motion.div>
-                                ))
-                            )}
-                        </div>
                     </div>
                 );
 
@@ -1385,24 +1887,55 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
             case 'board':
                 return (
                     <div className="space-y-6">
-                        <h3 className="font-bold mb-4">CAKE BOARD</h3>
-                        <p className="text-sm text-gray-500 mb-4">Select your preferred board color (subject to availability)</p>
-                        <div className="grid grid-cols-3 gap-4">
+                        <h3 className="font-bold mb-4 text-2xl bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
+                            ĐẾ BÁNH
+                        </h3>
+                        <div className="grid grid-cols-2 gap-4">
                             {boardOptions.map(option => (
-                                <motion.div
+                                <motion.button
                                     key={option.id}
-                                    whileHover={{ scale: 1.05 }}
-                                    className="flex flex-col items-center"
+                                    variants={selectedVariants}
+                                    animate={config.board === option.id ? "selected" : "unselected"}
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={() => handleOptionSelect('board', option.id)}
+                                    className={`relative flex flex-col items-center p-6 rounded-xl border-2
+                                        ${config.board === option.id
+                                            ? 'border-pink-500 bg-gradient-to-br from-pink-50 to-purple-50'
+                                            : 'border-gray-200 hover:border-pink-300'}
+                                        transition-all duration-300`}
                                 >
-                                    <button
-                                        onClick={() => handleOptionSelect('board', option.id)}
-                                        className={`w-20 h-20 ${option.color} ${option.border || ''} 
-                                            ${config.board === option.id ? 'ring-2 ring-pink-500' : 'ring-1 ring-gray-200'} 
-                                            rounded-lg shadow-sm hover:shadow-md transition-all`}
-                                    />
-                                    <p className="text-sm font-medium text-center mt-2">{option.name}</p>
-                                </motion.div>
+                                    <div
+                                        className={`w-24 h-24 ${option.color} 
+                                            ${option.shape === 'square' ? 'rounded-2xl' : 'rounded-full'}
+                                            shadow-md transition-all duration-300
+                                            flex items-center justify-center`}
+                                    >
+                                        <span className="text-4xl opacity-50">🎂</span>
+                                    </div>
+                                    <div className="mt-4 text-center">
+                                        <div className="font-medium text-gray-900">{option.name}</div>
+                                        <div className="text-sm text-gray-500 mt-1">
+                                            {option.shape === 'square' ? 'Góc bo tròn' : 'Hình tròn hoàn hảo'}
+                                        </div>
+                                        <div className="text-pink-600 font-bold mt-2">
+                                            {(10000).toLocaleString()} VND
+                                        </div>
+                                    </div>
+                                    {config.board === option.id && (
+                                        <motion.div
+                                            initial={{ scale: 0 }}
+                                            animate={{ scale: 1 }}
+                                            className="absolute -top-2 -right-2 bg-pink-500 text-white rounded-full p-2"
+                                        >
+                                            <Check className="w-5 h-5" />
+                                        </motion.div>
+                                    )}
+                                </motion.button>
                             ))}
+                        </div>
+                        <div className="mt-4 text-sm text-gray-500 text-center">
+                            Chọn hình dạng đế bánh phù hợp với thiết kế của bạn
                         </div>
                     </div>
                 );
@@ -1493,7 +2026,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                 outerIcing: config.outerIcing,
                 candles: config.candles,
                 goo: config.goo,
-                extras: config.extras,
+                extras: Array.isArray(config.extras) ? config.extras : [],
                 board: config.board,
                 imageUrl: config.imageUrl || '',
                 price: config.price,
@@ -1510,6 +2043,15 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
 
         addToCart(customCake);
         router.push('/cart');
+    };
+
+    // Add back the missing helper functions
+    const getOptionPrice = (option: ApiItem): number => {
+        return option.price || 0;
+    };
+
+    const getOptionName = (option: ApiItem): string => {
+        return option.name || 'Unnamed Option';
     };
 
     return (
@@ -1631,7 +2173,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                                 onClick={() => handlePartSelect('message')}
                                                 gradient="from-blue-500 to-cyan-500"
                                             />
-                                            <MenuItem
+                                            {/* <MenuItem
                                                 icon="🕯️"
                                                 title="TRANG TRÍ CUỐI"
                                                 subtitle="6 NẾN HỒNG + PLAQUE SÔ CÔ LA TRẮNG"
@@ -1644,11 +2186,11 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                                 subtitle={`${boardOptions.find(b => b.id === config.board)?.name || 'Chọn màu đế bánh'}`}
                                                 onClick={() => handlePartSelect('board')}
                                                 gradient="from-green-500 to-teal-500"
-                                            />
+                                            /> */}
                                             <MenuItem
                                                 icon="🍪"
                                                 title="THÊM PHẦN"
-                                                subtitle={config.extras.length > 0
+                                                subtitle={Array.isArray(config.extras) && config.extras.length > 0
                                                     ? `Đã thêm ${config.extras.length} phần phụ`
                                                     : "Thêm topping đặc biệt"}
                                                 onClick={() => handlePartSelect('extras')}
@@ -1767,37 +2309,37 @@ const MenuItem = ({
 
 // Update global styles
 const globalStyles = `
-    .custom-scrollbar {
-        scrollbar-width: thin;
-        scrollbar-color: rgba(236, 72, 153, 0.3) transparent;
-    }
-    
-    .custom-scrollbar::-webkit-scrollbar {
-        width: 6px;
-    }
-    
-    .custom-scrollbar::-webkit-scrollbar-track {
-        background: transparent;
-    }
-    
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-        background-color: rgba(236, 72, 153, 0.3);
-        border-radius: 3px;
-    }
-    
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background-color: rgba(236, 72, 153, 0.5);
+                            .custom-scrollbar {
+                                scrollbar - width: thin;
+                            scrollbar-color: rgba(236, 72, 153, 0.3) transparent;
     }
 
-    @keyframes float {
-        0% { transform: translateY(0px); }
-        50% { transform: translateY(-10px); }
-        100% { transform: translateY(0px); }
+                            .custom-scrollbar::-webkit-scrollbar {
+                                width: 6px;
     }
 
-    .float-animation {
-        animation: float 3s ease-in-out infinite;
+                            .custom-scrollbar::-webkit-scrollbar-track {
+                                background: transparent;
     }
-`;
+
+                            .custom-scrollbar::-webkit-scrollbar-thumb {
+                                background - color: rgba(236, 72, 153, 0.3);
+                            border-radius: 3px;
+    }
+
+                            .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                                background - color: rgba(236, 72, 153, 0.5);
+    }
+
+                            @keyframes float {
+                                0 % { transform: translateY(0px); }
+        50% {transform: translateY(-10px); }
+                            100% {transform: translateY(0px); }
+    }
+
+                            .float-animation {
+                                animation: float 3s ease-in-out infinite;
+    }
+                            `;
 
 export default CakeCustomizer;
