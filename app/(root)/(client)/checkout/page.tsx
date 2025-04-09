@@ -1029,7 +1029,9 @@ const CheckoutPage = () => {
                   <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   <span className="font-medium">Địa chỉ giao hàng:</span>
                   <span className="text-muted-foreground">
-                    {form.getValues('address') ? `${form.getValues('address')}, TP BIEN HOA` : 'Vui lòng điền thông tin địa chỉ của bạn'}
+                    {form.getValues('address') ?
+                      `${form.getValues('address')}, ${form.getValues('district')}, ${form.getValues('province')}` :
+                      'Vui lòng điền thông tin địa chỉ của bạn'}
                   </span>
                 </div>
 
