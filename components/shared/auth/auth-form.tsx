@@ -23,7 +23,7 @@ import {
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { FIELD_NAMES, FIELD_TYPES } from "@/constants/field-constants";
-import { toast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
 
 interface Props<T extends FieldValues> {
@@ -42,6 +42,7 @@ const AuthForm = <T extends FieldValues>({
   isLoading = false,
 }: Props<T>) => {
   const router = useRouter();
+  const { toast } = useToast();
 
   const isSignIn = type === "SIGN_IN";
 
@@ -72,61 +73,85 @@ const AuthForm = <T extends FieldValues>({
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold text-white">
-        {isSignIn ? "Welcome back to Cake" : "Create your cake usser account"}
-      </h1>
-      <p className="text-light-100">
-        {isSignIn
-          ? "Access the vast collection of resources, and stay updated"
-          : "Please complete all fields and upload a valid data to gain access to the cake store"}
-      </p>
+    <div className="flex flex-col gap-6 max-w-md mx-auto p-6 bg-white dark:bg-gray-800 shadow-lg rounded-xl">
+      <div className="space-y-2 text-center">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          {isSignIn ? "Welcome back to CusCake" : "Create your CusCake account"}
+        </h1>
+        <p className="text-gray-600 dark:text-gray-300">
+          {isSignIn
+            ? "Sign in to access your account and place orders"
+            : "Join us to order delicious custom cakes and treats"}
+        </p>
+      </div>
+      
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(handleSubmit)}
-          className="w-full space-y-6"
+          className="w-full space-y-4"
         >
-          {Object.keys(defaultValues).map((field) => (
-            <FormField
-              key={field}
-              control={form.control}
-              name={field as Path<T>}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="capitalize">
-                    {FIELD_NAMES[field.name as keyof typeof FIELD_NAMES]}
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      required
-                      type={FIELD_TYPES[field.name as keyof typeof FIELD_TYPES]}
-                      {...field}
-                      className="form-input"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          ))}
+          {Object.keys(defaultValues).map((field) => {
+            // Skip rendering hidden fields in the UI
+            if (FIELD_TYPES[field as keyof typeof FIELD_TYPES] === "hidden") {
+              return null;
+            }
+            
+            return (
+              <FormField
+                key={field}
+                control={form.control}
+                name={field as Path<T>}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-gray-700 dark:text-gray-200">
+                      {FIELD_NAMES[field.name as keyof typeof FIELD_NAMES]}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        required
+                        type={FIELD_TYPES[field.name as keyof typeof FIELD_TYPES]}
+                        {...field}
+                        className="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-custom-teal focus:border-custom-teal dark:focus:ring-custom-teal dark:focus:border-custom-teal"
+                      />
+                    </FormControl>
+                    <FormMessage className="text-red-500" />
+                  </FormItem>
+                )}
+              />
+            );
+          })}
 
-          <Button type="submit" className="form-btn" disabled={isLoading}>
-            {isLoading ? "Loading..." : (isSignIn ? "Sign In" : "Sign Up")}
+          <Button 
+            type="submit" 
+            className="w-full bg-custom-teal hover:bg-custom-pink text-white py-2 rounded-md transition-colors dark:bg-custom-teal dark:hover:bg-custom-pink" 
+            disabled={isLoading}
+          >
+            {isLoading ? "Processing..." : (isSignIn ? "Sign In" : "Sign Up")}
           </Button>
         </form>
       </Form>
 
-      <p className="text-center text-base font-medium">
-        {isSignIn ? "New to BookWise? " : "Already have an account? "}
-
-        <Link
-          href={isSignIn ? "/sign-up" : "/sign-in"}
-          className="font-bold text-primary"
-        >
-          {isSignIn ? "Create an account" : "Sign in"}
-        </Link>
-      </p>
+      <div className="text-center border-t pt-4 border-gray-200 dark:border-gray-700">
+        <p className="text-gray-600 dark:text-gray-300 text-sm">
+          {isSignIn ? "Don't have an account? " : "Already have an account? "}
+          <Link
+            href={isSignIn ? "/sign-up" : "/sign-in"}
+            className="font-medium text-custom-teal hover:text-custom-pink transition-colors"
+          >
+            {isSignIn ? "Sign up now" : "Sign in"}
+          </Link>
+        </p>
+        
+        {isSignIn && (
+          <Link href="/bakery-register">
+            <Button variant="ghost" className="mt-3 text-sm text-gray-600 dark:text-gray-300 hover:text-custom-teal">
+              Register as a bakery
+            </Button>
+          </Link>
+        )}
+      </div>
     </div>
   );
 };
+
 export default AuthForm;
