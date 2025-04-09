@@ -111,7 +111,7 @@ const Header = () => {
       </div>
 
       {/* Main header */}
-      <header className="bg-gradient-to-r from-pink-100 to-teal-100 dark:from-pink-950 dark:to-teal-950 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 shadow-sm">
+      <header className="bg-gradient-to-r from-pink-100 to-teal-100 dark:from-gray-900 dark:to-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             {/* Logo */}
@@ -153,29 +153,29 @@ const Header = () => {
                     {/* User dropdown */}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="rounded-full flex items-center space-x-2 px-3">
+                        <Button variant="ghost" size="sm" className="rounded-full flex items-center space-x-2 px-3 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
                           <User className="h-5 w-5" />
                           <span className="text-sm font-medium">Tài khoản</span>
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-56" align="end" forceMount>
+                      <DropdownMenuContent className="w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700" align="end" forceMount>
                         <DropdownMenuItem
-                          className="flex items-center gap-2"
+                          className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700"
                           onClick={() => router.push('/profileSetting')}
                         >
                           <User className="h-4 w-4" />
                           <span>Hồ sơ</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          className="flex items-center gap-2"
+                          className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700"
                           onClick={() => router.push('/orderHistory')}
                         >
                           <ShoppingBag className="h-4 w-4" />
                           <span>Lịch sử đơn hàng</span>
                         </DropdownMenuItem>
-                        <DropdownMenuSeparator />
+                        <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-700" />
                         <DropdownMenuItem
-                          className="flex items-center gap-2 text-red-500 hover:text-red-600"
+                          className="flex items-center gap-2 text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700"
                           onClick={handleLogout}
                         >
                           <LogOut className="h-4 w-4" />
@@ -198,17 +198,17 @@ const Header = () => {
                 ) : (
                   <div className="flex items-center space-x-3">
                     <Link href="/sign-in">
-                      <Button variant="outline" className="border-custom-teal text-custom-teal hover:bg-custom-teal hover:text-white transition-all">
+                      <Button variant="outline" className="border-custom-teal text-custom-teal hover:bg-custom-teal hover:text-white dark:border-custom-teal/70 dark:text-custom-teal/90 dark:hover:bg-custom-teal/20 dark:hover:text-white transition-all">
                         Đăng nhập
                       </Button>
                     </Link>
                     <Link href="/sign-up">
-                      <Button variant="default" className="bg-custom-teal hover:bg-custom-pink transition-all">
+                      <Button variant="default" className="bg-custom-teal hover:bg-custom-pink text-white transition-all">
                         Đăng ký
                       </Button>
                     </Link>
-                    <Link href="/bakery-register">
-                      <Button variant="ghost" className="flex items-center space-x-2 text-gray-800 dark:text-gray-300 hover:text-custom-teal">
+                    <Link href="/bakery-sign-up">
+                      <Button variant="ghost" className="flex items-center space-x-2 text-gray-800 dark:text-gray-300 hover:text-custom-teal hover:bg-gray-100 dark:hover:bg-gray-800">
                         <Store className="h-4 w-4" />
                         <span>Đăng ký cửa hàng</span>
                       </Button>
@@ -223,7 +223,7 @@ const Header = () => {
       </header>
 
       {/* Navigation Menu */}
-      <nav className="bg-gradient-to-r from-pink-100 to-teal-100 dark:from-pink-900/20 dark:to-teal-900/20 border-b border-gray-200 dark:border-gray-800 shadow-sm">
+      <nav className="bg-gradient-to-r from-pink-100 to-teal-100 dark:from-gray-800 dark:to-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
             <div className="relative group py-4">
