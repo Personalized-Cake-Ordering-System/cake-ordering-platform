@@ -18,6 +18,15 @@ import Image from "next/image";
 import { toast, ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import { useRouter } from "next/navigation";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { CheckCircle } from "lucide-react";
 
 // Define the bakery registration schema
 const bakerySchema = z.object({
@@ -169,6 +178,7 @@ const ImageUploader = ({ label, imageUrl, isLoading, onUpload, icon }: ImageUplo
 const BakerySignUpPage = () => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   
   // Image loading states
   const [shopImageLoading, setShopImageLoading] = useState(false);
@@ -381,16 +391,14 @@ const BakerySignUpPage = () => {
 
       if (responseData.status_code === 201 || responseData.status_code === 200) {
         toast.update(toastId, {
-          render: "Đăng ký cửa hàng thành công! Vui lòng đăng nhập.",
+          render: "Đăng ký cửa hàng thành công!",
           type: "success",
           isLoading: false,
           autoClose: 3000,
         });
         
-        // Redirect to sign-in page after successful registration
-        setTimeout(() => {
-          router.push('/sign-in');
-        }, 3000);
+        // Show success modal instead of redirecting immediately
+        setShowSuccessModal(true);
       } else {
         toast.update(toastId, {
           render: 'Đăng ký thất bại: ' + (responseData.errors?.join(', ') || 'Đã xảy ra lỗi'),
@@ -608,6 +616,32 @@ const BakerySignUpPage = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Success Modal */}
+      <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
+        <DialogContent className="sm:max-w-md bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg">
+          <DialogHeader>
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+              <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
+            </div>
+            <DialogTitle className="text-center text-lg font-semibold mt-4 text-gray-900 dark:text-white">
+              Đăng ký cửa hàng thành công!
+            </DialogTitle>
+            <DialogDescription className="text-center text-gray-600 dark:text-gray-300">
+              Hệ thống đang xử lý thông tin của bạn. Vui lòng đợi xác thực từ đội ngũ quản trị viên trước khi bạn có thể bán sản phẩm trên nền tảng.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex flex-col space-y-3 sm:flex-row sm:space-x-3 sm:space-y-0 sm:justify-center mt-4">
+          
+            <Button
+              onClick={() => window.open('https://cake-ordering-dashboard-reveiw3.vercel.app/', '_blank')}
+              className="flex-1 sm:flex-none bg-custom-teal hover:bg-custom-teal/90 text-white"
+            >
+              Đi đến trang quản lý
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
