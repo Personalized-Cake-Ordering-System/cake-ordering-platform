@@ -13,12 +13,16 @@ import {
   User,
   Settings,
   ShoppingBag,
+  Store,
+  LogOut,
+  Bell
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -143,58 +147,76 @@ const Header = () => {
 
             {/* User navigation */}
             <div className="flex items-center space-x-6">
-              <div className="hidden md:block">
+              <div className="hidden md:flex items-center space-x-3">
                 {isLoggedIn ? (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                        <User className="h-5 w-5" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56" align="end" forceMount>
-                      <DropdownMenuItem
-                        className="flex items-center gap-2"
-                        onClick={() => router.push('/profileSetting')}
-                      >
-                        <User className="h-4 w-4" />
-                        <span>Hồ sơ</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="flex items-center gap-2"
-                        onClick={() => router.push('/orderHistory')}
-                      >
-                        <ShoppingBag className="h-4 w-4" />
-                        <span>Lịch sử đơn hàng</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="flex items-center gap-2 text-red-500 hover:text-red-600"
-                        onClick={handleLogout}
-                      >
-                        <span>Đăng xuất</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <>
+                    {/* User dropdown */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="rounded-full flex items-center space-x-2 px-3">
+                          <User className="h-5 w-5" />
+                          <span className="text-sm font-medium">Tài khoản</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="w-56" align="end" forceMount>
+                        <DropdownMenuItem
+                          className="flex items-center gap-2"
+                          onClick={() => router.push('/profileSetting')}
+                        >
+                          <User className="h-4 w-4" />
+                          <span>Hồ sơ</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="flex items-center gap-2"
+                          onClick={() => router.push('/orderHistory')}
+                        >
+                          <ShoppingBag className="h-4 w-4" />
+                          <span>Lịch sử đơn hàng</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="flex items-center gap-2 text-red-500 hover:text-red-600"
+                          onClick={handleLogout}
+                        >
+                          <LogOut className="h-4 w-4" />
+                          <span>Đăng xuất</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    
+                    {/* Only show notifications, wishlist and cart when logged in */}
+                    <NotificationDropdown />
+                    <Link href="/wishlist" className="relative group">
+                      <Heart className="h-6 w-6 text-gray-800 dark:text-gray-300 group-hover:text-custom-teal dark:group-hover:text-custom-teal transition-colors duration-200" />
+                      <NotificationBadge count={wishlistCount} />
+                    </Link>
+                    <Link href="/cart" className="relative group">
+                      <ShoppingCart className="h-6 w-6 text-gray-800 dark:text-gray-300 group-hover:text-custom-teal dark:group-hover:text-custom-teal transition-colors duration-200" />
+                      <NotificationBadge count={cartCount} />
+                    </Link>
+                  </>
                 ) : (
-                  <Link
-                    href="/sign-in"
-                    className="text-gray-800 hover:text-custom-teal dark:text-gray-300 dark:hover:text-custom-teal transition-colors duration-200 font-medium"
-                  >
-                    Đăng nhập | Đăng ký
-                  </Link>
+                  <div className="flex items-center space-x-3">
+                    <Link href="/sign-in">
+                      <Button variant="outline" className="border-custom-teal text-custom-teal hover:bg-custom-teal hover:text-white transition-all">
+                        Đăng nhập
+                      </Button>
+                    </Link>
+                    <Link href="/sign-up">
+                      <Button variant="default" className="bg-custom-teal hover:bg-custom-pink transition-all">
+                        Đăng ký
+                      </Button>
+                    </Link>
+                    <Link href="/bakery-register">
+                      <Button variant="ghost" className="flex items-center space-x-2 text-gray-800 dark:text-gray-300 hover:text-custom-teal">
+                        <Store className="h-4 w-4" />
+                        <span>Đăng ký cửa hàng</span>
+                      </Button>
+                    </Link>
+                  </div>
                 )}
               </div>
-              <div className="flex items-center space-x-5">
-                <ModeToggleAnimate />
-                <NotificationDropdown />
-                <Link href="/wishlist" className="relative group">
-                  <Heart className="h-6 w-6 text-gray-800 dark:text-gray-300 group-hover:text-custom-teal dark:group-hover:text-custom-teal transition-colors duration-200" />
-                  <NotificationBadge count={wishlistCount} />
-                </Link>
-                <Link href="/cart" className="relative group">
-                  <ShoppingCart className="h-6 w-6 text-gray-800 dark:text-gray-300 group-hover:text-custom-teal dark:group-hover:text-custom-teal transition-colors duration-200" />
-                  <NotificationBadge count={cartCount} />
-                </Link>
-              </div>
+              <ModeToggleAnimate />
             </div>
           </div>
         </div>

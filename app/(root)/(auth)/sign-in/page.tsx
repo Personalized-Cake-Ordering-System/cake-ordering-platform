@@ -4,13 +4,15 @@ import { signInSchema } from "@/lib/schema/auth-schema";
 import React, { useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
+import { z } from "zod";
+
+// Define the interface using the schema type
+type SignInParams = z.infer<typeof signInSchema>;
 
 const SignInPage = () => {
   const [isLoading, setIsLoading] = useState(false);
 
-  const signIn = async (
-    params: { email: string; password: string }
-  ) => {
+  const signIn = async (params: SignInParams) => {
     setIsLoading(true);
     const toastId = toast.loading("Signing in...");
 
@@ -38,7 +40,7 @@ const SignInPage = () => {
         return { success: true };
       } else {
         toast.update(toastId, {
-          render: 'Login failed: ' + (data.errors.join(', ') || 'Unknown error'),
+          render: 'Login failed: ' + (data.errors?.join(', ') || 'Unknown error'),
           type: "error",
           isLoading: false,
           autoClose: 3000,
@@ -61,7 +63,7 @@ const SignInPage = () => {
   return (
     <>
       <ToastContainer />
-      <div className="sign-in-container">
+      <div className="container mx-auto py-10">
         <AuthForm
           type="SIGN_IN"
           schema={signInSchema}
@@ -73,20 +75,6 @@ const SignInPage = () => {
           isLoading={isLoading}
         />
       </div>
-      <style jsx>{`
-        .sign-in-container {
-          max-width: 400px;
-          margin: 0 auto;
-          padding: 20px;
-          background-color: #f9f9f9;
-          border-radius: 8px;
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        .sign-in-container h1 {
-          text-align: center;
-          color: #333;
-        }
-      `}</style>
     </>
   );
 };

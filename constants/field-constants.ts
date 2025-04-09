@@ -1,17 +1,19 @@
-
-
-
-
-
-
 export const FIELD_NAMES = {
-    fullName: "Full name",
+    name: "Full name",
     email: "Email",
     password: "Password",
+    phone: "Phone number",
+    address: "Address",
+    latitude: "Latitude",
+    longitude: "Longitude",
   };
   
   export const FIELD_TYPES = {
-    fullName: "text",
+    name: "text",
     email: "email",
     password: "password",
+    phone: "tel",
+    address: "text",
+    latitude: "hidden",
+    longitude: "hidden",
   };
