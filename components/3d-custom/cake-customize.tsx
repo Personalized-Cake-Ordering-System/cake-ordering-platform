@@ -832,7 +832,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
         try {
             setIsLoading(true);
             setError(null);
-            const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/decoration_options');
+            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/decoration_options?bakeryId=${storeId}`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -856,7 +856,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
         try {
             setIsLoading(true);
             setError(null);
-            const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/extra_options');
+            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/extra_options?bakeryId=${storeId}`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -880,7 +880,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
         try {
             setIsLoading(true);
             setError(null);
-            const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/message_options');
+            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/message_options?bakeryId=${storeId}`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -904,7 +904,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
         try {
             setIsLoading(true);
             setError(null);
-            const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/part_options');
+            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/part_options?bakeryId=${storeId}`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
