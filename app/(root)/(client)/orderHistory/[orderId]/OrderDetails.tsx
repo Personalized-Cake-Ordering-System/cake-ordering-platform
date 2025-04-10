@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Calendar, Clock, MapPin, Package, ArrowLeft, CreditCard, Truck, Star } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, parse } from 'date-fns';
 import { decodeJWT } from '@/lib/utils';
 import Image from 'next/image';
 import { toast } from 'sonner';
@@ -627,7 +627,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                             </CardContent>
                         </Card>
 
-                        <Card className="border-none shadow-lg hover:shadow-2xl transition-shadow duration-300">
+                        {/* <Card className="border-none shadow-lg hover:shadow-2xl transition-shadow duration-300">
                             <CardHeader className="p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-t-lg">
                                 <CardTitle className="text-lg font-bold">Thông tin thanh toán</CardTitle>
                             </CardHeader>
@@ -643,12 +643,12 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                                             Số tài khoản: {order.transaction?.account_number}
                                         </p>
                                         <p className="text-xs text-gray-600">
-                                            Thời gian thanh toán: {format(new Date(order.paid_at), 'dd/MM/yyyy HH:mm')}
+                                            Thời gian thanh toán: {order.paid_at ? format(parse(order.paid_at, 'yyyy-MM-dd\'T\'HH:mm:ss.SSS\'Z\'', new Date()), 'dd/MM/yyyy HH:mm') : 'Chưa thanh toán'}
                                         </p>
                                     </div>
                                 </div>
                             </CardContent>
-                        </Card>
+                        </Card> */}
 
                         {/* Bakery Information */}
                         <Card className="border-none shadow-lg hover:shadow-2xl transition-shadow duration-300">
