@@ -390,7 +390,7 @@ const OrderHistoryPage = () => {
                                                                 <Calendar className="h-4 w-4 text-primary" />
                                                             </div>
                                                             <p className="text-sm">
-                                                                Thời gian nhận: {format(new Date(order.pickup_time), 'dd/MM/yyyy HH:mm')}
+                                                                Thời gian nhận: {format(new Date(order.pickup_time), 'dd/MM/yyyy')}
                                                             </p>
                                                         </div>
                                                     </div>
