@@ -2209,13 +2209,13 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                     </svg>
                                 </motion.button>
                             </div>
-                            <motion.div
+                            {/* <motion.div
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
                                 className="text-3xl font-bold text-pink-600 mt-2"
                             >
                                 {config.price.toFixed(2)} VND
-                            </motion.div>
+                            </motion.div> */}
                         </motion.div>
 
                         <div className="max-h-[60vh] overflow-y-auto custom-scrollbar">
