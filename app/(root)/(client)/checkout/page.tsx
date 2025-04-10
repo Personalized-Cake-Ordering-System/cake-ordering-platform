@@ -162,7 +162,7 @@ const CheckoutPage = () => {
   const subtotal = cartItems.reduce((sum, item) => sum + item.sub_total_price, 0);
   const tax = subtotal * 0.08; // 8% tax
   const deliveryFee = deliveryMethod === 'express' ? expressDelivery : standardDelivery;
-  const total = subtotal + tax + deliveryFee;
+  const total = subtotal + tax;
 
   // Handle province change
   const handleProvinceChange = (provinceCode: string) => {
@@ -621,7 +621,7 @@ const CheckoutPage = () => {
                       <FormItem>
                         <FormLabel>Họ và Tên</FormLabel>
                         <FormControl>
-                          <Input placeholder="Thanh Tâm" {...field} />
+                          <Input placeholder="Thanh Tâm" className="h-[3.5rem]" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -635,7 +635,7 @@ const CheckoutPage = () => {
                       <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="your@email.com" {...field} />
+                          <Input type="email" placeholder="your@email.com" className="h-[3.5rem]" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -649,7 +649,7 @@ const CheckoutPage = () => {
                       <FormItem>
                         <FormLabel>Số điện thoại</FormLabel>
                         <FormControl>
-                          <Input placeholder="(123) 456-7890" {...field} />
+                          <Input placeholder="(123) 456-7890" className="h-[3.5rem]" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -775,7 +775,7 @@ const CheckoutPage = () => {
                       <FormItem>
                         <FormLabel>Địa chỉ</FormLabel>
                         <FormControl>
-                          <Input placeholder="Số nhà, tên đường" {...field} />
+                          <Input placeholder="Số nhà, tên đường" className="h-[3.5rem]" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -820,7 +820,7 @@ const CheckoutPage = () => {
                                   </p>
                                 </div>
                               </div>
-                              <p className="font-bold self-end mt-2">{formatVND(standardDelivery)}</p>
+                              {/* <p className="font-bold self-end mt-2">{formatVND(standardDelivery)}</p> */}
                             </Label>
                           </motion.div>
 
@@ -847,7 +847,7 @@ const CheckoutPage = () => {
                                   </p>
                                 </div>
                               </div>
-                              <p className="font-bold self-end mt-2">{formatVND(expressDelivery)}</p>
+                              {/* <p className="font-bold self-end mt-2">{formatVND(expressDelivery)}</p> */}
                             </Label>
                           </motion.div>
                         </RadioGroup>
@@ -864,21 +864,23 @@ const CheckoutPage = () => {
                 variants={itemVariants}
                 className="sticky bottom-0 bg-background p-4 border-t border-border shadow-md md:static md:p-0 md:border-0 md:shadow-none z-10"
               >
-                <Button
-                  type="submit"
-                  size="lg"
-                  className="w-full md:w-auto"
-                  disabled={isProcessing || !form.formState.isValid}
-                >
-                  {isProcessing ? (
-                    <>
-                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent"></div>
-                      Processing...
-                    </>
-                  ) : (
-                    `Hoàn thành ${formatVND(total)}`
-                  )}
-                </Button>
+                <div className="flex justify-end">
+                  <Button
+                    type="submit"
+                    size="lg"
+                    className="w-full md:w-auto"
+                    disabled={isProcessing || !form.formState.isValid}
+                  >
+                    {isProcessing ? (
+                      <>
+                        <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent"></div>
+                        Processing...
+                      </>
+                    ) : (
+                      `Hoàn thành đơn hàng`
+                    )}
+                  </Button>
+                </div>
               </motion.div>
             </form>
           </Form>
@@ -1008,20 +1010,23 @@ const CheckoutPage = () => {
               {/* Order calculation */}
               <div className="space-y-1">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Tổng cộng</span>
-                  <span>{formatVND(subtotal)}</span>
+                  <span className="text-muted-foreground font-medium">Tổng cộng</span>
+                  <span>{formatVND(subtotal)} </span>
                 </div>
-                <div className="flex justify-between text-sm">
+                <div className="text-xs text-muted-foreground text-right">
+                  Chưa tính phí vận chuyển
+                </div>
+                {/* <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">
                     {deliveryMethod === 'express' ? 'Giao Tận Nơi' : 'Tại Cửa Hàng'}
                   </span>
                   <span>{formatVND(deliveryFee)}</span>
-                </div>
+                </div> */}
                 <Separator className="my-1.5" />
-                <div className="flex justify-between font-medium">
+                {/* <div className="flex justify-between font-medium">
                   <span>Tổng</span>
-                  <span>{formatVND(total)}</span>
-                </div>
+                  <span>{formatVND(subtotal)}</span>
+                </div> */}
               </div>
 
               <div className="mt-3 space-y-2">

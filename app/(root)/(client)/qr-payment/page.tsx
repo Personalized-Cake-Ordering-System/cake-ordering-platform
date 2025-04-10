@@ -308,7 +308,7 @@ const QRPaymentPage = () => {
                                 <div className="space-y-2">
                                     <Separator className="my-2" />
                                     <div className="flex justify-between font-bold">
-                                        <span>Tổng cộng</span>
+                                        <span>Tổng cộng (Đã tính phí vận chuyển)</span>
                                         <span>{formatVND(orderDetails.orderInfo.total)}</span>
                                     </div>
                                 </div>
