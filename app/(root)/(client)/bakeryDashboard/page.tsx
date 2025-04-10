@@ -1,5 +1,5 @@
-import BakeryDashboard from './BakeryDashboard';
+import BakeryDashboard from "./BakeryDashboard";
 
 export default function BakeryDashboardPage() {
-    return <BakeryDashboard bakeryName="My Bakery" />;
-} 
+  return <BakeryDashboard bakeryName="My Bakery" />;
+}
