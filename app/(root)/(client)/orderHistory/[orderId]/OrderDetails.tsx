@@ -488,7 +488,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                                 <div className="flex justify-between items-center">
                                     <div>
                                         <CardTitle className="text-2xl font-bold">Đơn hàng #{order.order_code}</CardTitle>
-                                        <div className="flex items-center gap-2 mt-2">
+                                        {/* <div className="flex items-center gap-2 mt-2">
                                             <Calendar className="h-4 w-4 text-blue-600" />
                                             <span className="text-sm text-gray-600">
                                                 {format(new Date(order.paid_at), 'MMM dd, yyyy')}
@@ -497,7 +497,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                                             <span className="text-sm text-gray-600">
                                                 {format(new Date(order.paid_at), 'hh:mm a')}
                                             </span>
-                                        </div>
+                                        </div> */}
                                     </div>
                                     <Badge className={`${getStatusColor(order.order_status)} px-4 py-1 rounded-full font-medium`}>
                                         {order.order_status.charAt(0).toUpperCase() + order.order_status.slice(1)}

@@ -319,12 +319,12 @@ const OrderHistoryPage = () => {
                                                                 {format(new Date(order.created_at), 'dd/MM/yyyy')}
                                                             </span>
                                                         </div>
-                                                        <div className="flex items-center gap-1 text-muted-foreground">
+                                                        {/* <div className="flex items-center gap-1 text-muted-foreground">
                                                             <Clock className="h-4 w-4" />
                                                             <span className="text-sm">
                                                                 {format(new Date(order.created_at), 'HH:mm')}
                                                             </span>
-                                                        </div>
+                                                        </div> */}
                                                     </div>
                                                 </div>
                                                 <Badge
