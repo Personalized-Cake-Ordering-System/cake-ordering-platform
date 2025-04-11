@@ -3,34 +3,39 @@ import AuthForm from "@/components/shared/auth/auth-form";
 import { signInSchema } from "@/lib/schema/auth-schema";
 import React, { useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
-import 'react-toastify/dist/ReactToastify.css';
+import "react-toastify/dist/ReactToastify.css";
 import { z } from "zod";
+import { useAuth } from "@/contexts/AuthContext"; // Import AuthContext
 
 // Define the interface using the schema type
 type SignInParams = z.infer<typeof signInSchema>;
 
 const SignInPage = () => {
   const [isLoading, setIsLoading] = useState(false);
-
+  const { setToken } = useAuth();
   const signIn = async (params: SignInParams) => {
     setIsLoading(true);
     const toastId = toast.loading("Signing in...");
 
     try {
-      const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/auths', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(params),
-      });
+      const response = await fetch(
+        "https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/auths",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(params),
+        }
+      );
 
       const data = await response.json();
 
       if (data.status_code === 200) {
         const accessToken = data.meta_data.access_token;
-        localStorage.setItem('accessToken', accessToken);
-        console.log('Login successful, access token saved:', accessToken);
+        localStorage.setItem("accessToken", accessToken);
+        setToken(accessToken);
+        console.log("Login successful, access token saved:", accessToken);
         toast.update(toastId, {
           render: "Sign in successful!",
           type: "success",
@@ -40,7 +45,8 @@ const SignInPage = () => {
         return { success: true };
       } else {
         toast.update(toastId, {
-          render: 'Login failed: ' + (data.errors?.join(', ') || 'Unknown error'),
+          render:
+            "Login failed: " + (data.errors?.join(", ") || "Unknown error"),
           type: "error",
           isLoading: false,
           autoClose: 3000,
@@ -49,12 +55,12 @@ const SignInPage = () => {
       }
     } catch (error) {
       toast.update(toastId, {
-        render: 'Error during login: ' + (error as Error).message,
+        render: "Error during login: " + (error as Error).message,
         type: "error",
         isLoading: false,
         autoClose: 3000,
       });
-      return { success: false, error: 'Login error' };
+      return { success: false, error: "Login error" };
     } finally {
       setIsLoading(false);
     }

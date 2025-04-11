@@ -60,7 +60,7 @@ const PaymentSuccessPage = () => {
     };
 
     const handleViewOrders = () => {
-        router.push('/orders');
+        router.push('/orderHistory');
     };
 
     // Animation variants

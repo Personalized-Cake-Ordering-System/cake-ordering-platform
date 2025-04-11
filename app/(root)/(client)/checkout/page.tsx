@@ -67,6 +67,7 @@ const checkoutSchema = z.object({
   district: z.string().min(2, { message: 'Quận/Huyện không được để trống' }),
   address: z.string().min(5, { message: 'Địa chỉ không được để trống' }),
   deliveryMethod: z.enum(['standard', 'express']),
+  deliveryType: z.enum(['DELIVERY', 'PICKUP']),
   specialInstructions: z.string().optional(),
   formatted_address: z.string().optional(),
   latitude: z.number().optional(),
@@ -151,18 +152,20 @@ const CheckoutPage = () => {
       district: '',
       address: '',
       deliveryMethod: 'standard',
+      deliveryType: 'DELIVERY',
       specialInstructions: '',
     },
   });
 
-  // Get the delivery method value from the form
+  // Get the delivery method and type values from the form
   const deliveryMethod = form.watch('deliveryMethod');
+  const deliveryType = form.watch('deliveryType');
 
   // Calculate totals based on actual cart items
   const subtotal = cartItems.reduce((sum, item) => sum + item.sub_total_price, 0);
   const tax = subtotal * 0.08; // 8% tax
-  const deliveryFee = deliveryMethod === 'express' ? expressDelivery : standardDelivery;
-  const total = subtotal + tax;
+  const deliveryFee = deliveryType === 'DELIVERY' ? (deliveryMethod === 'express' ? expressDelivery : standardDelivery) : 0;
+  const total = subtotal + tax + deliveryFee;
 
   // Handle province change
   const handleProvinceChange = (provinceCode: string) => {
@@ -251,7 +254,7 @@ const CheckoutPage = () => {
                   latitude: geocodeResult.location.lat.toString(),
                   longitude: geocodeResult.location.lng.toString(),
                   pickup_time: new Date().toISOString(),
-                  shipping_type: "DELIVERY",
+                  shipping_type: data.deliveryType,
                   payment_type: "QR_CODE",
                   voucher_code: "",
                   order_detail_create_models: cartItems.map((item) => ({
@@ -324,7 +327,7 @@ const CheckoutPage = () => {
             latitude: geocodeResult.location.lat.toString(),
             longitude: geocodeResult.location.lng.toString(),
             pickup_time: new Date().toISOString(),
-            shipping_type: "DELIVERY",
+            shipping_type: data.deliveryType,
             payment_type: "QR_CODE",
             voucher_code: "",
             order_detail_create_models: cartItems.map((item) => ({
@@ -525,7 +528,7 @@ const CheckoutPage = () => {
           <Card className="p-6 mb-8">
             <h2 className="text-lg font-medium mb-4 flex items-center">
               <PackageCheck className="mr-2 h-5 w-5" />
-              Delivery Information
+              Thông tin giao hàng
             </h2>
 
             <div className="text-center mb-6">
@@ -593,7 +596,7 @@ const CheckoutPage = () => {
             Back to Cart
           </Link>
         </Button>
-        <h1 className="text-3xl font-bold">Checkout</h1>
+        <h1 className="text-3xl font-bold"></h1>
       </motion.div>
 
       <div className="flex flex-col lg:flex-row gap-8">
@@ -787,10 +790,10 @@ const CheckoutPage = () => {
 
                 <FormField
                   control={form.control}
-                  name="deliveryMethod"
+                  name="deliveryType"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-base mb-4 block">Phương thức vận chuyển</FormLabel>
+                      <FormLabel className="text-base mb-4 block">Phương thức nhận hàng</FormLabel>
                       <FormControl>
                         <RadioGroup
                           value={field.value}
@@ -803,16 +806,16 @@ const CheckoutPage = () => {
                             className="flex-1"
                           >
                             <Label
-                              htmlFor="standard"
+                              htmlFor="pickup"
                               className={`
                                 flex flex-col p-4 border rounded-lg cursor-pointer h-full
-                                ${field.value === 'standard'
+                                ${field.value === 'PICKUP'
                                   ? 'border-primary bg-primary/5'
                                   : 'border-muted-foreground/20 hover:border-primary/50'}
                               `}
                             >
                               <div className="flex items-start mb-1">
-                                <RadioGroupItem value="standard" id="standard" className="mt-1 mr-2" />
+                                <RadioGroupItem value="PICKUP" id="pickup" className="mt-1 mr-2" />
                                 <div>
                                   <span className="font-medium">Tại cửa hàng</span>
                                   <p className="text-sm text-muted-foreground mt-1">
@@ -820,7 +823,6 @@ const CheckoutPage = () => {
                                   </p>
                                 </div>
                               </div>
-                              {/* <p className="font-bold self-end mt-2">{formatVND(standardDelivery)}</p> */}
                             </Label>
                           </motion.div>
 
@@ -830,16 +832,16 @@ const CheckoutPage = () => {
                             className="flex-1"
                           >
                             <Label
-                              htmlFor="express"
+                              htmlFor="delivery"
                               className={`
                                 flex flex-col p-4 border rounded-lg cursor-pointer h-full
-                                ${field.value === 'express'
+                                ${field.value === 'DELIVERY'
                                   ? 'border-primary bg-primary/5'
                                   : 'border-muted-foreground/20 hover:border-primary/50'}
                               `}
                             >
                               <div className="flex items-start mb-1">
-                                <RadioGroupItem value="express" id="express" className="mt-1 mr-2" />
+                                <RadioGroupItem value="DELIVERY" id="delivery" className="mt-1 mr-2" />
                                 <div>
                                   <span className="font-medium">Giao tận nơi</span>
                                   <p className="text-sm text-muted-foreground mt-1">
@@ -847,7 +849,6 @@ const CheckoutPage = () => {
                                   </p>
                                 </div>
                               </div>
-                              {/* <p className="font-bold self-end mt-2">{formatVND(expressDelivery)}</p> */}
                             </Label>
                           </motion.div>
                         </RadioGroup>
@@ -1008,42 +1009,34 @@ const CheckoutPage = () => {
               <Separator className="my-3" />
 
               {/* Order calculation */}
-              <div className="space-y-1">
+              {/* <div className="space-y-1">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground font-medium">Tổng cộng</span>
-                  <span>{formatVND(subtotal)} </span>
+                  <span>{formatVND(total)}</span>
                 </div>
-                <div className="text-xs text-muted-foreground text-right">
-                  Chưa tính phí vận chuyển
-                </div>
-                {/* <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {deliveryMethod === 'express' ? 'Giao Tận Nơi' : 'Tại Cửa Hàng'}
-                  </span>
-                  <span>{formatVND(deliveryFee)}</span>
-                </div> */}
-                <Separator className="my-1.5" />
-                {/* <div className="flex justify-between font-medium">
-                  <span>Tổng</span>
-                  <span>{formatVND(subtotal)}</span>
-                </div> */}
-              </div>
+              </div> */}
 
               <div className="mt-3 space-y-2">
-                <div className="flex items-center gap-2 text-sm">
-                  <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                  <span className="font-medium">Địa chỉ giao hàng:</span>
-                  <span className="text-muted-foreground">
-                    {form.getValues('address') ?
-                      `${form.getValues('address')}, ${form.getValues('district')}, ${form.getValues('province')}` :
-                      'Vui lòng điền thông tin địa chỉ của bạn'}
-                  </span>
-                </div>
+                {deliveryType === 'DELIVERY' && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <span className="font-medium">Địa chỉ giao hàng:</span>
+                    <span className="text-muted-foreground">
+                      {form.getValues('address') ?
+                        `${form.getValues('address')}, ${form.getValues('district')}, ${form.getValues('province')}` :
+                        'Vui lòng điền thông tin địa chỉ của bạn'}
+                    </span>
+                  </div>
+                )}
 
                 <div className="flex items-center gap-2 text-sm">
                   <PackageCheck className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   <span className="font-medium">Dự kiến:</span>
-                  <span className="text-muted-foreground">Trong vòng 2-3 ngày</span>
+                  <span className="text-muted-foreground">
+                    {deliveryType === 'DELIVERY'
+                      ? '2-3 ngày'
+                      : 'Nhận tại cửa hàng'}
+                  </span>
                 </div>
               </div>
 

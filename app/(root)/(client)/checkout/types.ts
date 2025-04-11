@@ -19,6 +19,7 @@ export type CheckoutFormValues = {
     district: string;
     address: string;
     deliveryMethod: 'standard' | 'express';
+    deliveryType: 'DELIVERY' | 'PICKUP';
     specialInstructions?: string;
     formatted_address?: string;
     latitude?: number;

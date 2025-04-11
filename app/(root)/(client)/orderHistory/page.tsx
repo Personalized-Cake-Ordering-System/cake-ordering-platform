@@ -375,7 +375,7 @@ const OrderHistoryPage = () => {
                                                             <div className="bg-primary/10 p-2 rounded-full">
                                                                 <MapPin className="h-4 w-4 text-primary" />
                                                             </div>
-                                                            <p className="text-sm">{order.shipping_address}</p>
+                                                            <p className="text-sm">{order.shipping_address || 'Nhận tại cửa hàng'}</p>
                                                         </div>
                                                         <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted/50 transition-colors">
                                                             <div className="bg-primary/10 p-2 rounded-full">
