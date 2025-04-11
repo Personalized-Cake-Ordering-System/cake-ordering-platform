@@ -13,6 +13,7 @@ type SignInParams = z.infer<typeof signInSchema>;
 const SignInPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { setToken } = useAuth();
+
   const signIn = async (params: SignInParams) => {
     setIsLoading(true);
     const toastId = toast.loading("Signing in...");
@@ -31,35 +32,27 @@ const SignInPage = () => {
 
       const data = await response.json();
 
+      // Luôn đóng toast loading trước
+      toast.dismiss(toastId);
+
       if (data.status_code === 200) {
         const accessToken = data.meta_data.access_token;
         localStorage.setItem("accessToken", accessToken);
         setToken(accessToken);
         console.log("Login successful, access token saved:", accessToken);
-        toast.update(toastId, {
-          render: "Sign in successful!",
-          type: "success",
-          isLoading: false,
-          autoClose: 3000,
-        });
+
+        // Hiển thị toast success mới
+        toast.success("Sign in successful!", { autoClose: 3000 });
         return { success: true };
       } else {
-        toast.update(toastId, {
-          render:
-            "Login failed: " + (data.errors?.join(", ") || "Unknown error"),
-          type: "error",
-          isLoading: false,
-          autoClose: 3000,
-        });
+        // Hiển thị toast error mới
+        toast.error("Login failed: " + (data.errors?.join(", ") || "Unknown error"), { autoClose: 3000 });
         return { success: false, error: data.errors };
       }
     } catch (error) {
-      toast.update(toastId, {
-        render: "Error during login: " + (error as Error).message,
-        type: "error",
-        isLoading: false,
-        autoClose: 3000,
-      });
+      // Đóng toast loading và hiển thị lỗi
+      toast.dismiss(toastId);
+      toast.error("Error during login: " + (error as Error).message, { autoClose: 3000 });
       return { success: false, error: "Login error" };
     } finally {
       setIsLoading(false);
@@ -68,7 +61,11 @@ const SignInPage = () => {
 
   return (
     <>
-      <ToastContainer />
+      <ToastContainer
+        position="top-right"
+        limit={1}
+        newestOnTop={true}
+      />
       <div className="container mx-auto py-10">
         <AuthForm
           type="SIGN_IN"
