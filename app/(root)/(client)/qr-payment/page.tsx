@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -104,34 +104,7 @@ const QRPaymentPage = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Handle SignalR message for payment success
-  useEffect(() => {
-    if (message && message.Type === "PAYMENT_SUCCESS") {
-      handlePaymentSuccess(message.OrderCode);
-    }
-  }, [message]);
-
-  const handleBackToCheckout = () => {
-    router.push("/checkout");
-  };
-
-  const copyOrderCode = () => {
-    if (orderDetails?.orderInfo.orderCode) {
-      navigator.clipboard.writeText(orderDetails.orderInfo.orderCode);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
-      .toString()
-      .padStart(2, "0")}`;
-  };
-
-  const handlePaymentSuccess = (orderCode: string) => {
+  const handlePaymentSuccess = useCallback((orderCode: string) => {
     console.log("Payment success handler called for order:", orderCode);
     setPaymentSuccess(true);
     console.log(
@@ -168,6 +141,33 @@ const QRPaymentPage = () => {
         window.location.href = "/payment-success";
       }
     }, 2000);
+  }, [userId, router, toast]);
+
+  // Handle SignalR message for payment success
+  useEffect(() => {
+    if (message && message.Type === "PAYMENT_SUCCESS") {
+      handlePaymentSuccess(message.OrderCode);
+    }
+  }, [message, handlePaymentSuccess]);
+
+  const handleBackToCheckout = () => {
+    router.push("/checkout");
+  };
+
+  const copyOrderCode = () => {
+    if (orderDetails?.orderInfo.orderCode) {
+      navigator.clipboard.writeText(orderDetails.orderInfo.orderCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
+      .toString()
+      .padStart(2, "0")}`;
   };
 
   // Add useEffect to handle payment success
@@ -301,7 +301,7 @@ const QRPaymentPage = () => {
 
                 <div className="text-sm text-muted-foreground mt-4">
                   <p>1. Mở ứng dụng ngân hàng của bạn</p>
-                  <p>2. Chọn "Quét mã QR"</p>
+                  <p>2. Chọn &quot;Quét mã QR&quot;</p>
                   <p>3. Quét mã QR này</p>
                   <p>4. Xác nhận thanh toán</p>
                 </div>
