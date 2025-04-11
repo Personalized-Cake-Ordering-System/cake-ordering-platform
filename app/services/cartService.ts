@@ -18,8 +18,8 @@ export interface CartItem {
     quantity: number;
     cake_note: string;
     sub_total_price: number;
-    available_cake_id: string;
-    custom_cake_id: string;
+    available_cake_id?: string | null;
+    custom_cake_id?: string | null;
     bakery_id?: string;
 }
 
@@ -61,7 +61,21 @@ export const cartService = {
         }
     },
 
-    //axios.delete(`${API_URL}/carts/${itemId}`
+    async updateCart(accessToken: string, cartData: Partial<Cart>): Promise<CartResponse> {
+        try {
+            const response = await axios.put(`${API_URL}/carts`, cartData, {
+                headers: {
+                    'accept': '*/*',
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error updating cart:', error);
+            throw error;
+        }
+    },
 
     async deleteCart(accessToken: string, itemId: string): Promise<CartResponse> {
         try {

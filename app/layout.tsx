@@ -3,16 +3,18 @@ import "./globals.css";
 import { siteConfig } from "@/config/site";
 import { fontMono, fontSans } from "@/lib/fonts";
 import { Toaster } from "@/components/ui/toaster";
-import { Toaster as HotToaster } from 'react-hot-toast';
+import { Toaster as HotToaster } from "react-hot-toast";
 
 import { ThemeProvider } from "@/providers/theme-provider";
 import SessionProviders from "@/providers/session-provider";
 import { ModalProvider } from "@/providers/modal-provider";
 import { QueryProvider } from "@/providers/query-provider";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 import { ThemeAwareLoader } from "@/components/shared/custom-ui/theme-aware-loader";
 import { cn } from "@/lib/utils";
-import { CartProvider } from '@/contexts/CartContext';
+import { CartProvider } from "@/contexts/CartContext";
+import SignalRProvider from "@/contexts/SingalRContext";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -66,9 +68,11 @@ export default function RootLayout({
           <SessionProviders>
             <QueryProvider>
               <ModalProvider />
-              <CartProvider>
-                {children}
-              </CartProvider>
+              <AuthProvider>
+                <SignalRProvider>
+                  <CartProvider>{children}</CartProvider>
+                </SignalRProvider>
+              </AuthProvider>
               <Toaster />
               <HotToaster position="top-center" />
             </QueryProvider>
