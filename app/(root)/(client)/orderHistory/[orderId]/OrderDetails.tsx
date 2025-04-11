@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -337,7 +337,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
     const [isCancelling, setIsCancelling] = useState(false);
     const [isMovingNext, setIsMovingNext] = useState(false);
 
-    const fetchOrder = async () => {
+    const fetchOrder = useCallback(async () => {
         try {
             const accessToken = localStorage.getItem('accessToken');
             if (!accessToken) {
@@ -424,11 +424,11 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
             setError('Failed to fetch order details');
             setLoading(false);
         }
-    };
+    }, [orderId]);
 
     useEffect(() => {
         fetchOrder();
-    }, [orderId]);
+    }, [fetchOrder]);
 
     const formatVND = (amount: number) => {
         return new Intl.NumberFormat('vi-VN', {
