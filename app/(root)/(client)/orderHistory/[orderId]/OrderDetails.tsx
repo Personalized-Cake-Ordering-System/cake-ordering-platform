@@ -14,6 +14,7 @@ import Image from 'next/image';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface Order {
     id: string;
@@ -236,6 +237,96 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
     );
 };
 
+interface ProgressStep {
+    status: string;
+    label: string;
+    description: string;
+}
+
+const OrderProgressBar = ({ currentStatus }: { currentStatus: string }) => {
+    const steps: ProgressStep[] = [
+        {
+            status: 'PENDING',
+            label: 'Chờ xác nhận',
+            description: 'Đơn hàng đang chờ xác nhận'
+        },
+        {
+            status: 'PROCESSING',
+            label: 'Đang xử lý',
+            description: 'Tiệm bánh đang chuẩn bị đơn hàng'
+        },
+        {
+            status: 'READY_FOR_PICKUP',
+            label: 'Sẵn sàng giao',
+            description: 'Đơn hàng đã sẵn sàng để giao'
+        },
+        {
+            status: 'SHIPPING',
+            label: 'Đang giao hàng',
+            description: 'Đơn hàng đang được giao đến bạn'
+        },
+        {
+            status: 'COMPLETED',
+            label: 'Hoàn thành',
+            description: 'Đơn hàng đã được giao thành công'
+        }
+    ];
+
+    const currentStepIndex = steps.findIndex(step => step.status === currentStatus);
+    const isCancelled = currentStatus === 'CANCELED';
+
+    return (
+        <div className="w-full py-6">
+            <div className="relative">
+                {/* Progress line */}
+                <div className="absolute top-4 left-0 w-full h-1 bg-gray-200">
+                    <div
+                        className={`h-full transition-all duration-500 ${isCancelled ? 'bg-red-500' : 'bg-blue-500'
+                            }`}
+                        style={{
+                            width: isCancelled ? '100%' : `${(currentStepIndex + 1) * (100 / steps.length)}%`
+                        }}
+                    />
+                </div>
+
+                {/* Steps */}
+                <div className="relative flex justify-between">
+                    {steps.map((step, index) => {
+                        const isActive = index <= currentStepIndex;
+                        const isCurrent = step.status === currentStatus;
+
+                        return (
+                            <div key={step.status} className="flex flex-col items-center">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center relative z-10 ${isCancelled ? 'bg-red-500' : isActive ? 'bg-blue-500' : 'bg-gray-200'
+                                    }`}>
+                                    {isCancelled ? (
+                                        <span className="text-white text-sm">×</span>
+                                    ) : (
+                                        <span className={`text-sm ${isActive ? 'text-white' : 'text-gray-500'}`}>
+                                            {index + 1}
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="mt-2 text-center">
+                                    <p className={`text-sm font-medium ${isCurrent ? 'text-blue-500' : isActive ? 'text-gray-700' : 'text-gray-400'
+                                        }`}>
+                                        {step.label}
+                                    </p>
+                                    {isCurrent && (
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            {step.description}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        </div>
+    );
+};
+
 export default function OrderDetails({ orderId }: OrderDetailsProps) {
     const router = useRouter();
     const [order, setOrder] = useState<Order | null>(null);
@@ -243,97 +334,99 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
     const [error, setError] = useState<string | null>(null);
     const [cakeImages, setCakeImages] = useState<{ [key: string]: string }>({});
     const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+    const [isCancelling, setIsCancelling] = useState(false);
+    const [isMovingNext, setIsMovingNext] = useState(false);
+
+    const fetchOrder = async () => {
+        try {
+            const accessToken = localStorage.getItem('accessToken');
+            if (!accessToken) {
+                setError('Vui lòng đăng nhập để xem chi tiết đơn hàng');
+                setLoading(false);
+                return;
+            }
+
+            const decodedToken = decodeJWT(accessToken);
+            if (!decodedToken?.id) {
+                setError('Xác thực không hợp lệ');
+                setLoading(false);
+                return;
+            }
+
+            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/orders/${orderId}`, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch order details');
+            }
+
+            const data = await response.json();
+
+            if (data.status_code !== 200) {
+                throw new Error(data.errors?.[0] || 'Failed to fetch order details');
+            }
+
+            const orderData = data.payload;
+            setOrder({
+                id: orderData.id,
+                order_code: orderData.order_code,
+                order_status: orderData.order_status,
+                total_customer_paid: orderData.total_customer_paid,
+                total_product_price: orderData.total_product_price,
+                shipping_fee: orderData.shipping_fee,
+                shipping_distance: orderData.shipping_distance,
+                shipping_time: orderData.shipping_time,
+                shipping_type: orderData.shipping_type,
+                commission_rate: orderData.commission_rate,
+                app_commission_fee: orderData.app_commission_fee,
+                shop_revenue: orderData.shop_revenue,
+                order_note: orderData.order_note,
+                pickup_time: orderData.pickup_time,
+                payment_type: orderData.payment_type,
+                phone_number: orderData.phone_number,
+                shipping_address: orderData.shipping_address,
+                latitude: orderData.latitude,
+                longitude: orderData.longitude,
+                paid_at: orderData.paid_at,
+                order_details: orderData.order_details.map((detail: any) => ({
+                    id: detail.id,
+                    quantity: detail.quantity,
+                    sub_total_price: detail.sub_total_price,
+                    cake_note: detail.cake_note,
+                    available_cake_id: detail.available_cake_id,
+                    shop_image_files: detail.available_cake?.shop_image_files?.[0]
+                })),
+                customer: {
+                    name: orderData.customer.name,
+                    email: orderData.customer.email,
+                    phone: orderData.customer.phone,
+                    address: orderData.customer.address
+                },
+                bakery: {
+                    bakery_name: orderData.bakery.bakery_name,
+                    email: orderData.bakery.email,
+                    phone: orderData.bakery.phone,
+                    address: orderData.bakery.address,
+                    id: orderData.bakery.id
+                },
+                transaction: orderData.transaction ? {
+                    amount: orderData.transaction.amount,
+                    gate_way: orderData.transaction.gate_way,
+                    transaction_date: orderData.transaction.transaction_date,
+                    account_number: orderData.transaction.account_number
+                } : undefined
+            });
+            setLoading(false);
+        } catch (err) {
+            setError('Failed to fetch order details');
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchOrder = async () => {
-            try {
-                const accessToken = localStorage.getItem('accessToken');
-                if (!accessToken) {
-                    setError('Vui lòng đăng nhập để xem chi tiết đơn hàng');
-                    setLoading(false);
-                    return;
-                }
-
-                const decodedToken = decodeJWT(accessToken);
-                if (!decodedToken?.id) {
-                    setError('Xác thực không hợp lệ');
-                    setLoading(false);
-                    return;
-                }
-
-                const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/orders/${orderId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${accessToken}`
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to fetch order details');
-                }
-
-                const data = await response.json();
-
-                if (data.status_code !== 200) {
-                    throw new Error(data.errors?.[0] || 'Failed to fetch order details');
-                }
-
-                const orderData = data.payload;
-                setOrder({
-                    id: orderData.id,
-                    order_code: orderData.order_code,
-                    order_status: orderData.order_status,
-                    total_customer_paid: orderData.total_customer_paid,
-                    total_product_price: orderData.total_product_price,
-                    shipping_fee: orderData.shipping_fee,
-                    shipping_distance: orderData.shipping_distance,
-                    shipping_time: orderData.shipping_time,
-                    shipping_type: orderData.shipping_type,
-                    commission_rate: orderData.commission_rate,
-                    app_commission_fee: orderData.app_commission_fee,
-                    shop_revenue: orderData.shop_revenue,
-                    order_note: orderData.order_note,
-                    pickup_time: orderData.pickup_time,
-                    payment_type: orderData.payment_type,
-                    phone_number: orderData.phone_number,
-                    shipping_address: orderData.shipping_address,
-                    latitude: orderData.latitude,
-                    longitude: orderData.longitude,
-                    paid_at: orderData.paid_at,
-                    order_details: orderData.order_details.map((detail: any) => ({
-                        id: detail.id,
-                        quantity: detail.quantity,
-                        sub_total_price: detail.sub_total_price,
-                        cake_note: detail.cake_note,
-                        available_cake_id: detail.available_cake_id,
-                        shop_image_files: detail.available_cake?.shop_image_files?.[0]
-                    })),
-                    customer: {
-                        name: orderData.customer.name,
-                        email: orderData.customer.email,
-                        phone: orderData.customer.phone,
-                        address: orderData.customer.address
-                    },
-                    bakery: {
-                        bakery_name: orderData.bakery.bakery_name,
-                        email: orderData.bakery.email,
-                        phone: orderData.bakery.phone,
-                        address: orderData.bakery.address,
-                        id: orderData.bakery.id
-                    },
-                    transaction: orderData.transaction ? {
-                        amount: orderData.transaction.amount,
-                        gate_way: orderData.transaction.gate_way,
-                        transaction_date: orderData.transaction.transaction_date,
-                        account_number: orderData.transaction.account_number
-                    } : undefined
-                });
-                setLoading(false);
-            } catch (err) {
-                setError('Failed to fetch order details');
-                setLoading(false);
-            }
-        };
-
         fetchOrder();
     }, [orderId]);
 
@@ -410,6 +503,71 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
         }
     }, [order]);
 
+    const handleCancelOrder = async () => {
+        try {
+            setIsCancelling(true);
+            const accessToken = localStorage.getItem('accessToken');
+            if (!accessToken) {
+                toast.error('Vui lòng đăng nhập để hủy đơn hàng');
+                return;
+            }
+
+            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/orders/${orderId}/cancel`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'accept': '*/*'
+                }
+            });
+
+            if (response.ok) {
+                toast.success('Đơn hàng đã được hủy thành công');
+                router.refresh();
+                router.push('/orderHistory');
+            } else {
+                const data = await response.json();
+                throw new Error(data.errors?.[0] || 'Không thể hủy đơn hàng');
+            }
+        } catch (err: any) {
+            toast.error(err.message || 'Không thể hủy đơn hàng');
+        } finally {
+            setIsCancelling(false);
+        }
+    };
+
+    const handleMoveToNext = async () => {
+        try {
+            setIsMovingNext(true);
+            const accessToken = localStorage.getItem('accessToken');
+            if (!accessToken) {
+                toast.error('Vui lòng đăng nhập để cập nhật trạng thái');
+                return;
+            }
+
+            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/orders/${orderId}/move-to-next`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'accept': '*/*'
+                }
+            });
+
+            if (response.ok) {
+                toast.success('Cập nhật trạng thái đơn hàng thành công');
+                router.refresh();
+                // Refresh the order data
+                fetchOrder();
+            } else {
+                const data = await response.json();
+                throw new Error(data.errors?.[0] || 'Không thể cập nhật trạng thái đơn hàng');
+            }
+        } catch (err: any) {
+            toast.error(err.message || 'Không thể cập nhật trạng thái đơn hàng');
+        } finally {
+            setIsMovingNext(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="container mx-auto px-4 py-8">
@@ -466,19 +624,103 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                 transition={{ duration: 0.5 }}
                 className="bg-gradient-to-r from-blue-100 to-purple-100 p-8 rounded-lg shadow-xl"
             >
-                <div className="flex items-center gap-4 mb-8">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => router.push('/orderHistory')}
-                        className="hover:bg-blue-200 transition-colors"
-                    >
-                        <ArrowLeft className="h-5 w-5 text-blue-600" />
-                    </Button>
-                    <h1 className="text-4xl font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                        Chi tiết đơn hàng
-                    </h1>
+                <div className="flex items-center justify-between gap-4 mb-8">
+                    <div className="flex items-center gap-4">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => router.push('/orderHistory')}
+                            className="hover:bg-blue-200 transition-colors"
+                        >
+                            <ArrowLeft className="h-5 w-5 text-blue-600" />
+                        </Button>
+                        <h1 className="text-4xl font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                            Chi tiết đơn hàng
+                        </h1>
+                    </div>
+
+                    <div className="flex gap-2">
+                        {(order?.order_status === 'SHIPPING' || order?.order_status === 'READY_FOR_PICKUP') && (
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button
+                                        variant="default"
+                                        disabled={isMovingNext}
+                                        className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-medium px-6 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+                                    >
+                                        {isMovingNext ? 'Đang cập nhật...' : 'Xác nhận đã nhận hàng'}
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent className="bg-white rounded-lg p-6">
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle className="text-xl font-semibold">Xác nhận đã nhận hàng</AlertDialogTitle>
+                                        <AlertDialogDescription className="text-gray-600 space-y-2">
+                                            <p>Bạn có chắc chắn đã nhận được đơn hàng này?</p>
+                                            <ul className="list-disc pl-4 space-y-1 mt-2">
+                                                <li>Đơn hàng sẽ được chuyển sang trạng thái hoàn thành</li>
+                                                <li>Bạn có thể đánh giá đơn hàng sau khi xác nhận</li>
+                                                <li>Hành động này không thể hoàn tác</li>
+                                            </ul>
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter className="mt-6">
+                                        <AlertDialogCancel className="bg-gray-100 hover:bg-gray-200">Quay lại</AlertDialogCancel>
+                                        <AlertDialogAction
+                                            onClick={handleMoveToNext}
+                                            className="bg-emerald-500 hover:bg-emerald-600 text-white"
+                                        >
+                                            Xác nhận
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        )}
+
+                        {(order?.order_status === 'PENDING' || order?.order_status === 'WAITING_BAKERY_CONFIRM') && (
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button
+                                        variant="destructive"
+                                        disabled={isCancelling}
+                                    >
+                                        {isCancelling ? 'Đang hủy...' : 'Hủy đơn hàng'}
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent className="bg-white rounded-lg p-6">
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle className="text-xl font-semibold">Xác nhận hủy đơn hàng</AlertDialogTitle>
+                                        <AlertDialogDescription className="text-gray-600 space-y-2">
+                                            <p>Bạn có chắc chắn muốn hủy đơn hàng này? Hành động này không thể hoàn tác.</p>
+                                            <ul className="list-disc pl-4 space-y-1 mt-2">
+                                                <li>Đơn hàng sẽ được hủy ngay lập tức</li>
+                                                <li>Nếu bạn đã thanh toán, số tiền sẽ được hoàn trả trong vòng 3-5 ngày làm việc</li>
+                                                <li>Sau khi hủy, bạn sẽ được chuyển về trang lịch sử đơn hàng</li>
+                                                <li>Bạn có thể đặt lại đơn hàng mới bất cứ lúc nào</li>
+                                            </ul>
+                                            <p className="text-sm text-red-500 mt-2">Lưu ý: Không được hủy quá nhiều đơn hàng nếu quá số lượng hủy được phép thì tài khoản sẽ bị khóa</p>
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter className="mt-6">
+                                        <AlertDialogCancel className="bg-gray-100 hover:bg-gray-200">Quay lại</AlertDialogCancel>
+                                        <AlertDialogAction
+                                            onClick={handleCancelOrder}
+                                            className="bg-red-500 hover:bg-red-600 text-white"
+                                        >
+                                            Xác nhận hủy
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        )}
+                    </div>
                 </div>
+
+                {/* Add Progress Bar */}
+                <Card className="mb-8 border-none shadow-lg">
+                    <CardContent className="p-6">
+                        <OrderProgressBar currentStatus={order?.order_status || ''} />
+                    </CardContent>
+                </Card>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Main Order Information */}
