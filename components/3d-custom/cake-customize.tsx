@@ -7,9 +7,10 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft, Check, Download } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useCakeConfigStore } from '@/components/shared/client/stores/cake-config';
 import { toast } from 'react-hot-toast';
+import html2canvas from 'html2canvas';
 
 // Define type for the selected part
 type SelectedPart = 'cake' | 'outer-icing' | 'filling' | 'message' | 'candles' | 'board' | 'extras' | null;
@@ -267,6 +268,14 @@ const boardOptions = [
     { id: 'square-board', name: 'SQUARE BOARD', color: 'bg-white', shape: 'square' as BoardShape }
 ];
 
+// Add these types near the top with other types
+type StepStatus = {
+    cake: boolean;
+    decoration: boolean;
+    message: boolean;
+    extras: boolean;
+};
+
 const getInitialCakeConfig = (): CakeConfig => {
     if (typeof window === 'undefined') {
         // Return default config when running on server
@@ -345,6 +354,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
     const searchParams = useSearchParams();
     const editId = searchParams.get('editId');
     const { config, setConfig } = useCakeConfigStore();
+    const cakePreviewRef = useRef<HTMLDivElement>(null);
 
     // Update state definitions with proper types
     const [selectedPart, setSelectedPart] = useState<SelectedPart>(null);
@@ -358,6 +368,17 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
     const [partOptions, setPartOptions] = useState<ApiOptionGroup[]>([]);
     const [error, setError] = useState<ApiError | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+
+    // Add step completion tracking
+    const [completedSteps, setCompletedSteps] = useState<StepStatus>({
+        cake: false,
+        decoration: false,
+        message: false,
+        extras: false
+    });
+
+    // Add current step tracking
+    const [currentStep, setCurrentStep] = useState<'cake' | 'decoration' | 'message' | 'extras'>('cake');
 
     // Update the initial state to load existing item if editing
     useEffect(() => {
@@ -482,6 +503,34 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                 return;
             }
 
+            // Capture the cake preview as an image
+            let cakeImageUrl = null;
+            if (cakePreviewRef.current) {
+                try {
+                    // Show loading toast
+                    const loadingToast = toast.loading('Generating cake image...');
+
+                    // Capture the cake preview
+                    const canvas = await html2canvas(cakePreviewRef.current, {
+                        backgroundColor: null,
+                        scale: 2, // Higher quality
+                        logging: false,
+                        useCORS: true,
+                        allowTaint: true
+                    });
+
+                    // Convert canvas to data URL
+                    cakeImageUrl = canvas.toDataURL('image/png');
+
+                    // Update loading toast
+                    toast.dismiss(loadingToast);
+                    toast.success('Cake image generated successfully!');
+                } catch (error) {
+                    console.error('Error capturing cake image:', error);
+                    toast.error('Failed to generate cake image. Using default image instead.');
+                }
+            }
+
             // Get message options from API response
             const messageTypeGroup = messageOptions.find(group => group.type === 'MESSAGE_TYPE');
             const plaqueColorGroup = messageOptions.find(group => group.type === 'PLAQUE_COLOUR');
@@ -594,7 +643,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                             updated_by: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
                             is_deleted: false,
                             file_name: "custom-cake.jpg",
-                            file_url: "/imagecake.jpg"
+                            file_url: cakeImageUrl || "/imagecake.jpg"
                         },
                         quantity: 1,
                         cake_note: `${config.sponge} sponge with ${config.filling} filling and ${config.outerIcing} icing`,
@@ -638,7 +687,8 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                     name: `Custom ${config.size} Cake`,
                     description: `${config.sponge} sponge with ${config.filling} filling and ${config.outerIcing} icing`,
                     type: 'custom',
-                    extras: Array.isArray(config.extras) ? config.extras : []
+                    extras: Array.isArray(config.extras) ? config.extras : [],
+                    imageUrl: cakeImageUrl // Add the captured image URL
                 }
             };
 
@@ -935,25 +985,20 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
         }
     };
 
-    // Update the handlePartSelect function to handle errors
+    // Modify handlePartSelect to include step logic
     const handlePartSelect = (part: SelectedPart) => {
         setError(null);
         setSelectedPart(part);
 
-        // Fetch data based on selected part
-        switch (part) {
-            case 'outer-icing':
-                fetchDecorationOptions();
-                break;
-            case 'extras':
-                fetchExtraOptions();
-                break;
-            case 'message':
-                fetchMessageOptions();
-                break;
-            case 'cake':
-                fetchPartOptions();
-                break;
+        // Only allow selecting the current step
+        if (part === 'cake' && currentStep === 'cake') {
+            fetchPartOptions();
+        } else if (part === 'outer-icing' && currentStep === 'decoration') {
+            fetchDecorationOptions();
+        } else if (part === 'message' && currentStep === 'message') {
+            fetchMessageOptions();
+        } else if (part === 'extras' && currentStep === 'extras') {
+            fetchExtraOptions();
         }
     };
 
@@ -1247,6 +1292,17 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
             );
         }
 
+        const renderCompleteButton = () => (
+            <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleStepComplete}
+                className="mt-8 w-full bg-gradient-to-r from-pink-600 to-purple-600 text-white py-4 text-lg font-bold rounded-xl hover:from-pink-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl"
+            >
+                HOÀN THÀNH BƯỚC NÀY
+            </motion.button>
+        );
+
         switch (selectedPart) {
             case 'cake':
                 return (
@@ -1489,6 +1545,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                 ))}
                             </div>
                         </div>
+                        {renderCompleteButton()}
                     </div>
                 );
 
@@ -1560,181 +1617,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                         <div className="mt-6 text-center text-sm text-gray-500">
                             Chọn kiểu trang trí cho bánh của bạn
                         </div>
-                    </div>
-                );
-
-            case 'extras':
-                return (
-                    <div>
-                        <h3 className="font-bold mb-6 text-2xl bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
-                            THÊM PHẦN
-                        </h3>
-                        <div className="space-y-8">
-                            {/* Candles Section */}
-                            <div className="space-y-4">
-                                <h4 className="font-semibold text-xl text-gray-800 pl-2 border-l-4 border-pink-500">
-                                    NẾN TRANG TRÍ 🕯️
-                                </h4>
-                                <div className="grid grid-cols-1 gap-4">
-                                    {extraOptions.find(group => group.type === 'Candles')?.items.map(option => (
-                                        <motion.button
-                                            key={option.id}
-                                            variants={selectedVariants}
-                                            animate={config.candles === option.id ? "selected" : "unselected"}
-                                            whileHover={{ scale: 1.02 }}
-                                            whileTap={{ scale: 0.98 }}
-                                            onClick={() => {
-                                                if (Array.isArray(config.extras)) {
-                                                    // Remove any existing items of the same type
-                                                    const extrasWithoutType = config.extras.filter(id => {
-                                                        const item = extraOptions.find(group =>
-                                                            group.items.some(item => item.id === id)
-                                                        )?.items.find(item => item.id === id);
-                                                        return item?.type !== option.type;
-                                                    });
-
-                                                    setConfig(prev => ({
-                                                        ...prev,
-                                                        extras: [...extrasWithoutType, option.id],
-                                                        // Update the specific type in config
-                                                        ...(option.type === 'Candles' ? { candles: option.id } : {}),
-                                                        ...(option.type === 'CakeBoard' ? { board: option.id } : {})
-                                                    }));
-                                                }
-                                            }}
-                                            className={`relative flex items-center p-6 rounded-xl border-2 w-full
-                                                ${config.candles === option.id
-                                                    ? 'border-pink-500 bg-gradient-to-br from-pink-50 to-purple-50'
-                                                    : 'border-gray-200 hover:border-pink-300'}
-                                                transition-all duration-300`}
-                                        >
-                                            <div className="flex-1 flex items-center gap-6">
-                                                <div className={`relative w-24 h-24 rounded-lg overflow-hidden 
-                                                    ${option.image
-                                                        ? ''
-                                                        : `bg-gradient-to-br from-${option.color.toLowerCase()}-200 to-white`}`
-                                                }>
-                                                    {option.image ? (
-                                                        <Image
-                                                            src={option.image.file_url}
-                                                            alt={option.name}
-                                                            fill
-                                                            className="object-cover"
-                                                        />
-                                                    ) : (
-                                                        <div className="w-full h-full flex items-center justify-center text-4xl">
-                                                            🕯️
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div className="flex-1">
-                                                    <div className="font-bold text-lg text-gray-900">{option.name}</div>
-                                                    <div className="text-sm text-gray-600 mt-1">
-                                                        {option.description}
-                                                    </div>
-                                                    <div className="text-pink-600 font-bold mt-2 text-xl">
-                                                        {option.price.toLocaleString()} VND
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            {config.candles === option.id && (
-                                                <motion.div
-                                                    initial={{ scale: 0 }}
-                                                    animate={{ scale: 1 }}
-                                                    className="absolute -top-2 -right-2 bg-pink-500 text-white rounded-full p-2"
-                                                >
-                                                    <Check className="w-5 h-5" />
-                                                </motion.div>
-                                            )}
-                                        </motion.button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Cake Board Section */}
-                            <div className="space-y-4">
-                                <h4 className="font-semibold text-xl text-gray-800 pl-2 border-l-4 border-pink-500">
-                                    ĐẾ BÁNH 🎂
-                                </h4>
-                                <div className="grid grid-cols-1 gap-4">
-                                    {extraOptions.find(group => group.type === 'CakeBoard')?.items.map(option => (
-                                        <motion.button
-                                            key={option.id}
-                                            variants={selectedVariants}
-                                            animate={config.board === option.id ? "selected" : "unselected"}
-                                            whileHover={{ scale: 1.02 }}
-                                            whileTap={{ scale: 0.98 }}
-                                            onClick={() => {
-                                                if (Array.isArray(config.extras)) {
-                                                    // Remove any existing items of the same type
-                                                    const extrasWithoutType = config.extras.filter(id => {
-                                                        const item = extraOptions.find(group =>
-                                                            group.items.some(item => item.id === id)
-                                                        )?.items.find(item => item.id === id);
-                                                        return item?.type !== option.type;
-                                                    });
-
-                                                    setConfig(prev => ({
-                                                        ...prev,
-                                                        extras: [...extrasWithoutType, option.id],
-                                                        // Update the specific type in config
-                                                        ...(option.type === 'Candles' ? { candles: option.id } : {}),
-                                                        ...(option.type === 'CakeBoard' ? { board: option.id } : {})
-                                                    }));
-                                                }
-                                            }}
-                                            className={`relative flex items-center p-6 rounded-xl border-2 w-full
-                                                ${config.board === option.id
-                                                    ? 'border-pink-500 bg-gradient-to-br from-pink-50 to-purple-50'
-                                                    : 'border-gray-200 hover:border-pink-300'}
-                                                transition-all duration-300`}
-                                        >
-                                            <div className="flex-1 flex items-center gap-6">
-                                                <div className={`relative w-24 h-24 rounded-lg overflow-hidden 
-                                                    ${option.image
-                                                        ? ''
-                                                        : `bg-gradient-to-br from-${option.color.toLowerCase()}-100 to-white`}`
-                                                }>
-                                                    {option.image ? (
-                                                        <Image
-                                                            src={option.image.file_url}
-                                                            alt={option.name}
-                                                            fill
-                                                            className="object-cover"
-                                                        />
-                                                    ) : (
-                                                        <div className="w-full h-full flex items-center justify-center text-4xl">
-                                                            🎂
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div className="flex-1">
-                                                    <div className="font-bold text-lg text-gray-900">{option.name}</div>
-                                                    <div className="text-sm text-gray-600 mt-1">
-                                                        {option.description}
-                                                    </div>
-                                                    <div className="text-pink-600 font-bold mt-2 text-xl">
-                                                        {option.price.toLocaleString()} VND
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            {config.board === option.id && (
-                                                <motion.div
-                                                    initial={{ scale: 0 }}
-                                                    animate={{ scale: 1 }}
-                                                    className="absolute -top-2 -right-2 bg-pink-500 text-white rounded-full p-2"
-                                                >
-                                                    <Check className="w-5 h-5" />
-                                                </motion.div>
-                                            )}
-                                        </motion.button>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                        <div className="mt-6 text-center text-sm text-gray-500">
-                            Chọn một loại nến và một loại đế bánh để hoàn thiện chiếc bánh của bạn
-                        </div>
+                        {renderCompleteButton()}
                     </div>
                 );
 
@@ -1931,6 +1814,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                 )}
                             </motion.div>
                         )}
+                        {renderCompleteButton()}
                     </div>
                 );
 
@@ -2013,6 +1897,182 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                         <div className="mt-4 text-sm text-gray-500 text-center">
                             Chọn hình dạng đế bánh phù hợp với thiết kế của bạn
                         </div>
+                    </div>
+                );
+
+            case 'extras':
+                return (
+                    <div>
+                        <h3 className="font-bold mb-6 text-2xl bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
+                            THÊM PHẦN
+                        </h3>
+                        <div className="space-y-8">
+                            {/* Candles Section */}
+                            <div className="space-y-4">
+                                <h4 className="font-semibold text-xl text-gray-800 pl-2 border-l-4 border-pink-500">
+                                    NẾN TRANG TRÍ 🕯️
+                                </h4>
+                                <div className="grid grid-cols-1 gap-4">
+                                    {extraOptions.find(group => group.type === 'Candles')?.items.map(option => (
+                                        <motion.button
+                                            key={option.id}
+                                            variants={selectedVariants}
+                                            animate={config.candles === option.id ? "selected" : "unselected"}
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                            onClick={() => {
+                                                if (Array.isArray(config.extras)) {
+                                                    // Remove any existing items of the same type
+                                                    const extrasWithoutType = config.extras.filter(id => {
+                                                        const item = extraOptions.find(group =>
+                                                            group.items.some(item => item.id === id)
+                                                        )?.items.find(item => item.id === id);
+                                                        return item?.type !== option.type;
+                                                    });
+
+                                                    setConfig(prev => ({
+                                                        ...prev,
+                                                        extras: [...extrasWithoutType, option.id],
+                                                        // Update the specific type in config
+                                                        ...(option.type === 'Candles' ? { candles: option.id } : {}),
+                                                        ...(option.type === 'CakeBoard' ? { board: option.id } : {})
+                                                    }));
+                                                }
+                                            }}
+                                            className={`relative flex items-center p-6 rounded-xl border-2 w-full
+                                                ${config.candles === option.id
+                                                    ? 'border-pink-500 bg-gradient-to-br from-pink-50 to-purple-50'
+                                                    : 'border-gray-200 hover:border-pink-300'}
+                                                transition-all duration-300`}
+                                        >
+                                            <div className="flex-1 flex items-center gap-6">
+                                                <div className={`relative w-24 h-24 rounded-lg overflow-hidden 
+                                                    ${option.image
+                                                        ? ''
+                                                        : `bg-gradient-to-br from-${option.color.toLowerCase()}-200 to-white`}`
+                                                }>
+                                                    {option.image ? (
+                                                        <Image
+                                                            src={option.image.file_url}
+                                                            alt={option.name}
+                                                            fill
+                                                            className="object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center text-4xl">
+                                                            🕯️
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <div className="font-bold text-lg text-gray-900">{option.name}</div>
+                                                    <div className="text-sm text-gray-600 mt-1">
+                                                        {option.description}
+                                                    </div>
+                                                    <div className="text-pink-600 font-bold mt-2 text-xl">
+                                                        {option.price.toLocaleString()} VND
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {config.candles === option.id && (
+                                                <motion.div
+                                                    initial={{ scale: 0 }}
+                                                    animate={{ scale: 1 }}
+                                                    className="absolute -top-2 -right-2 bg-pink-500 text-white rounded-full p-2"
+                                                >
+                                                    <Check className="w-5 h-5" />
+                                                </motion.div>
+                                            )}
+                                        </motion.button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Cake Board Section */}
+                            <div className="space-y-4">
+                                <h4 className="font-semibold text-xl text-gray-800 pl-2 border-l-4 border-pink-500">
+                                    ĐẾ BÁNH 🎂
+                                </h4>
+                                <div className="grid grid-cols-1 gap-4">
+                                    {extraOptions.find(group => group.type === 'CakeBoard')?.items.map(option => (
+                                        <motion.button
+                                            key={option.id}
+                                            variants={selectedVariants}
+                                            animate={config.board === option.id ? "selected" : "unselected"}
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                            onClick={() => {
+                                                if (Array.isArray(config.extras)) {
+                                                    // Remove any existing items of the same type
+                                                    const extrasWithoutType = config.extras.filter(id => {
+                                                        const item = extraOptions.find(group =>
+                                                            group.items.some(item => item.id === id)
+                                                        )?.items.find(item => item.id === id);
+                                                        return item?.type !== option.type;
+                                                    });
+
+                                                    setConfig(prev => ({
+                                                        ...prev,
+                                                        extras: [...extrasWithoutType, option.id],
+                                                        // Update the specific type in config
+                                                        ...(option.type === 'Candles' ? { candles: option.id } : {}),
+                                                        ...(option.type === 'CakeBoard' ? { board: option.id } : {})
+                                                    }));
+                                                }
+                                            }}
+                                            className={`relative flex items-center p-6 rounded-xl border-2 w-full
+                                                ${config.board === option.id
+                                                    ? 'border-pink-500 bg-gradient-to-br from-pink-50 to-purple-50'
+                                                    : 'border-gray-200 hover:border-pink-300'}
+                                                transition-all duration-300`}
+                                        >
+                                            <div className="flex-1 flex items-center gap-6">
+                                                <div className={`relative w-24 h-24 rounded-lg overflow-hidden 
+                                                    ${option.image
+                                                        ? ''
+                                                        : `bg-gradient-to-br from-${option.color.toLowerCase()}-100 to-white`}`
+                                                }>
+                                                    {option.image ? (
+                                                        <Image
+                                                            src={option.image.file_url}
+                                                            alt={option.name}
+                                                            fill
+                                                            className="object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center text-4xl">
+                                                            🎂
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <div className="font-bold text-lg text-gray-900">{option.name}</div>
+                                                    <div className="text-sm text-gray-600 mt-1">
+                                                        {option.description}
+                                                    </div>
+                                                    <div className="text-pink-600 font-bold mt-2 text-xl">
+                                                        {option.price.toLocaleString()} VND
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {config.board === option.id && (
+                                                <motion.div
+                                                    initial={{ scale: 0 }}
+                                                    animate={{ scale: 1 }}
+                                                    className="absolute -top-2 -right-2 bg-pink-500 text-white rounded-full p-2"
+                                                >
+                                                    <Check className="w-5 h-5" />
+                                                </motion.div>
+                                            )}
+                                        </motion.button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="mt-6 text-center text-sm text-gray-500">
+                            Chọn một loại nến và một loại đế bánh để hoàn thiện chiếc bánh của bạn
+                        </div>
+                        {renderCompleteButton()}
                     </div>
                 );
 
@@ -2130,6 +2190,24 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
         return option.name || 'Unnamed Option';
     };
 
+    // Add function to handle step completion
+    const handleStepComplete = () => {
+        setSelectedPart(null);
+
+        if (currentStep === 'cake') {
+            setCompletedSteps(prev => ({ ...prev, cake: true }));
+            setCurrentStep('decoration');
+        } else if (currentStep === 'decoration') {
+            setCompletedSteps(prev => ({ ...prev, decoration: true }));
+            setCurrentStep('message');
+        } else if (currentStep === 'message') {
+            setCompletedSteps(prev => ({ ...prev, message: true }));
+            setCurrentStep('extras');
+        } else if (currentStep === 'extras') {
+            setCompletedSteps(prev => ({ ...prev, extras: true }));
+        }
+    };
+
     return (
         <motion.div
             initial={{ opacity: 0 }}
@@ -2160,6 +2238,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.8 }}
                                 transition={{ duration: 0.3 }}
+                                ref={cakePreviewRef}
                             >
                                 {renderCake()}
                             </motion.div>
@@ -2234,6 +2313,8 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                                 subtitle={`${config.size}`}
                                                 onClick={() => handlePartSelect('cake')}
                                                 gradient="from-pink-500 to-rose-500"
+                                                disabled={currentStep !== 'cake'}
+                                                completed={completedSteps.cake}
                                             />
                                             <MenuItem
                                                 icon="🧁"
@@ -2241,6 +2322,8 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                                 subtitle="KEM SÔ CÔ LA"
                                                 onClick={() => handlePartSelect('outer-icing')}
                                                 gradient="from-purple-500 to-indigo-500"
+                                                disabled={currentStep !== 'decoration'}
+                                                completed={completedSteps.decoration}
                                             />
                                             <MenuItem
                                                 icon="✍️"
@@ -2248,21 +2331,9 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                                 subtitle={config.message || "CHỮ VIẾT TAY + PLAQUE SÔ CÔ LA TRẮNG"}
                                                 onClick={() => handlePartSelect('message')}
                                                 gradient="from-blue-500 to-cyan-500"
+                                                disabled={currentStep !== 'message'}
+                                                completed={completedSteps.message}
                                             />
-                                            {/* <MenuItem
-                                                icon="🕯️"
-                                                title="TRANG TRÍ CUỐI"
-                                                subtitle="6 NẾN HỒNG + PLAQUE SÔ CÔ LA TRẮNG"
-                                                onClick={() => handlePartSelect('candles')}
-                                                gradient="from-teal-500 to-emerald-500"
-                                            />
-                                            <MenuItem
-                                                icon="📝"
-                                                title="ĐẾ BÁNH"
-                                                subtitle={`${boardOptions.find(b => b.id === config.board)?.name || 'Chọn màu đế bánh'}`}
-                                                onClick={() => handlePartSelect('board')}
-                                                gradient="from-green-500 to-teal-500"
-                                            /> */}
                                             <MenuItem
                                                 icon="🍪"
                                                 title="THÊM PHẦN"
@@ -2271,6 +2342,8 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                                     : "Thêm topping đặc biệt"}
                                                 onClick={() => handlePartSelect('extras')}
                                                 gradient="from-yellow-500 to-orange-500"
+                                                disabled={currentStep !== 'extras'}
+                                                completed={completedSteps.extras}
                                             />
                                         </motion.div>
                                     ) : (
@@ -2327,29 +2400,35 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
     );
 };
 
-// Update MenuItem component with enhanced styling
+// Update MenuItem component to handle disabled state and completion
 const MenuItem = ({
     icon,
     title,
     subtitle,
     onClick,
-    gradient
+    gradient,
+    disabled,
+    completed
 }: {
     icon: string;
     title: string;
     subtitle: string;
     onClick: () => void;
     gradient: string;
+    disabled: boolean;
+    completed: boolean;
 }) => {
     return (
         <motion.button
-            whileHover={{ scale: 1.02, backgroundColor: 'rgb(249, 250, 251)' }}
-            whileTap={{ scale: 0.98 }}
-            onClick={onClick}
-            className={`w-full flex items-center gap-4 p-4 rounded-xl transition-all hover:shadow-lg border border-pink-100`}
+            whileHover={!disabled ? { scale: 1.02, backgroundColor: 'rgb(249, 250, 251)' } : {}}
+            whileTap={!disabled ? { scale: 0.98 } : {}}
+            onClick={!disabled ? onClick : undefined}
+            className={`w-full flex items-center gap-4 p-4 rounded-xl transition-all border border-pink-100
+                ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-lg'}
+                ${completed ? 'bg-green-50' : ''}`}
         >
             <motion.span
-                whileHover={{ rotate: [0, -10, 10, -10, 0] }}
+                whileHover={!disabled ? { rotate: [0, -10, 10, -10, 0] } : {}}
                 transition={{ duration: 0.5 }}
                 className="text-3xl"
             >
@@ -2369,16 +2448,26 @@ const MenuItem = ({
                     {subtitle}
                 </motion.div>
             </div>
-            <motion.svg
-                whileHover={{ x: 5 }}
-                className="w-6 h-6 text-pink-400"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-            >
-                <path d="M9 18l6-6-6-6" />
-            </motion.svg>
+            {completed ? (
+                <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center"
+                >
+                    ✓
+                </motion.div>
+            ) : (
+                <motion.svg
+                    whileHover={{ x: 5 }}
+                    className={`w-6 h-6 ${disabled ? 'text-gray-400' : 'text-pink-400'}`}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                >
+                    <path d="M9 18l6-6-6-6" />
+                </motion.svg>
+            )}
         </motion.button>
     );
 };
