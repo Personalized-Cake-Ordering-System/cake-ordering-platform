@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Copy, CheckCircle, Clock, Loader2 } from "lucide-react";
-import SignalRNotificationComponent from "./signalR";
 
 // Function to decode JWT token
 const decodeJWT = (token: string) => {
@@ -163,12 +162,12 @@ const QRPaymentPage = () => {
       </motion.div>
 
       {/* SignalR Notification Component */}
-      {userId && (
+      {/* {userId && (
         <SignalRNotificationComponent
           userId={userId}
           onPaymentSuccess={handlePaymentSuccess}
         />
-      )}
+      )} */}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* QR Code Section */}
@@ -212,14 +211,12 @@ const QRPaymentPage = () => {
                 }}
               >
                 <Clock
-                  className={`h-5 w-5 ${
-                    countdown < 300 ? "text-red-500" : "text-yellow-500"
-                  }`}
+                  className={`h-5 w-5 ${countdown < 300 ? "text-red-500" : "text-yellow-500"
+                    }`}
                 />
                 <span
-                  className={`font-medium ${
-                    countdown < 300 ? "text-red-500" : ""
-                  }`}
+                  className={`font-medium ${countdown < 300 ? "text-red-500" : ""
+                    }`}
                 >
                   Thanh toán hết hạn trong {formatTime(countdown)}
                 </span>
