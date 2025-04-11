@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Copy, CheckCircle, Clock, Loader2 } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import { useSignalR } from "@/contexts/SingalRContext";
 
 // Function to decode JWT token
 const decodeJWT = (token: string) => {
@@ -35,6 +37,8 @@ const LoadingQR = () => (
 
 const QRPaymentPage = () => {
   const router = useRouter();
+  const { toast } = useToast();
+  const { message } = useSignalR();
   const [orderDetails, setOrderDetails] = useState<any>(null);
   const [copied, setCopied] = useState(false);
   const [countdown, setCountdown] = useState(900); // 15 minutes in seconds
@@ -100,6 +104,13 @@ const QRPaymentPage = () => {
     return () => clearInterval(timer);
   }, []);
 
+  // Handle SignalR message for payment success
+  useEffect(() => {
+    if (message && message.Type === "PAYMENT_SUCCESS") {
+      handlePaymentSuccess(message.OrderCode);
+    }
+  }, [message]);
+
   const handleBackToCheckout = () => {
     router.push("/checkout");
   };
@@ -130,12 +141,43 @@ const QRPaymentPage = () => {
       orderCode
     );
 
-    // Add a small delay to ensure the success message is visible before redirecting
+    // Show success toast
+    toast({
+      title: "Thanh toán thành công",
+      description: "Đơn hàng của bạn đã được thanh toán thành công.",
+      duration: 2000,
+    });
+
+    // Redirect after toast is shown
+    console.log("Starting redirect timer...");
     setTimeout(() => {
-      console.log("Redirecting to payment success page");
-      router.push("/payment-success");
-    }, 2000); // 2 second delay to show the success message
+      console.log("Attempting to redirect to payment-success page...");
+      try {
+        router.push("/payment-success");
+        console.log("Next.js router redirect attempted");
+
+        // Fallback to window.location after a short delay
+        setTimeout(() => {
+          if (window.location.pathname !== "/payment-success") {
+            console.log("Using window.location as fallback");
+            window.location.href = "/payment-success";
+          }
+        }, 500);
+      } catch (error) {
+        console.error("Error during redirect:", error);
+        window.location.href = "/payment-success";
+      }
+    }, 2000);
   };
+
+  // Add useEffect to handle payment success
+  useEffect(() => {
+    if (paymentSuccess) {
+      console.log("Payment success state changed, cleaning up...");
+      // Clear the current order from localStorage
+      localStorage.removeItem("currentOrder");
+    }
+  }, [paymentSuccess]);
 
   if (!orderDetails) return null;
 
@@ -179,7 +221,7 @@ const QRPaymentPage = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className="text-2xl font-bold mb-4 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent"
               >
-                Quét để thanh toán
+                Quét mã để thanh toán
               </motion.h2>
               <motion.div
                 className="relative w-[300px] h-[300px] mx-auto mb-6 bg-white p-4 rounded-lg shadow-sm"
@@ -189,12 +231,12 @@ const QRPaymentPage = () => {
                 {isLoading && <LoadingQR />}
                 <Image
                   src={orderDetails.qrLink}
-                  alt="Mã thanh toán VietQR"
+                  alt="Mã QR thanh toán"
                   fill
                   className={`object-contain ${isLoading ? "hidden" : ""}`}
                   onLoadingComplete={() => setIsLoading(false)}
                   onError={(e) => {
-                    console.error("QR image failed to load:", e);
+                    console.error("Lỗi tải hình ảnh QR:", e);
                     setIsLoading(false);
                   }}
                   priority
@@ -218,7 +260,7 @@ const QRPaymentPage = () => {
                   className={`font-medium ${countdown < 300 ? "text-red-500" : ""
                     }`}
                 >
-                  Thanh toán hết hạn trong {formatTime(countdown)}
+                  Thời gian thanh toán còn lại: {formatTime(countdown)}
                 </span>
               </motion.div>
 
@@ -259,8 +301,8 @@ const QRPaymentPage = () => {
 
                 <div className="text-sm text-muted-foreground mt-4">
                   <p>1. Mở ứng dụng ngân hàng của bạn</p>
-                  <p>2. Chọn &quot;Quét mã QR&quot;</p>
-                  <p>3. Quét mã VietQR này</p>
+                  <p>2. Chọn "Quét mã QR"</p>
+                  <p>3. Quét mã QR này</p>
                   <p>4. Xác nhận thanh toán</p>
                 </div>
               </div>
@@ -351,9 +393,15 @@ const QRPaymentPage = () => {
                 <div className="space-y-2">
                   <Separator className="my-2" />
                   <div className="flex justify-between font-bold">
-                    <span>Tổng cộng (Đã tính phí vận chuyển)</span>
+                    <span>Tổng cộng {orderDetails.orderInfo.deliveryType === 'DELIVERY' ? '(Đã tính phí vận chuyển)' : ''}</span>
                     <span>{formatVND(orderDetails.orderInfo.total)}</span>
                   </div>
+                  {orderDetails.orderInfo.deliveryType === 'DELIVERY' && (
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>Phí vận chuyển:</span>
+                      <span>{formatVND(orderDetails.orderInfo.deliveryFee)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

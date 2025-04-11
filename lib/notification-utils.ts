@@ -14,26 +14,26 @@ export const NotificationTypes = {
 export const getNotificationMessage = (type: string): string => {
   switch (type) {
     case NotificationTypes.MAKING_BILLING:
-      return "A new billing is being created.";
+      return "Đang tạo hóa đơn mới.";
     case NotificationTypes.PAYMENT_SUCCESS:
-      return "Payment was successful!";
+      return "Thanh toán thành công!";
     case NotificationTypes.NEW_ORDER:
-      return "You have a new order.";
+      return "Bạn có đơn hàng mới.";
     case NotificationTypes.PROCESSING_ORDER:
-      return "An order is being processed.";
+      return "Đơn hàng đang được xử lý.";
     case NotificationTypes.SHIPPING_ORDER:
-      return "An order is being shipped.";
+      return "Đơn hàng đang được vận chuyển.";
     case NotificationTypes.READY_FOR_PICKUP:
-      return "An order is ready for pickup.";
+      return "Đơn hàng đã sẵn sàng để nhận.";
     case NotificationTypes.COMPLETED_ORDER:
-      return "An order has been completed.";
+      return "Đơn hàng đã hoàn tất.";
     case NotificationTypes.CANCELED_ORDER:
-      return "An order has been canceled.";
+      return "Đơn hàng đã bị hủy.";
     case NotificationTypes.NEW_BAKERY_REGISTRATION:
-      return "A new bakery has registered.";
+      return "Có tiệm bánh mới đăng ký.";
     case NotificationTypes.NEW_REPORT:
-      return "A new report has been submitted.";
+      return "Có báo cáo mới được gửi.";
     default:
-      return "Unknown notification type.";
+      return "Loại thông báo không xác định.";
   }
 };
