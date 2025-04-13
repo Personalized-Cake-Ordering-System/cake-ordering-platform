@@ -19,6 +19,9 @@ export const StoreCard = ({ bakery, isFeatured = false }: StoreCardProps) => {
   const [isNewBakery, setIsNewBakery] = React.useState(false);
   const [formattedDate, setFormattedDate] = React.useState("");
 
+  // Only show confirmed stores
+  if (bakery.status !== "CONFIRMED") return null;
+
   // Ensure component only runs client-side
   React.useEffect(() => {
     setIsClient(true);
