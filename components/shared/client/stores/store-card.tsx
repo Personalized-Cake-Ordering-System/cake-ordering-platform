@@ -19,9 +19,6 @@ export const StoreCard = ({ bakery, isFeatured = false }: StoreCardProps) => {
   const [isNewBakery, setIsNewBakery] = React.useState(false);
   const [formattedDate, setFormattedDate] = React.useState("");
 
-  // Only show confirmed stores
-  if (bakery.status !== "CONFIRMED") return null;
-
   // Ensure component only runs client-side
   React.useEffect(() => {
     setIsClient(true);
@@ -37,6 +34,9 @@ export const StoreCard = ({ bakery, isFeatured = false }: StoreCardProps) => {
       setFormattedDate(createdDate.toLocaleDateString("vi-VN", { year: "numeric", month: "short", day: "numeric" }));
     }
   }, [bakery]);
+
+  // Only show confirmed stores
+  if (bakery.status !== "CONFIRMED") return null;
 
   // Don't render anything until client-side is ready
   if (!isClient) return null;
