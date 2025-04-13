@@ -37,9 +37,15 @@ const SignInPage = () => {
 
       if (data.status_code === 200) {
         const accessToken = data.meta_data.access_token;
+        const walletId = data.payload?.wallet_id;
+
         localStorage.setItem("accessToken", accessToken);
+        if (walletId) {
+          localStorage.setItem("walletId", walletId);
+        }
         setToken(accessToken);
         console.log("Login successful, access token saved:", accessToken);
+        console.log("Wallet ID saved:", walletId);
 
         // Hiển thị toast success mới
         toast.success("Sign in successful!", { autoClose: 3000 });
