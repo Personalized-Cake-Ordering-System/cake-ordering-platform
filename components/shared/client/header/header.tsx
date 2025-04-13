@@ -194,11 +194,11 @@ const Header = () => {
                     <NotificationDropdown />
                     <Link href="/wishlist" className="relative group">
                       <Heart className="h-6 w-6 text-gray-800 dark:text-gray-300 group-hover:text-custom-teal dark:group-hover:text-custom-teal transition-colors duration-200" />
-                      <NotificationBadge count={wishlistCount} />
+                      {/* <NotificationBadge count={wishlistCount} /> */}
                     </Link>
                     <Link href="/cart" className="relative group">
                       <ShoppingCart className="h-6 w-6 text-gray-800 dark:text-gray-300 group-hover:text-custom-teal dark:group-hover:text-custom-teal transition-colors duration-200" />
-                      <NotificationBadge count={cartCount} />
+                      {/* <NotificationBadge count={cartCount} /> */}
                     </Link>
                   </>
                 ) : (
