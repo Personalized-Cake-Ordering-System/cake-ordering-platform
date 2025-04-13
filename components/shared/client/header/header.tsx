@@ -95,7 +95,13 @@ const Header = () => {
     { href: "/cakes", label: "Bánh kem" },
     { href: "/discover", label: "Khám phá" },
     { href: "/promotions", label: "Khuyến mãi" },
+    // { href: "/wallet", label: "Ví" },
     // { href: "/customizeCake", label: "Tùy chỉnh bánh" },
+  ];
+
+  const authenticatedNavLinks: NavItemType[] = [
+    ...navLinks,
+    { href: "/wallet", label: "Ví" },
   ];
 
   return (
@@ -183,7 +189,7 @@ const Header = () => {
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                    
+
                     {/* Only show notifications, wishlist and cart when logged in */}
                     <NotificationDropdown />
                     <Link href="/wishlist" className="relative group">
@@ -250,7 +256,7 @@ const Header = () => {
             </div>
 
             <div className="hidden md:flex items-center">
-              {navLinks.map((link) => (
+              {(isLoggedIn ? authenticatedNavLinks : navLinks).map((link) => (
                 <NavLink
                   key={link.href}
                   href={link.href}
