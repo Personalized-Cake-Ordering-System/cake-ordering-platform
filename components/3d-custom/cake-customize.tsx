@@ -988,17 +988,40 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
     // Modify handlePartSelect to include step logic
     const handlePartSelect = (part: SelectedPart) => {
         setError(null);
-        setSelectedPart(part);
 
-        // Only allow selecting the current step
-        if (part === 'cake' && currentStep === 'cake') {
+        // Determine which steps are available based on completion status
+        const canSelectCake = true; // Always available
+        const canSelectDecoration = completedSteps.cake;
+        const canSelectMessage = completedSteps.decoration;
+        const canSelectExtras = completedSteps.message;
+
+        // Only allow selecting steps that are available
+        if (part === 'cake') {
+            setSelectedPart(part);
             fetchPartOptions();
-        } else if (part === 'outer-icing' && currentStep === 'decoration') {
+        } else if (part === 'outer-icing' && canSelectDecoration) {
+            setSelectedPart(part);
             fetchDecorationOptions();
-        } else if (part === 'message' && currentStep === 'message') {
+        } else if (part === 'message' && canSelectMessage) {
+            setSelectedPart(part);
             fetchMessageOptions();
-        } else if (part === 'extras' && currentStep === 'extras') {
+        } else if (part === 'extras' && canSelectExtras) {
+            setSelectedPart(part);
             fetchExtraOptions();
+        } else if (part !== null) {
+            // Show error message if trying to select a locked step
+            toast.error('Please complete the previous steps first');
+        }
+
+        // Update current step based on selection
+        if (part === 'cake' && !completedSteps.cake) {
+            setCurrentStep('cake');
+        } else if (part === 'outer-icing' && !completedSteps.decoration) {
+            setCurrentStep('decoration');
+        } else if (part === 'message' && !completedSteps.message) {
+            setCurrentStep('message');
+        } else if (part === 'extras' && !completedSteps.extras) {
+            setCurrentStep('extras');
         }
     };
 
@@ -2194,17 +2217,33 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
     const handleStepComplete = () => {
         setSelectedPart(null);
 
-        if (currentStep === 'cake') {
+        // Check if current step matches the natural progression
+        const canCompleteCake = currentStep === 'cake' && !completedSteps.cake;
+        const canCompleteDecoration = currentStep === 'decoration' && completedSteps.cake && !completedSteps.decoration;
+        const canCompleteMessage = currentStep === 'message' && completedSteps.decoration && !completedSteps.message;
+        const canCompleteExtras = currentStep === 'extras' && completedSteps.message && !completedSteps.extras;
+
+        // Only allow progression if the current step's requirements are met and follows natural progression
+        if (canCompleteCake && config.size && config.sponge && config.filling) {
             setCompletedSteps(prev => ({ ...prev, cake: true }));
             setCurrentStep('decoration');
-        } else if (currentStep === 'decoration') {
+        } else if (canCompleteDecoration && config.outerIcing) {
             setCompletedSteps(prev => ({ ...prev, decoration: true }));
             setCurrentStep('message');
-        } else if (currentStep === 'message') {
+        } else if (canCompleteMessage) {
+            // Allow completion of message step even if no message is added (as it's optional)
             setCompletedSteps(prev => ({ ...prev, message: true }));
             setCurrentStep('extras');
-        } else if (currentStep === 'extras') {
+        } else if (canCompleteExtras) {
+            // Allow completion of extras step even if no extras are added (as they're optional)
             setCompletedSteps(prev => ({ ...prev, extras: true }));
+        }
+
+        // Show toast message if requirements aren't met
+        if (currentStep === 'cake' && (!config.size || !config.sponge || !config.filling)) {
+            toast.error('Please complete all required cake options before proceeding');
+        } else if (currentStep === 'decoration' && !config.outerIcing) {
+            toast.error('Please select a decoration option before proceeding');
         }
     };
 
@@ -2311,27 +2350,39 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                                 icon="🍰"
                                                 title="BÁNH"
                                                 subtitle={`${config.size}`}
-                                                onClick={() => handlePartSelect('cake')}
+                                                onClick={() => {
+                                                    if (currentStep === 'cake' || completedSteps.cake) {
+                                                        handlePartSelect('cake');
+                                                    }
+                                                }}
                                                 gradient="from-pink-500 to-rose-500"
-                                                disabled={currentStep !== 'cake'}
+                                                disabled={false}
                                                 completed={completedSteps.cake}
                                             />
                                             <MenuItem
                                                 icon="🧁"
                                                 title="TRANG TRÍ"
                                                 subtitle="KEM SÔ CÔ LA"
-                                                onClick={() => handlePartSelect('outer-icing')}
+                                                onClick={() => {
+                                                    if (completedSteps.cake && (currentStep === 'decoration' || completedSteps.decoration)) {
+                                                        handlePartSelect('outer-icing');
+                                                    }
+                                                }}
                                                 gradient="from-purple-500 to-indigo-500"
-                                                disabled={currentStep !== 'decoration'}
+                                                disabled={!completedSteps.cake}
                                                 completed={completedSteps.decoration}
                                             />
                                             <MenuItem
                                                 icon="✍️"
                                                 title="CHỮ & HÌNH ẢNH"
                                                 subtitle={config.message || "CHỮ VIẾT TAY + PLAQUE SÔ CÔ LA TRẮNG"}
-                                                onClick={() => handlePartSelect('message')}
+                                                onClick={() => {
+                                                    if (completedSteps.decoration && (currentStep === 'message' || completedSteps.message)) {
+                                                        handlePartSelect('message');
+                                                    }
+                                                }}
                                                 gradient="from-blue-500 to-cyan-500"
-                                                disabled={currentStep !== 'message'}
+                                                disabled={!completedSteps.decoration}
                                                 completed={completedSteps.message}
                                             />
                                             <MenuItem
@@ -2340,9 +2391,13 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                                 subtitle={Array.isArray(config.extras) && config.extras.length > 0
                                                     ? `Đã thêm ${config.extras.length} phần phụ`
                                                     : "Thêm topping đặc biệt"}
-                                                onClick={() => handlePartSelect('extras')}
+                                                onClick={() => {
+                                                    if (completedSteps.message && (currentStep === 'extras' || completedSteps.extras)) {
+                                                        handlePartSelect('extras');
+                                                    }
+                                                }}
                                                 gradient="from-yellow-500 to-orange-500"
-                                                disabled={currentStep !== 'extras'}
+                                                disabled={!completedSteps.message}
                                                 completed={completedSteps.extras}
                                             />
                                         </motion.div>
@@ -2400,7 +2455,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
     );
 };
 
-// Update MenuItem component to handle disabled state and completion
+// Update MenuItem component to handle the new step logic
 const MenuItem = ({
     icon,
     title,
@@ -2420,15 +2475,15 @@ const MenuItem = ({
 }) => {
     return (
         <motion.button
-            whileHover={!disabled ? { scale: 1.02, backgroundColor: 'rgb(249, 250, 251)' } : {}}
-            whileTap={!disabled ? { scale: 0.98 } : {}}
-            onClick={!disabled ? onClick : undefined}
+            whileHover={{ scale: 1.02, backgroundColor: 'rgb(249, 250, 251)' }}
+            whileTap={{ scale: 0.98 }}
+            onClick={onClick}
             className={`w-full flex items-center gap-4 p-4 rounded-xl transition-all border border-pink-100
                 ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-lg'}
                 ${completed ? 'bg-green-50' : ''}`}
         >
             <motion.span
-                whileHover={!disabled ? { rotate: [0, -10, 10, -10, 0] } : {}}
+                whileHover={{ rotate: [0, -10, 10, -10, 0] }}
                 transition={{ duration: 0.5 }}
                 className="text-3xl"
             >
