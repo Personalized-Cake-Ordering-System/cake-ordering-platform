@@ -5,14 +5,16 @@ import React, { useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { z } from "zod";
-import { useAuth } from "@/contexts/AuthContext"; // Import AuthContext
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
 
 // Define the interface using the schema type
 type SignInParams = z.infer<typeof signInSchema>;
 
 const SignInPage = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const { setToken } = useAuth();
+  const { setToken, setUserRole } = useAuth();
+  const router = useRouter();
 
   const signIn = async (params: SignInParams) => {
     setIsLoading(true);
@@ -32,31 +34,38 @@ const SignInPage = () => {
 
       const data = await response.json();
 
-      // Luôn đóng toast loading trước
       toast.dismiss(toastId);
 
       if (data.status_code === 200) {
         const accessToken = data.meta_data.access_token;
         const walletId = data.payload?.wallet_id;
+        const userRole = data.payload?.role;
 
         localStorage.setItem("accessToken", accessToken);
+        localStorage.setItem("userRole", userRole);
+
         if (walletId) {
           localStorage.setItem("walletId", walletId);
         }
+
         setToken(accessToken);
+        setUserRole(userRole);
+
         console.log("Login successful, access token saved:", accessToken);
         console.log("Wallet ID saved:", walletId);
+        console.log("User role:", userRole);
 
-        // Hiển thị toast success mới
+        if (userRole !== "CUSTOMER") {
+          toast.warning("You are logging in as a non-customer user. Some features may be restricted.", { autoClose: 5000 });
+        }
+
         toast.success("Sign in successful!", { autoClose: 3000 });
         return { success: true };
       } else {
-        // Hiển thị toast error mới
         toast.error("Login failed: " + (data.errors?.join(", ") || "Unknown error"), { autoClose: 3000 });
         return { success: false, error: data.errors };
       }
     } catch (error) {
-      // Đóng toast loading và hiển thị lỗi
       toast.dismiss(toastId);
       toast.error("Error during login: " + (error as Error).message, { autoClose: 3000 });
       return { success: false, error: "Login error" };
