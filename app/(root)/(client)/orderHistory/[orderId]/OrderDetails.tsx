@@ -43,6 +43,7 @@ interface Order {
         sub_total_price: number;
         cake_note: string;
         available_cake_id: string;
+        cake_name?: string;
         shop_image_files?: {
             file_url: string;
         };
@@ -333,6 +334,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [cakeImages, setCakeImages] = useState<{ [key: string]: string }>({});
+    const [cakeNames, setCakeNames] = useState<{ [key: string]: string }>({});
     const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
     const [isCancelling, setIsCancelling] = useState(false);
     const [isMovingNext, setIsMovingNext] = useState(false);
@@ -397,6 +399,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                     sub_total_price: detail.sub_total_price,
                     cake_note: detail.cake_note,
                     available_cake_id: detail.available_cake_id,
+                    cake_name: detail.available_cake?.cake_name,
                     shop_image_files: detail.available_cake?.shop_image_files?.[0]
                 })),
                 customer: {
@@ -452,7 +455,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
         }
     };
 
-    const fetchCakeImage = async (cakeId: string) => {
+    const fetchCakeDetails = async (cakeId: string) => {
         try {
             const accessToken = localStorage.getItem('accessToken');
             if (!accessToken) {
@@ -477,10 +480,13 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
             }
 
             const imageUrl = data.payload.available_cake_image_files?.[0]?.file_url;
+            const cakeName = data.payload.available_cake_name;
+
             if (imageUrl) {
                 setCakeImages(prev => ({ ...prev, [cakeId]: imageUrl }));
-            } else {
-                console.log('No image available for this cake');
+            }
+            if (cakeName) {
+                setCakeNames(prev => ({ ...prev, [cakeId]: cakeName }));
             }
         } catch (err: any) {
             console.error(err.message);
@@ -490,7 +496,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
     useEffect(() => {
         if (order) {
             order.order_details.forEach(detail => {
-                fetchCakeImage(detail.available_cake_id);
+                fetchCakeDetails(detail.available_cake_id);
             });
         }
     }, [order]);
@@ -772,7 +778,9 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                                                         )}
                                                     </div>
                                                     <div className="flex-1">
-                                                        <h4 className="font-medium text-lg text-blue-700">{item.available_cake_id}</h4>
+                                                        <h4 className="font-medium text-lg text-blue-700">
+                                                            {cakeNames[item.available_cake_id] || 'Loading...'}
+                                                        </h4>
                                                         {item.cake_note && (
                                                             <p className="text-sm text-gray-600 mt-1">
                                                                 Ghi chú: {item.cake_note}
