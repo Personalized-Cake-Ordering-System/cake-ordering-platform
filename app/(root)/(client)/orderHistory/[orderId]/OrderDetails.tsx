@@ -455,6 +455,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
         }
     };
 
+    // fetch cake details by api call available_cakes/{cakeId}
     const fetchCakeDetails = async (cakeId: string) => {
         try {
             const accessToken = localStorage.getItem('accessToken');
