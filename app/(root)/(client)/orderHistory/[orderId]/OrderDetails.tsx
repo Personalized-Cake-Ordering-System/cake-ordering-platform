@@ -779,7 +779,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                                                     </div>
                                                     <div className="flex-1">
                                                         <h4 className="font-medium text-lg text-blue-700">
-                                                            {cakeNames[item.available_cake_id] || 'Loading...'}
+                                                            {cakeNames[item.available_cake_id] || 'Cake Custom'}
                                                         </h4>
                                                         {item.cake_note && (
                                                             <p className="text-sm text-gray-600 mt-1">
