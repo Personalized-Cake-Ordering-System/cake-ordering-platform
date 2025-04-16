@@ -17,6 +17,20 @@ import { useWishlist } from '@/app/store/useWishlist';
 import { toast } from 'sonner';
 
 const MultiCakes = () => {
+  const getCakeTypeDisplayName = (type: string): string => {
+    const cakeTypeMap: { [key: string]: string } = {
+      'BANH_KEM': 'Bánh Kem',
+      'BANH_MI': 'Bánh Mì',
+      'BANH_NGON': 'Bánh Ngọt',
+      'BANH_MAN': 'Bánh Mặn',
+      'BANH_TRUNG_THU': 'Bánh Trung Thu',
+      'BANH_CHAY': 'Bánh Chay',
+      'CUPCAKE': 'Cupcake',
+      'BANH_THEO_MUA': 'Bánh Theo Mùa'
+    };
+    return cakeTypeMap[type] || type;
+  };
+
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
   const [allCakes, setAllCakes] = React.useState<any[]>([]);
   const [filteredCakes, setFilteredCakes] = React.useState<any[]>([]);
@@ -168,7 +182,7 @@ const MultiCakes = () => {
                 : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`}
             >
               <span className="mr-2">{category.icon}</span>
-              {category.label}
+              {getCakeTypeDisplayName(category.name)}
             </motion.button>
           ))}
         </div>
@@ -254,9 +268,17 @@ const MultiCakes = () => {
                   <CardHeader className="pb-2">
                     <div className="flex justify-between items-start">
                       <CardTitle className="text-xl font-semibold">{cake.available_cake_name}</CardTitle>
-                      <Badge variant="outline" className="bg-transparent border-pink-200 text-pink-500">
-                        {cake.available_cake_type}
-                      </Badge>
+                      <div className="flex flex-col gap-1">
+                        {cake.available_cake_type === 'BANH_KEM' ? (
+                          <Badge variant="outline" className="bg-yellow-100 border-yellow-400 text-yellow-700">
+                            ⭐ Bánh Kem
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-transparent border-pink-200 text-pink-500">
+                            {getCakeTypeDisplayName(cake.available_cake_type)}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </CardHeader>
 
