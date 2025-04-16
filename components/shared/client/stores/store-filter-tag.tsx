@@ -5,9 +5,9 @@ import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStoreFilters } from "@/hooks/use-store-filter";
 
-interface StoreFilterTagsProps {}
+interface StoreFilterTagsProps { }
 
-export const StoreFilterTags: React.FC<StoreFilterTagsProps> = ({}) => {
+export const StoreFilterTags: React.FC<StoreFilterTagsProps> = ({ }) => {
   const { filters, resetFilters, setPriceRange, setDistance, toggleCategory } =
     useStoreFilters();
   const { priceRange, distance, selectedCategories } = filters;
@@ -61,7 +61,7 @@ export const StoreFilterTags: React.FC<StoreFilterTagsProps> = ({}) => {
           className="h-8 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 px-3 rounded-full"
           onClick={() => setDistance(defaultDistance)}
         >
-          Bán kính {distance}km
+          Bán kính {distance} km
           <X className="ml-1 h-4 w-4" />
         </Button>
       )}

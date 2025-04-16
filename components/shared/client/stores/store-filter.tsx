@@ -5,16 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { useStoreFilters } from "@/hooks/use-store-filter";
+import { Input } from "@/components/ui/input";
 
 interface StoreFiltersProps {
   cakeCategories: string[];
 }
 
 export const StoreFilters = ({ cakeCategories }: StoreFiltersProps) => {
-  const { filters, resetFilters, setPriceRange, setDistance, toggleCategory } =
+  const { filters, resetFilters, setPriceRange, setDistance, toggleCategory, setBakeryName } =
     useStoreFilters();
 
-  const { priceRange, distance, selectedCategories } = filters;
+  const { priceRange, distance, selectedCategories, bakeryName } = filters;
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-4">
@@ -29,6 +30,19 @@ export const StoreFilters = ({ cakeCategories }: StoreFiltersProps) => {
         >
           Đặt lại
         </Button>
+      </div>
+
+      <div>
+        <h3 className="text-md font-medium text-gray-900 dark:text-white mb-3">
+          Tên cửa hàng
+        </h3>
+        <Input
+          type="text"
+          placeholder="Tìm theo tên cửa hàng"
+          value={bakeryName}
+          onChange={(e) => setBakeryName(e.target.value)}
+          className="w-full border-gray-300 dark:border-gray-700 focus:border-custom-teal dark:focus:border-custom-teal"
+        />
       </div>
 
       <div>
