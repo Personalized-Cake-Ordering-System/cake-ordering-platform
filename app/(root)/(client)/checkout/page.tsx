@@ -2,7 +2,7 @@
 import { useCart } from '@/app/store/useCart';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { motion } from 'framer-motion';
-import { AlertCircle, ArrowLeft, Check, ChevronDown, ChevronUp, MapPin, PackageCheck, ShieldCheck } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Check, ChevronDown, ChevronUp, MapPin, PackageCheck, ShieldCheck, Ticket } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import * as React from 'react';
@@ -43,6 +43,7 @@ import { createOrder } from './api';
 import { cartService } from '@/app/services/cartService';
 import { ShoppingBag } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { voucherService } from '@/app/services/voucherService';
 
 type GeocodingResponse = {
   results: Array<{
@@ -72,6 +73,7 @@ const checkoutSchema = z.object({
   formatted_address: z.string().optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
+  voucher_code: z.string().optional(),
 });
 
 // Animation variants
@@ -128,14 +130,9 @@ const CheckoutPage = () => {
   const [cartItems, setCartItems] = React.useState<CartItem[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-
-  // Add VND currency formatter
-  const formatVND = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(amount);
-  };
+  const [vouchers, setVouchers] = React.useState<any[]>([]);
+  const [selectedVoucher, setSelectedVoucher] = React.useState<any>(null);
+  const [isVoucherDialogOpen, setIsVoucherDialogOpen] = React.useState(false);
 
   // Delivery fees
   const standardDelivery = 50000; // 50,000 VND
@@ -161,11 +158,26 @@ const CheckoutPage = () => {
   const deliveryMethod = form.watch('deliveryMethod');
   const deliveryType = form.watch('deliveryType');
 
+  // Add VND currency formatter
+  const formatVND = (amount: number) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND'
+    }).format(amount);
+  };
+
   // Calculate totals based on actual cart items
   const subtotal = cartItems.reduce((sum, item) => sum + item.sub_total_price, 0);
-  const tax = subtotal * 0.08; // 8% tax
   const deliveryFee = deliveryType === 'DELIVERY' ? (deliveryMethod === 'express' ? expressDelivery : standardDelivery) : 0;
-  const total = subtotal + tax + deliveryFee;
+
+  const calculateDiscount = () => {
+    if (!selectedVoucher) return 0;
+    const discountAmount = (subtotal * selectedVoucher.discount_percentage) / 100;
+    return Math.min(discountAmount, selectedVoucher.max_discount_amount);
+  };
+
+  const discount = calculateDiscount();
+  const total = subtotal - discount;
 
   // Handle province change
   const handleProvinceChange = (provinceCode: string) => {
@@ -210,197 +222,7 @@ const CheckoutPage = () => {
     }
   };
 
-  // Update the onSubmit function
-  const onSubmit = async (data: CheckoutFormValues) => {
-    setIsProcessing(true);
-
-    try {
-      const fullAddress = `${data.address}, ${data.district}, ${data.province}`;
-      const geocodeResult = await geocodeAddress(fullAddress);
-
-      if (geocodeResult) {
-        // Extract bakery_id from the first cart item
-        // If cart is empty, we can't proceed
-        if (cartItems.length === 0) {
-          toast.error('Your cart is empty');
-          setIsProcessing(false);
-          return;
-        }
-
-        // Get the bakery_id from the first cart item
-        // This assumes all items in the cart are from the same bakery
-        const bakery_id = cartItems[0].bakery_id;
-
-        // Log the bakery_id for debugging
-        console.log('Bakery ID from first cart item:', bakery_id);
-        console.log('All cart items:', cartItems);
-
-        if (!bakery_id) {
-          // Try to get bakery_id from the cart response payload
-          const accessToken = localStorage.getItem('accessToken');
-          if (accessToken) {
-            try {
-              const response = await cartService.getCart(accessToken);
-              const cartBakeryId = response.payload.bakeryId;
-              console.log('Bakery ID from cart response:', cartBakeryId);
-
-              if (cartBakeryId) {
-                // Use the bakery_id from the cart response
-                const orderData = {
-                  bakery_id: cartBakeryId,
-                  order_note: data.specialInstructions || '',
-                  phone_number: data.phone,
-                  shipping_address: fullAddress,
-                  latitude: geocodeResult.location.lat.toString(),
-                  longitude: geocodeResult.location.lng.toString(),
-                  pickup_time: data.deliveryType === 'PICKUP' ? new Date().toISOString() : null,
-                  shipping_type: data.deliveryType,
-                  payment_type: "QR_CODE",
-                  voucher_code: "",
-                  order_detail_create_models: cartItems.map((item) => ({
-                    available_cake_id: item.available_cake_id,
-                    custom_cake_id: item.custom_cake_id,
-                    cake_note: item.cake_note || '',
-                    quantity: item.quantity,
-                    price: item.sub_total_price / item.quantity
-                  })),
-                };
-
-                console.log(orderData);
-
-                const response = await createOrder(orderData);
-
-                if (response.status_code === 200) {
-                  const { total_customer_paid, order_code } = response.payload;
-                  const qrLink = `https://img.vietqr.io/image/TPBank-00005992966-qr_only.jpg?amount=${total_customer_paid}&addInfo=${order_code}`;
-
-                  // Store order details in localStorage
-                  const orderDetails = {
-                    customerInfo: {
-                      fullName: data.fullName,
-                      email: data.email,
-                      phone: data.phone,
-                      address: fullAddress,
-                    },
-                    orderInfo: {
-                      items: cartItems,
-                      subtotal,
-                      tax,
-                      deliveryMethod: data.deliveryMethod,
-                      deliveryFee,
-                      total: total_customer_paid,
-                      orderCode: order_code,
-                    },
-                    qrLink
-                  };
-
-                  localStorage.setItem('currentOrder', JSON.stringify(orderDetails));
-
-                  // Redirect to QR payment page
-                  router.push('/qr-payment');
-                } else {
-                  console.error('Order creation failed:', response.errors);
-                  setIsProcessing(false);
-                }
-              } else {
-                toast.error('Unable to determine bakery information');
-                setIsProcessing(false);
-                return;
-              }
-            } catch (error) {
-              console.error('Error fetching cart for bakery_id:', error);
-              toast.error('Unable to determine bakery information');
-              setIsProcessing(false);
-              return;
-            }
-          } else {
-            toast.error('Unable to determine bakery information');
-            setIsProcessing(false);
-            return;
-          }
-        } else {
-          const orderData = {
-            bakery_id: bakery_id,
-            order_note: data.specialInstructions || '',
-            phone_number: data.phone,
-            shipping_address: fullAddress,
-            latitude: geocodeResult.location.lat.toString(),
-            longitude: geocodeResult.location.lng.toString(),
-            pickup_time: data.deliveryType === 'PICKUP' ? new Date().toISOString() : null,
-            shipping_type: data.deliveryType,
-            payment_type: "QR_CODE",
-            voucher_code: "",
-            order_detail_create_models: cartItems.map((item) => ({
-              available_cake_id: item.available_cake_id,
-              custom_cake_id: item.custom_cake_id,
-              cake_note: item.cake_note || '',
-              quantity: item.quantity,
-              price: item.sub_total_price / item.quantity
-            })),
-          };
-
-          const response = await createOrder(orderData);
-
-          if (response.status_code === 200) {
-            const { total_customer_paid, order_code } = response.payload;
-            const qrLink = `https://img.vietqr.io/image/TPBank-00005992966-qr_only.jpg?amount=${total_customer_paid}&addInfo=${order_code}`;
-
-            // Store order details in localStorage
-            const orderDetails = {
-              customerInfo: {
-                fullName: data.fullName,
-                email: data.email,
-                phone: data.phone,
-                address: fullAddress,
-              },
-              orderInfo: {
-                items: cartItems,
-                subtotal,
-                tax,
-                deliveryMethod: data.deliveryMethod,
-                deliveryFee,
-                total: total_customer_paid,
-                orderCode: order_code,
-              },
-              qrLink
-            };
-
-            localStorage.setItem('currentOrder', JSON.stringify(orderDetails));
-
-            // Redirect to QR payment page
-            router.push('/qr-payment');
-          } else {
-            console.error('Order creation failed:', response.errors);
-            setIsProcessing(false);
-          }
-        }
-      } else {
-        console.error('Failed to geocode address:', fullAddress);
-        setIsProcessing(false);
-      }
-    } catch (error) {
-      console.error('Error processing order:', error);
-      setIsProcessing(false);
-    }
-  };
-
-  React.useEffect(() => {
-    const savedOrder = localStorage.getItem('currentOrder');
-    if (savedOrder) {
-      const orderDetails = JSON.parse(savedOrder);
-      // Pre-fill the form with saved customer information
-      form.reset({
-        fullName: orderDetails.customerInfo.fullName,
-        email: orderDetails.customerInfo.email,
-        phone: orderDetails.customerInfo.phone,
-        address: orderDetails.customerInfo.address.split(', ')[0],
-        province: orderDetails.customerInfo.address.split(', ')[2],
-        district: orderDetails.customerInfo.address.split(', ')[1],
-        deliveryMethod: orderDetails.orderInfo.deliveryMethod,
-      });
-    }
-  }, [form]);
-
+  // Add logging to useEffect for cart items
   React.useEffect(() => {
     const fetchCart = async () => {
       const accessToken = localStorage.getItem('accessToken');
@@ -416,11 +238,10 @@ const CheckoutPage = () => {
         console.log('Fetching cart data...');
         const response = await cartService.getCart(accessToken);
         console.log('Cart API Response:', response);
-        console.log('Cart Items:', response.payload.cartItems);
 
-        // Check if bakery_id is present in cart items
-        if (response.payload.cartItems && response.payload.cartItems.length > 0) {
-          console.log('First cart item bakery_id:', response.payload.cartItems[0].bakery_id);
+        if (response.payload.bakeryId) {
+          console.log('Bakery ID from cart:', response.payload.bakeryId);
+          fetchVouchers(response.payload.bakeryId);
         }
 
         setCartItems(response.payload.cartItems as CartItem[]);
@@ -460,6 +281,309 @@ const CheckoutPage = () => {
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     const target = e.target as HTMLImageElement;
     target.src = '/imagecake.jpg'; // Fallback image
+  };
+
+  // Add function to fetch vouchers with logging
+  const fetchVouchers = async (bakeryId: string) => {
+    try {
+      const accessToken = localStorage.getItem('accessToken');
+      console.log('Fetching vouchers with:', { bakeryId, accessToken: !!accessToken });
+
+      if (!accessToken) return;
+
+      const response = await voucherService.getVouchers(bakeryId, accessToken);
+      console.log('Voucher API Response:', response);
+
+      if (response.status_code === 200) {
+        // Filter out expired and fully used vouchers
+        const validVouchers = response.payload.filter((voucher: any) => {
+          const isExpired = new Date(voucher.expiration_date) < new Date();
+          const isFullyUsed = voucher.usage_count >= voucher.quantity;
+          const isValid = !isExpired && !isFullyUsed;
+          console.log('Voucher validation:', {
+            code: voucher.code,
+            isExpired,
+            isFullyUsed,
+            isValid,
+            expirationDate: voucher.expiration_date,
+            usageCount: voucher.usage_count,
+            quantity: voucher.quantity
+          });
+          return isValid;
+        });
+        console.log('Valid vouchers:', validVouchers);
+        setVouchers(validVouchers);
+      }
+    } catch (error) {
+      console.error('Error fetching vouchers:', error);
+    }
+  };
+
+  // Add useEffect to fetch vouchers when bakery_id is available
+  React.useEffect(() => {
+    if (cartItems.length > 0 && cartItems[0].bakery_id) {
+      fetchVouchers(cartItems[0].bakery_id);
+    }
+  }, [cartItems]);
+
+  // Add function to handle voucher selection
+  const handleVoucherSelect = (voucher: any) => {
+    if (subtotal < voucher.min_order_amount) {
+      toast.error(`Đơn hàng tối thiểu ${formatVND(voucher.min_order_amount)} để sử dụng mã này`);
+      return;
+    }
+    setSelectedVoucher(voucher);
+    setIsVoucherDialogOpen(false);
+    form.setValue('voucher_code', voucher.code);
+  };
+
+  // Add logging when voucher dialog is opened
+  const handleVoucherDialogOpen = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent form submission
+    e.stopPropagation(); // Stop event bubbling
+    console.log('Current vouchers state:', vouchers);
+    setIsVoucherDialogOpen(true);
+  };
+
+  // Update the voucher button to use the new handler
+  const renderVoucherSection = () => (
+    <Card className="p-6 mt-6">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Ticket className="h-5 w-5 text-primary" />
+          <h3 className="font-medium">Mã giảm giá</h3>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleVoucherDialogOpen}
+        >
+          {selectedVoucher ? 'Thay đổi mã' : 'Chọn mã'}
+        </Button>
+      </div>
+
+      {isVoucherDialogOpen && (
+        <div className="mt-4 border rounded-lg p-4">
+          <h4 className="font-medium mb-3">Mã giảm giá có sẵn</h4>
+          <div className="space-y-3 max-h-60 overflow-y-auto">
+            {vouchers.length > 0 ? (
+              vouchers.map((voucher) => (
+                <div
+                  key={voucher.id}
+                  className={`p-3 border rounded-lg transition-all ${selectedVoucher?.id === voucher.id
+                    ? 'border-primary bg-primary/5'
+                    : subtotal >= voucher.min_order_amount
+                      ? 'cursor-pointer hover:border-primary/50'
+                      : 'opacity-50 cursor-not-allowed'
+                    }`}
+                  onClick={() => subtotal >= voucher.min_order_amount && handleVoucherSelect(voucher)}
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="font-medium text-primary">
+                        Giảm {voucher.discount_percentage}%
+                      </span>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {voucher.description || 'Không có mô tả'}
+                      </p>
+                    </div>
+                    <Badge
+                      variant={subtotal >= voucher.min_order_amount ? "outline" : "secondary"}
+                    >
+                      {voucher.code}
+                    </Badge>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-2">
+                    <p className={subtotal < voucher.min_order_amount ? "text-destructive font-medium" : ""}>
+                      Đơn tối thiểu: {formatVND(voucher.min_order_amount)}
+                      {subtotal < voucher.min_order_amount && (
+                        <span className="ml-2">
+                          (Còn thiếu {formatVND(voucher.min_order_amount - subtotal)})
+                        </span>
+                      )}
+                    </p>
+                    <p>Giảm tối đa: {formatVND(voucher.max_discount_amount)}</p>
+                    <p>HSD: {new Date(voucher.expiration_date).toLocaleDateString()}</p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center text-muted-foreground py-4">
+                Không có mã giảm giá nào khả dụng
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {selectedVoucher && !isVoucherDialogOpen && (
+        <div className="mt-2 p-3 border rounded-lg bg-muted/30">
+          <div className="flex justify-between items-start">
+            <div>
+              <span className="font-medium text-primary">
+                Giảm {selectedVoucher.discount_percentage}%
+              </span>
+              <p className="text-sm text-muted-foreground mt-1">
+                {selectedVoucher.code}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Đơn tối thiểu: {formatVND(selectedVoucher.min_order_amount)}
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.preventDefault();
+                setSelectedVoucher(null);
+                form.setValue('voucher_code', '');
+              }}
+            >
+              Xóa
+            </Button>
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+
+  // Update the order calculation section
+  const orderCalculation = (
+    <div className="space-y-1">
+      <div className="flex justify-between text-sm">
+        <span className="text-muted-foreground">Tạm tính</span>
+        <span>{formatVND(subtotal)}</span>
+      </div>
+      {selectedVoucher && (
+        <div className="flex justify-between text-sm">
+          <span className="text-muted-foreground">Giảm giá</span>
+          <span className="text-primary">-{formatVND(discount)}</span>
+        </div>
+      )}
+      {/* {deliveryType === 'DELIVERY' && (
+        <div className="flex justify-between text-sm">
+          <span className="text-muted-foreground">Phí vận chuyển</span>
+          <span>{formatVND(deliveryFee)}</span>
+        </div>
+      )} */}
+      <Separator className="my-2" />
+      <div className="flex justify-between text-base font-medium">
+        <span>Tổng cộng</span>
+        <span>{formatVND(total)}</span>
+      </div>
+    </div>
+  );
+
+  // Add onSubmit handler
+  const onSubmit = async (data: CheckoutFormValues) => {
+    setIsProcessing(true);
+
+    try {
+      const fullAddress = `${data.address}, ${data.district}, ${data.province}`;
+      const geocodeResult = await geocodeAddress(fullAddress);
+
+      if (geocodeResult) {
+        const accessToken = localStorage.getItem('accessToken');
+        if (!accessToken) {
+          toast.error('Please login to continue');
+          setIsProcessing(false);
+          return;
+        }
+
+        try {
+          const cartResponse = await cartService.getCart(accessToken);
+          const bakeryId = cartResponse.payload.bakeryId;
+
+          if (!bakeryId) {
+            toast.error('Unable to determine bakery information');
+            setIsProcessing(false);
+            return;
+          }
+
+          const orderData = {
+            bakery_id: bakeryId,
+            order_note: data.specialInstructions || '',
+            phone_number: data.phone,
+            shipping_address: fullAddress,
+            latitude: geocodeResult.location.lat.toString(),
+            longitude: geocodeResult.location.lng.toString(),
+            pickup_time: data.deliveryType === 'PICKUP' ? new Date().toISOString() : null,
+            shipping_type: data.deliveryType,
+            payment_type: "QR_CODE",
+            voucher_code: selectedVoucher?.code || "",
+            order_detail_create_models: cartItems.map((item) => ({
+              available_cake_id: item.available_cake_id || null,
+              custom_cake_id: item.custom_cake_id || null,
+              cake_note: item.cake_note || '',
+              quantity: item.quantity,
+              price: item.sub_total_price / item.quantity
+            })),
+          };
+
+          console.log('Submitting order with data:', orderData);
+          const response = await createOrder(orderData);
+
+          if (response.status_code === 200) {
+            const {
+              total_customer_paid,
+              order_code,
+              total_product_price,
+              shipping_distance,
+              discount_amount,
+              shipping_fee
+            } = response.payload;
+            const qrLink = `https://img.vietqr.io/image/TPBank-00005992966-qr_only.jpg?amount=${total_customer_paid}&addInfo=${order_code}`;
+
+            const orderDetails = {
+              customerInfo: {
+                fullName: data.fullName,
+                email: data.email,
+                phone: data.phone,
+                address: fullAddress,
+              },
+              orderInfo: {
+                items: cartItems,
+                subtotal,
+                deliveryMethod: data.deliveryMethod,
+                deliveryFee,
+                total: total_customer_paid,
+                orderCode: order_code,
+                totalProductPrice: total_product_price,
+                shippingDistance: shipping_distance,
+                discountAmount: discount_amount,
+                shippingFee: shipping_fee,
+                voucher: selectedVoucher ? {
+                  code: selectedVoucher.code,
+                  discount_percentage: selectedVoucher.discount_percentage,
+                } : null,
+                voucher_discount: discount
+              },
+              qrLink
+            };
+
+            localStorage.setItem('currentOrder', JSON.stringify(orderDetails));
+            router.push('/qr-payment');
+          } else {
+            console.error('Order creation failed:', response.errors);
+            toast.error('Failed to create order');
+            setIsProcessing(false);
+          }
+        } catch (error) {
+          console.error('Error getting cart or creating order:', error);
+          toast.error('Failed to process order');
+          setIsProcessing(false);
+        }
+      } else {
+        console.error('Failed to geocode address:', fullAddress);
+        toast.error('Failed to validate address');
+        setIsProcessing(false);
+      }
+    } catch (error) {
+      console.error('Error processing order:', error);
+      toast.error('Failed to process order');
+      setIsProcessing(false);
+    }
   };
 
   if (loading) {
@@ -860,6 +984,8 @@ const CheckoutPage = () => {
 
               </Card>
 
+              {renderVoucherSection()}
+
               {/* Submit section */}
               <motion.div
                 variants={itemVariants}
@@ -1008,37 +1134,7 @@ const CheckoutPage = () => {
 
               <Separator className="my-3" />
 
-              {/* Order calculation */}
-              {/* <div className="space-y-1">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground font-medium">Tổng cộng</span>
-                  <span>{formatVND(total)}</span>
-                </div>
-              </div> */}
-
-              <div className="mt-3 space-y-2">
-                {deliveryType === 'DELIVERY' && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                    <span className="font-medium">Địa chỉ giao hàng:</span>
-                    <span className="text-muted-foreground">
-                      {form.getValues('address') ?
-                        `${form.getValues('address')}, ${form.getValues('district')}, ${form.getValues('province')}` :
-                        'Vui lòng điền thông tin địa chỉ của bạn'}
-                    </span>
-                  </div>
-                )}
-
-                <div className="flex items-center gap-2 text-sm">
-                  <PackageCheck className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                  <span className="font-medium">Dự kiến:</span>
-                  <span className="text-muted-foreground">
-                    {deliveryType === 'DELIVERY'
-                      ? '2-3 ngày'
-                      : 'Nhận tại cửa hàng'}
-                  </span>
-                </div>
-              </div>
+              {orderCalculation}
 
               <div className="mt-3">
                 <div className="flex flex-col space-y-1.5">
