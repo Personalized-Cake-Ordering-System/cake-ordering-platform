@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Copy, CheckCircle, Clock, Loader2 } from "lucide-react";
+import { ArrowLeft, Copy, CheckCircle, Clock, Loader2, Ticket } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useSignalR } from "@/contexts/SingalRContext";
 
@@ -372,6 +372,7 @@ const QRPaymentPage = () => {
                             {item.cake_note || "Không có ghi chú đặc biệt"}
                           </p>
                         </div>
+
                         <div className="text-right">
                           <p className="font-medium">
                             {formatVND(item.sub_total_price)}
@@ -391,17 +392,36 @@ const QRPaymentPage = () => {
               {/* Order Summary */}
               <div>
                 <div className="space-y-2">
-                  <Separator className="my-2" />
-                  <div className="flex justify-between font-bold">
-                    <span>Tổng cộng {orderDetails.orderInfo.deliveryType === 'DELIVERY' ? '(Đã tính phí vận chuyển)' : ''}</span>
-                    <span>{formatVND(orderDetails.orderInfo.total)}</span>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Tổng tiền sản phẩm</span>
+                    <span>{formatVND(orderDetails.orderInfo.totalProductPrice)}</span>
                   </div>
-                  {orderDetails.orderInfo.deliveryType === 'DELIVERY' && (
-                    <div className="flex justify-between text-sm text-muted-foreground">
-                      <span>Phí vận chuyển:</span>
-                      <span>{formatVND(orderDetails.orderInfo.deliveryFee)}</span>
+
+                  {orderDetails.orderInfo.voucher && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground flex items-center gap-2">
+                        <Ticket className="h-4 w-4" />
+                        Giảm {orderDetails.orderInfo.voucher.discount_percentage}%
+                      </span>
+                      <span className="text-primary">
+                        -{formatVND(orderDetails.orderInfo.discountAmount)}
+                      </span>
                     </div>
                   )}
+
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground flex items-center gap-2">
+                      Phí vận chuyển ({orderDetails.orderInfo.shippingDistance.toFixed(1)} km)
+                    </span>
+                    <span>{formatVND(orderDetails.orderInfo.shippingFee)}</span>
+                  </div>
+
+                  <Separator className="my-2" />
+
+                  <div className="flex justify-between font-bold">
+                    <span>Tổng thanh toán</span>
+                    <span>{formatVND(orderDetails.orderInfo.total)}</span>
+                  </div>
                 </div>
               </div>
             </div>

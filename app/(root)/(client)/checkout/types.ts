@@ -24,6 +24,7 @@ export type CheckoutFormValues = {
     formatted_address?: string;
     latitude?: number;
     longitude?: number;
+    voucher_code?: string;
 };
 
 export type CakeConfig = {
