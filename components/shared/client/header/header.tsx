@@ -93,7 +93,7 @@ const Header = () => {
     { href: "/", label: "Trang chủ" },
     { href: "/stores", label: "Cửa hàng" },
     { href: "/cakes", label: "Bánh kem" },
-    { href: "/discover", label: "Khám phá" },
+    // { href: "/discover", label: "Khám phá" },
     { href: "/promotions", label: "Khuyến mãi" },
     // { href: "/wallet", label: "Ví" },
     // { href: "/customizeCake", label: "Tùy chỉnh bánh" },
