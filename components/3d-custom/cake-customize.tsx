@@ -1079,7 +1079,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                         height={200}
                                     />
                                 ) : (
-                                    <div className={`text-center text-${textColor} italic p-8`}>
+                                    <div className={`text-center ${config.pipingColor ? `text-${textColor}` : 'text-black-900'} italic p-8`}>
                                         {config.message || "Your message will be piped here..."}
                                     </div>
                                 )}
@@ -2151,22 +2151,18 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                     </svg>
                 </motion.button>
 
-                <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
+                {/* <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                     onClick={handleOrderCake}
-                    className="p-3 rounded-full bg-pink-500 text-white shadow-lg hover:bg-pink-600 transition-all"
+                    disabled={!completedSteps.cake || !completedSteps.decoration || !completedSteps.message || !completedSteps.extras}
+                    className={`flex-1 bg-gradient-to-r from-pink-600 to-purple-600 text-white py-4 text-lg font-bold rounded-xl transition-all shadow-lg hover:shadow-xl
+                        ${(!completedSteps.cake || !completedSteps.decoration || !completedSteps.message || !completedSteps.extras)
+                            ? 'opacity-50 cursor-not-allowed from-gray-400 to-gray-500 hover:from-gray-400 hover:to-gray-500'
+                            : 'hover:from-pink-700 hover:to-purple-700'}`}
                 >
-                    <svg
-                        className="w-6 h-6"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                    >
-                        <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                </motion.button>
+                    ĐẶT HÀNG NGAY
+                </motion.button> */}
             </motion.div>
         );
     };
@@ -2443,7 +2439,11 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={handleOrderCake}
-                                className="flex-1 bg-gradient-to-r from-pink-600 to-purple-600 text-white py-4 text-lg font-bold rounded-xl hover:from-pink-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl"
+                                disabled={!completedSteps.cake || !completedSteps.decoration || !completedSteps.message || !completedSteps.extras}
+                                className={`flex-1 bg-gradient-to-r from-pink-600 to-purple-600 text-white py-4 text-lg font-bold rounded-xl transition-all shadow-lg hover:shadow-xl
+                                    ${(!completedSteps.cake || !completedSteps.decoration || !completedSteps.message || !completedSteps.extras)
+                                        ? 'opacity-50 cursor-not-allowed from-gray-400 to-gray-500 hover:from-gray-400 hover:to-gray-500'
+                                        : 'hover:from-pink-700 hover:to-purple-700'}`}
                             >
                                 ĐẶT HÀNG NGAY
                             </motion.button>

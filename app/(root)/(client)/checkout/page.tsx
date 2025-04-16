@@ -1073,9 +1073,7 @@ const CheckoutPage = () => {
                             </div>
                             <div className="flex flex-1 flex-col justify-center">
                               <h3 className="font-medium">{item.cake_name}</h3>
-                              <p className="text-sm text-muted-foreground line-clamp-1">
-                                {item.cake_note || 'No special notes'}
-                              </p>
+
                               <div className="mt-auto text-sm font-medium">
                                 {formatVND(item.sub_total_price)}
                               </div>
@@ -1119,9 +1117,9 @@ const CheckoutPage = () => {
                         </div>
                         <div className="flex flex-1 flex-col justify-between py-1">
                           <h3 className="font-medium text-sm">{item.cake_name}</h3>
-                          <p className="text-xs text-muted-foreground line-clamp-1">
+                          {/* <p className="text-xs text-muted-foreground line-clamp-1">
                             {item.cake_note || 'No special notes'}
-                          </p>
+                          </p> */}
                           <div className="text-sm font-medium">
                             {formatVND(item.sub_total_price)}
                           </div>

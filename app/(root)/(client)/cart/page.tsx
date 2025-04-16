@@ -116,50 +116,30 @@ const CartPage = () => {
         return;
       }
 
-      // Prepare the cart payload
+      // Use cartService instead of direct fetch
       const cartPayload = {
         bakeryId: item.bakery_id || "",
-        order_note: "",
-        phone_number: "",
-        shipping_address: "",
-        latitude: "",
-        longitude: "",
-        pickup_time: new Date().toISOString(),
-        shipping_type: "DELIVERY",
-        payment_type: "QR_CODE",
-        voucher_code: "",
         cartItems: [{
           cake_name: item.cake_name,
           main_image_id: item.main_image?.id || "",
           main_image: item.main_image || null,
           quantity: newQuantity,
           cake_note: item.cake_note || "",
-          sub_total_price: (item.sub_total_price / item.quantity) * newQuantity, // Recalculate subtotal
+          sub_total_price: (item.sub_total_price / item.quantity) * newQuantity,
           available_cake_id: item.available_cake_id || null,
           custom_cake_id: item.custom_cake_id || null,
           bakery_id: item.bakery_id || ""
         }]
       };
 
-      const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/carts', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`
-        },
-        body: JSON.stringify(cartPayload)
-      });
+      const response = await cartService.updateCart(accessToken, cartPayload);
 
-      const data = await response.json();
-      console.log(data);
-
-      if (data.status_code === 200) {
-        // Fetch fresh cart data after successful update
+      if (response.status_code === 200) {
         await fetchCart();
         toast.success('Cart updated successfully');
       } else {
-        console.error('Failed to update cart:', data);
-        toast.error(data.errors?.[0] || 'Failed to update cart');
+        console.error('Failed to update cart:', response);
+        toast.error(response.errors?.[0] || 'Failed to update cart');
       }
     } catch (error) {
       console.error('Error updating cart:', error);
@@ -181,15 +161,32 @@ const CartPage = () => {
         return;
       }
 
-      const response = await cartService.deleteCart(accessToken, itemId);
+      // Use the correct endpoint structure for deleting cart items
+      const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/carts/items/${itemId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
 
-      if (response && response.status_code === 200) {
-        // Fetch fresh cart data after successful deletion
+      // Handle both JSON and non-JSON responses
+      if (response.ok) {
         await fetchCart();
         toast.success('Item removed from cart successfully');
       } else {
-        console.error('Failed to remove item:', response);
-        toast.error(response?.errors?.[0] || 'Failed to remove item from cart');
+        console.error('Failed to remove item:', response.status, response.statusText);
+        let errorMessage = 'Failed to remove item from cart';
+        try {
+          const data = await response.json();
+          if (data.errors?.length > 0) {
+            errorMessage = data.errors[0];
+          }
+        } catch (e) {
+          // If JSON parsing fails, use the status text
+          errorMessage = response.statusText || errorMessage;
+        }
+        toast.error(errorMessage);
       }
     } catch (error) {
       console.error('Error removing item from cart:', error);
@@ -339,7 +336,7 @@ const CartPage = () => {
                                   )}
                                 </div>
                               </div>
-                              <motion.button
+                              {/* <motion.button
                                 whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={() => handleRemoveItem(item)}
@@ -357,16 +354,16 @@ const CartPage = () => {
                                     </TooltipContent>
                                   </Tooltip>
                                 </TooltipProvider>
-                              </motion.button>
+                              </motion.button> */}
                             </div>
 
                             <div className="mt-4 space-y-3 bg-muted/5 p-4 rounded-lg border border-muted/10">
-                              {item.cake_note && (
+                              {/* {item.cake_note && (
                                 <div className="flex items-start gap-2">
                                   <span className="text-muted-foreground text-sm font-medium min-w-[80px]">Ghi chú:</span>
                                   <p className="text-sm">{item.cake_note}</p>
                                 </div>
-                              )}
+                              )} */}
 
                               <div className="flex items-start gap-2">
                                 <span className="text-muted-foreground text-sm font-medium min-w-[80px]">Giá một cái:</span>
@@ -380,7 +377,7 @@ const CartPage = () => {
                             </div>
                           </div>
 
-                          <div className="flex justify-between items-center mt-4 pt-4 border-t border-dashed">
+                          {/* <div className="flex justify-between items-center mt-4 pt-4 border-t border-dashed">
                             <div className="flex items-center gap-3">
                               <span className="text-sm text-muted-foreground">Số lượng:</span>
                               <div className="flex items-center space-x-1 border rounded-full bg-muted/5 p-1">
@@ -410,7 +407,7 @@ const CartPage = () => {
                               </div>
                               <p className="text-sm text-muted-foreground">Tổng cộng</p>
                             </div>
-                          </div>
+                          </div> */}
                         </div>
                       </div>
                     </Card>
@@ -549,14 +546,14 @@ const CartPage = () => {
                       <h4 className="font-medium text-sm text-gray-500">Số lượng</h4>
                       <p className="font-medium text-gray-900">{selectedCake.quantity}</p>
                     </div>
-                    {selectedCake.cake_note && (
+                    {/* {selectedCake.cake_note && (
                       <div className="col-span-2 space-y-2">
                         <h4 className="font-medium text-sm text-gray-500">Ghi chú</h4>
                         <p className="text-sm text-gray-700 bg-white p-3 rounded-lg border border-gray-200">
                           {selectedCake.cake_note}
                         </p>
                       </div>
-                    )}
+                    )} */}
                   </div>
                 </div>
 

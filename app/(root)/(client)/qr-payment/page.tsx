@@ -368,9 +368,9 @@ const QRPaymentPage = () => {
                         </div>
                         <div className="flex-1">
                           <p className="font-medium">{item.cake_name}</p>
-                          <p className="text-sm text-muted-foreground">
+                          {/* <p className="text-sm text-muted-foreground">
                             {item.cake_note || "Không có ghi chú đặc biệt"}
-                          </p>
+                          </p> */}
                         </div>
 
                         <div className="text-right">
