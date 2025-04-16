@@ -18,7 +18,8 @@ import { toast } from 'sonner';
 
 const MultiCakes = () => {
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
-  const [cakes, setCakes] = React.useState<any[]>([]);
+  const [allCakes, setAllCakes] = React.useState<any[]>([]);
+  const [filteredCakes, setFilteredCakes] = React.useState<any[]>([]);
   const [isLoaded, setIsLoaded] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
 
@@ -29,7 +30,8 @@ const MultiCakes = () => {
       const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/available_cakes');
       const data = await response.json();
       if (data.status_code === 200) {
-        setCakes(data.payload);
+        setAllCakes(data.payload);
+        setFilteredCakes(data.payload);
       }
     } catch (error) {
       console.error('Error fetching cakes:', error);
@@ -45,14 +47,14 @@ const MultiCakes = () => {
 
   React.useEffect(() => {
     if (selectedCategory) {
-      const filteredCakes = cakes.filter(cake =>
+      const filtered = allCakes.filter(cake =>
         cake.available_cake_type === selectedCategory
       );
-      setCakes(filteredCakes);
+      setFilteredCakes(filtered);
     } else {
-      fetchCakes();
+      setFilteredCakes(allCakes);
     }
-  }, [selectedCategory, cakes]);
+  }, [selectedCategory, allCakes]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -82,8 +84,14 @@ const MultiCakes = () => {
   };
 
   const cakeCategories = [
-    { id: 1, name: 'BANH_KEM', icon: '🎂' },
-    { id: 2, name: 'BANHKEM', icon: '🍰' },
+    { id: 1, name: 'BANH_KEM', label: 'Bánh Kem', icon: '🎂' },
+    { id: 2, name: 'BANH_MI', label: 'Bánh Mì', icon: '🥖' },
+    { id: 3, name: 'BANH_NGON', label: 'Bánh Ngọt', icon: '🍰' },
+    { id: 4, name: 'BANH_MAN', label: 'Bánh Mặn', icon: '🥮' },
+    { id: 5, name: 'BANH_TRUNG_THU', label: 'Bánh Trung Thu', icon: '🥮' },
+    { id: 6, name: 'BANH_CHAY', label: 'Bánh Chay', icon: '🌱' },
+    { id: 7, name: 'CUPCAKE', label: 'Cupcake', icon: '🧁' },
+    { id: 8, name: 'BANH_THEO_MUA', label: 'Bánh Theo Mùa', icon: '🍂' },
   ];
 
   const handleWishlistToggle = (cake: any) => {
@@ -146,7 +154,7 @@ const MultiCakes = () => {
               ? 'bg-pink-500 text-white'
               : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`}
           >
-            All
+            Tất cả
           </motion.button>
 
           {cakeCategories.map((category) => (
@@ -160,7 +168,7 @@ const MultiCakes = () => {
                 : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`}
             >
               <span className="mr-2">{category.icon}</span>
-              {category.name}
+              {category.label}
             </motion.button>
           ))}
         </div>
@@ -175,8 +183,28 @@ const MultiCakes = () => {
       >
         {isLoading ? (
           <div>Loading...</div>
+        ) : filteredCakes.length === 0 && selectedCategory ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="col-span-full text-center py-12"
+          >
+            <div className="max-w-md mx-auto">
+              <div className="text-4xl mb-4">😢</div>
+              <p className="text-lg text-gray-600 dark:text-gray-300">
+                Xin lỗi hiện tại không có {cakeCategories.find(cat => cat.name === selectedCategory)?.label.toLowerCase() + " "}
+                mà bạn muốn, hãy quay lại lần tới nhé!
+              </p>
+              <Button
+                onClick={() => setSelectedCategory(null)}
+                className="mt-4 bg-pink-500 hover:bg-pink-600"
+              >
+                Xem tất cả bánh
+              </Button>
+            </div>
+          </motion.div>
         ) : (
-          cakes.map((cake) => (
+          filteredCakes.map((cake) => (
             <motion.div
               key={cake.id}
               variants={itemVariants}
