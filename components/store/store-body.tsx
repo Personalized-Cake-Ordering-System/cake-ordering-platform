@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, Filter, Search } from "lucide-react";
@@ -37,7 +37,6 @@ interface StoreSectionProps {
 }
 
 const StoresBody = ({ barkeriesPromise }: StoreSectionProps) => {
-    console.log("Initial barkeriesPromise:", barkeriesPromise);
 
     const {
         filters,
@@ -46,6 +45,7 @@ const StoresBody = ({ barkeriesPromise }: StoreSectionProps) => {
         setIsFilterOpen,
         setSortBy,
         setSearchQuery,
+        setBakeryName,
     } = useStoreFilters();
 
     const [bakeries, setBakeries] = useState<IBakery[]>([]);
@@ -83,9 +83,7 @@ const StoresBody = ({ barkeriesPromise }: StoreSectionProps) => {
         }
     }, [barkeriesPromise]);
 
-    // Only fetch data when filters change or pagination changes
-    // Skip on initial load since we're using barkeriesPromise
-    const fetchBakeries = async () => {
+    const fetchBakeries = useCallback(async () => {
         console.log("Fetching bakeries with filters:", filters);
         setLoading(true);
         try {
@@ -94,16 +92,29 @@ const StoresBody = ({ barkeriesPromise }: StoreSectionProps) => {
                 "page-size": "10",
             };
 
-            if (filters.searchQuery) {
-                searchParams["search-term"] = filters.searchQuery;
+            // Add bakery name filter
+            if (filters.bakeryName) {
+                searchParams["bakery-name"] = filters.bakeryName;
             }
 
-            if (filters.sortBy) {
-                searchParams["sort-by"] = filters.sortBy;
+            // Add category filters
+            if (filters.selectedCategories && filters.selectedCategories.length > 0) {
+                searchParams["categories"] = filters.selectedCategories;
+            }
+
+            // Add price range filter
+            if (filters.priceRange) {
+                searchParams["min-price"] = filters.priceRange[0].toString();
+                searchParams["max-price"] = filters.priceRange[1].toString();
+            }
+
+            // Add distance filter
+            if (filters.distance) {
+                searchParams["distance"] = filters.distance.toString();
             }
 
             console.log("Search params for API call:", searchParams);
-            const response = await getBakeries();
+            const response = await getBakeries(searchParams);
             console.log("API response:", response);
 
             if (response.payload && Array.isArray(response.payload)) {
@@ -126,7 +137,15 @@ const StoresBody = ({ barkeriesPromise }: StoreSectionProps) => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [filters, pagination.currentPage]);
+
+    // Only fetch data when filters change or pagination changes
+    // Skip on initial load since we're using barkeriesPromise
+    useEffect(() => {
+        if (initialDataLoaded) {
+            fetchBakeries();
+        }
+    }, [fetchBakeries, initialDataLoaded]);
 
     console.log("Bakeries state:", bakeries);
 
@@ -140,7 +159,7 @@ const StoresBody = ({ barkeriesPromise }: StoreSectionProps) => {
     return (
         <div className="min-h-screen bg-gradient-to-b from-pink-50 to-white dark:from-gray-950 dark:to-gray-900">
             {/* Header */}
-            <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm">
+            {/* <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm">
                 <div className="container mx-auto px-4 py-4">
                     <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -151,10 +170,10 @@ const StoresBody = ({ barkeriesPromise }: StoreSectionProps) => {
                             <div className="relative flex-1 md:w-64">
                                 <Input
                                     type="search"
-                                    placeholder="Tìm cửa hàng"
+                                    placeholder="Tìm tên cửa hàng..."
                                     className="pr-10 border-gray-300 dark:border-gray-700 focus:border-custom-teal dark:focus:border-custom-teal focus:ring-custom-teal/20 dark:focus:ring-custom-teal/20"
-                                    value={filters.searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    value={filters.bakeryName}
+                                    onChange={(e) => setBakeryName(e.target.value)}
                                 />
                                 <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                             </div>
@@ -172,45 +191,19 @@ const StoresBody = ({ barkeriesPromise }: StoreSectionProps) => {
                                     </span>
                                 )}
                             </Button>
-
-                            <Select value={filters.sortBy!} onValueChange={setSortBy}>
-                                <SelectTrigger className="w-28 md:w-40 ml-2 border-gray-300 dark:border-gray-700">
-                                    <SelectValue placeholder="Sắp xếp" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="relevant">Phù hợp nhất</SelectItem>
-                                    <SelectItem value="rating">Đánh giá cao</SelectItem>
-                                    <SelectItem value="distance">Gần nhất</SelectItem>
-                                    <SelectItem value="desc">Giá thấp</SelectItem>
-                                    <SelectItem value="asc">Giá cao</SelectItem>
-                                </SelectContent>
-                            </Select>
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> */}
 
             <div className="container mx-auto px-4 py-6">
                 <div className="flex flex-col md:flex-row gap-6">
-                    <div
-                        className={`w-full md:w-64 lg:w-72 bg-white dark:bg-gray-900 p-4 rounded-xl shadow-md border border-gray-200 dark:border-gray-800 md:block ${isFilterOpen ? "block" : "hidden"
-                            }`}
-                    >
-                        <StoreFilters cakeCategories={cakeCategories} />
-
-                        <div className="pt-2 md:hidden">
-                            <Button
-                                className="w-full bg-custom-teal hover:bg-custom-pink text-white transition-colors duration-300 shadow-md"
-                                onClick={() => setIsFilterOpen(false)}
-                            >
-                                Áp dụng bộ lọc
-                            </Button>
+                    {isFilterOpen && (
+                        <div className="w-full md:w-64 bg-white dark:bg-gray-900 p-6 rounded-lg shadow-lg border border-gray-200 dark:border-gray-800">
+                            <StoreFilters cakeCategories={cakeCategories} />
                         </div>
-                    </div>
-
+                    )}
                     <div className="flex-1">
-                        <StoreFilterTags />
-
                         {loading ? (
                             <div className="flex justify-center items-center h-64">
                                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-custom-teal"></div>

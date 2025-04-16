@@ -7,6 +7,7 @@ export interface StoreFilters {
   sortBy: string;
   selectedCategories: string[];
   searchQuery: string;
+  bakeryName: string;
 }
 
 const DEFAULT_FILTERS: StoreFilters = {
@@ -15,6 +16,7 @@ const DEFAULT_FILTERS: StoreFilters = {
   sortBy: "desc",
   selectedCategories: [],
   searchQuery: "",
+  bakeryName: "",
 };
 
 interface UseStoreFiltersProps {
@@ -34,7 +36,7 @@ export const useStoreFilters = ({
     return [
       filters.selectedCategories.length,
       filters.priceRange[0] !== DEFAULT_FILTERS.priceRange[0] ||
-        filters.priceRange[1] !== DEFAULT_FILTERS.priceRange[1],
+      filters.priceRange[1] !== DEFAULT_FILTERS.priceRange[1],
       filters.distance !== DEFAULT_FILTERS.distance,
       filters.searchQuery,
       filters.sortBy !== DEFAULT_FILTERS.sortBy,
@@ -132,6 +134,10 @@ export const useStoreFilters = ({
     setFilters(DEFAULT_FILTERS);
   }, []);
 
+  const setBakeryName = useCallback((value: string) => {
+    setFilters((prev) => ({ ...prev, bakeryName: value }));
+  }, []);
+
   return {
     filters,
     isFilterOpen,
@@ -144,5 +150,6 @@ export const useStoreFilters = ({
     setDistance,
     toggleCategory,
     resetFilters,
+    setBakeryName,
   };
 };
