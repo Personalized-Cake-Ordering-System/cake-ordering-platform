@@ -335,7 +335,7 @@ const CheckoutPage = () => {
       const customerId = payload.id;
 
       const response = await fetch(
-        `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/customers/${customerId}/vouchers?isApplied=true&pageIndex=0&pageSize=10`,
+        `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/customers/${customerId}/vouchers?isApplied=false&pageIndex=0&pageSize=10`,
         {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
@@ -431,71 +431,101 @@ const CheckoutPage = () => {
     setIsVoucherDialogOpen(true);
   };
 
-  // Update the voucher button to use the new handler
+  // Update renderVoucherSection to make it more attractive and modern
   const renderVoucherSection = () => (
-    <Card className="p-6 mt-6">
-      <div className="flex items-center justify-between mb-4">
+    <Card className="p-6 mt-6 overflow-hidden">
+      <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
-          <Ticket className="h-5 w-5 text-primary" />
-          <h3 className="font-medium">Mã giảm giá</h3>
+          <div className="bg-primary/10 p-2 rounded-full">
+            <Ticket className="h-5 w-5 text-primary" />
+          </div>
+          <h3 className="font-medium text-lg">Mã giảm giá</h3>
         </div>
         <Button
           type="button"
           variant="outline"
           onClick={handleVoucherDialogOpen}
+          className="px-4 py-2 rounded-full border-primary/30 hover:border-primary hover:bg-primary/5 transition-all"
         >
           {selectedVoucher ? 'Thay đổi mã' : 'Chọn mã'}
         </Button>
       </div>
 
       {isVoucherDialogOpen && (
-        <div className="mt-4 border rounded-lg p-4">
-          <h4 className="font-medium mb-3">Mã giảm giá có sẵn</h4>
-          <div className="space-y-3 max-h-60 overflow-y-auto">
+        <div className="mt-4 rounded-xl border p-0 overflow-hidden">
+          <div className="bg-muted/30 p-4 border-b">
+            <h4 className="font-medium flex items-center gap-2">
+              <Ticket className="h-4 w-4 text-primary" />
+              Mã giảm giá có sẵn
+            </h4>
+          </div>
+          <div className="space-y-3 p-4 max-h-[350px] overflow-y-auto">
             {vouchers.length > 0 ? (
               vouchers.map((voucher) => (
                 <div
                   key={voucher.id}
-                  className={`p-3 border rounded-lg transition-all ${selectedVoucher?.id === voucher.id
-                    ? 'border-primary bg-primary/5'
-                    : subtotal >= voucher.min_order_amount
-                      ? 'cursor-pointer hover:border-primary/50'
-                      : 'opacity-50 cursor-not-allowed'
+                  className={`relative p-4 border rounded-xl transition-all group
+                    ${selectedVoucher?.id === voucher.id
+                      ? 'border-primary bg-primary/5 shadow-md'
+                      : subtotal >= voucher.min_order_amount
+                        ? 'cursor-pointer hover:border-primary/50 hover:shadow-md'
+                        : 'opacity-70 cursor-not-allowed bg-muted/20'
                     }`}
                   onClick={() => subtotal >= voucher.min_order_amount && handleVoucherSelect(voucher)}
                 >
+                  {/* Decorative elements */}
+                  <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-background border border-muted-foreground/20"></div>
+                  <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-background border border-muted-foreground/20"></div>
+
                   <div className="flex justify-between items-start">
-                    <div>
-                      <span className="font-medium text-primary">
-                        Giảm {voucher.discount_percentage}%
-                      </span>
-                      <p className="text-sm text-muted-foreground mt-1">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <div className="bg-primary/10 p-1.5 rounded-md">
+                          <Ticket className="h-4 w-4 text-primary" />
+                        </div>
+                        <span className="font-semibold text-primary text-lg">
+                          Giảm {voucher.discount_percentage}%
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
                         {voucher.description || 'Không có mô tả'}
                       </p>
                     </div>
                     <Badge
-                      variant={subtotal >= voucher.min_order_amount ? "outline" : "secondary"}
+                      variant={selectedVoucher?.id === voucher.id ? "default" : "outline"}
+                      className={`text-xs font-mono tracking-wider ${selectedVoucher?.id === voucher.id ? 'bg-primary' : 'group-hover:bg-primary/10'}`}
                     >
                       {voucher.code}
                     </Badge>
                   </div>
-                  <div className="text-xs text-muted-foreground mt-2">
-                    <p className={subtotal < voucher.min_order_amount ? "text-destructive font-medium" : ""}>
+
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mt-4 pt-3 border-t border-dashed">
+                    <p className={subtotal < voucher.min_order_amount ? "text-destructive font-medium flex items-center" : "flex items-center"}>
+                      <span className="w-2 h-2 rounded-full bg-blue-400 mr-1.5"></span>
                       Đơn tối thiểu: {formatVND(voucher.min_order_amount)}
                       {subtotal < voucher.min_order_amount && (
-                        <span className="ml-2">
+                        <span className="ml-1 text-destructive">
                           (Còn thiếu {formatVND(voucher.min_order_amount - subtotal)})
                         </span>
                       )}
                     </p>
-                    <p>Giảm tối đa: {formatVND(voucher.max_discount_amount)}</p>
-                    <p>HSD: {new Date(voucher.expiration_date).toLocaleDateString()}</p>
+                    <p className="flex items-center">
+                      <span className="w-2 h-2 rounded-full bg-green-400 mr-1.5"></span>
+                      Giảm tối đa: {formatVND(voucher.max_discount_amount)}
+                    </p>
+                    <p className="flex items-center">
+                      <span className="w-2 h-2 rounded-full bg-amber-400 mr-1.5"></span>
+                      HSD: {new Date(voucher.expiration_date).toLocaleDateString()}
+                    </p>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="text-center text-muted-foreground py-4">
-                Không có mã giảm giá nào khả dụng
+              <div className="text-center py-8 px-4">
+                <div className="mx-auto w-12 h-12 rounded-full bg-muted/30 flex items-center justify-center mb-3">
+                  <Ticket className="h-6 w-6 text-muted-foreground/70" />
+                </div>
+                <p className="text-muted-foreground">Không có mã giảm giá nào khả dụng</p>
               </div>
             )}
           </div>
@@ -503,31 +533,46 @@ const CheckoutPage = () => {
       )}
 
       {selectedVoucher && !isVoucherDialogOpen && (
-        <div className="mt-2 p-3 border rounded-lg bg-muted/30">
-          <div className="flex justify-between items-start">
-            <div>
-              <span className="font-medium text-primary">
-                Giảm {selectedVoucher.discount_percentage}%
-              </span>
-              <p className="text-sm text-muted-foreground mt-1">
-                {selectedVoucher.code}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Đơn tối thiểu: {formatVND(selectedVoucher.min_order_amount)}
-              </p>
+        <div className="mt-4 rounded-xl overflow-hidden border bg-gradient-to-r from-primary/5 to-transparent">
+          <div className="relative p-4">
+            {/* Decorative elements */}
+            <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-background border border-muted-foreground/20"></div>
+            <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-background border border-muted-foreground/20"></div>
+
+            <div className="flex justify-between items-start">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="bg-primary/10 p-1.5 rounded-md">
+                    <Ticket className="h-4 w-4 text-primary" />
+                  </div>
+                  <span className="font-semibold text-primary">
+                    Giảm {selectedVoucher.discount_percentage}%
+                  </span>
+                </div>
+                <Badge variant="outline" className="mb-2 bg-background/50 font-mono text-xs">
+                  {selectedVoucher.code}
+                </Badge>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Đơn tối thiểu: {formatVND(selectedVoucher.min_order_amount)}
+                </p>
+                <p className="text-xs text-primary font-medium mt-1">
+                  Bạn tiết kiệm được: {formatVND(calculateDiscount())}
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-destructive"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setSelectedVoucher(null);
+                  form.setValue('voucher_code', '');
+                }}
+              >
+                Xóa
+              </Button>
             </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.preventDefault();
-                setSelectedVoucher(null);
-                form.setValue('voucher_code', '');
-              }}
-            >
-              Xóa
-            </Button>
           </div>
         </div>
       )}
