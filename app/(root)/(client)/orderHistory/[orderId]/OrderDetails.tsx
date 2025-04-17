@@ -671,10 +671,12 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                     },
                     orderInfo: {
                         items: order.order_details.map(detail => ({
-                            cake_name: detail.cake_name || "Cake",
+                            cake_name: cakeNames[detail.available_cake_id] || "Cake",
                             quantity: detail.quantity,
                             sub_total_price: detail.sub_total_price,
-                            main_image: detail.shop_image_files
+                            main_image: {
+                                file_url: cakeImages[detail.available_cake_id] || null
+                            }
                         })),
                         total: data.payload.total_customer_paid,
                         orderCode: data.payload.order_code,
