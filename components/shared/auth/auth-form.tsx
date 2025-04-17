@@ -84,7 +84,7 @@ const AuthForm = <T extends FieldValues>({
             : "Join us to order delicious custom cakes and treats"}
         </p>
       </div>
-      
+
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(handleSubmit)}
@@ -95,7 +95,7 @@ const AuthForm = <T extends FieldValues>({
             if (FIELD_TYPES[field as keyof typeof FIELD_TYPES] === "hidden") {
               return null;
             }
-            
+
             return (
               <FormField
                 key={field}
@@ -121,9 +121,9 @@ const AuthForm = <T extends FieldValues>({
             );
           })}
 
-          <Button 
-            type="submit" 
-            className="w-full bg-custom-teal hover:bg-custom-pink text-white py-2 rounded-md transition-colors dark:bg-custom-teal dark:hover:bg-custom-pink" 
+          <Button
+            type="submit"
+            className="w-full bg-custom-teal hover:bg-custom-pink text-white py-2 rounded-md transition-colors dark:bg-custom-teal dark:hover:bg-custom-pink"
             disabled={isLoading}
           >
             {isLoading ? "Processing..." : (isSignIn ? "Sign In" : "Sign Up")}
@@ -141,14 +141,14 @@ const AuthForm = <T extends FieldValues>({
             {isSignIn ? "Sign up now" : "Sign in"}
           </Link>
         </p>
-        
-        {isSignIn && (
+
+        {/* {isSignIn && (
           <Link href="/bakery-register">
             <Button variant="ghost" className="mt-3 text-sm text-gray-600 dark:text-gray-300 hover:text-custom-teal">
               Register as a bakery
             </Button>
           </Link>
-        )}
+        )} */}
       </div>
     </div>
   );
