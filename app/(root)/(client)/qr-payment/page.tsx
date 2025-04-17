@@ -41,7 +41,18 @@ const QRPaymentPage = () => {
   const { message } = useSignalR();
   const [orderDetails, setOrderDetails] = useState<any>(null);
   const [copied, setCopied] = useState(false);
-  const [countdown, setCountdown] = useState(900); // 15 minutes in seconds
+  const [countdown, setCountdown] = useState(() => {
+    // Get remaining time from localStorage or default to 15 minutes
+    const savedCountdown = localStorage.getItem('paymentCountdown');
+    const savedTimestamp = localStorage.getItem('paymentTimestamp');
+
+    if (savedCountdown && savedTimestamp) {
+      const elapsedTime = Math.floor((Date.now() - parseInt(savedTimestamp)) / 1000);
+      const remainingTime = Math.max(0, parseInt(savedCountdown) - elapsedTime);
+      return remainingTime;
+    }
+    return 900; // 15 minutes in seconds
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [userId, setUserId] = useState<string>("");
@@ -104,16 +115,34 @@ const QRPaymentPage = () => {
     // Set up countdown timer
     const timer = setInterval(() => {
       setCountdown((prev) => {
-        if (prev <= 1) {
+        const newCountdown = prev <= 1 ? 0 : prev - 1;
+        // Save current countdown and timestamp to localStorage
+        localStorage.setItem('paymentCountdown', newCountdown.toString());
+        localStorage.setItem('paymentTimestamp', Date.now().toString());
+
+        if (newCountdown === 0) {
           clearInterval(timer);
-          return 0;
+          // Redirect to checkout when time runs out
+          toast({
+            title: "Hết thời gian thanh toán",
+            description: "Vui lòng thử lại.",
+            variant: "destructive"
+          });
+          setTimeout(() => router.push('/checkout'), 2000);
         }
-        return prev - 1;
+        return newCountdown;
       });
     }, 1000);
 
-    return () => clearInterval(timer);
-  }, [router, toast]);
+    return () => {
+      clearInterval(timer);
+      // Clean up localStorage when component unmounts
+      if (paymentSuccess) {
+        localStorage.removeItem('paymentCountdown');
+        localStorage.removeItem('paymentTimestamp');
+      }
+    };
+  }, [router, toast, paymentSuccess]);
 
   const handlePaymentSuccess = useCallback((orderCode: string) => {
     console.log("Payment success handler called for order:", orderCode);

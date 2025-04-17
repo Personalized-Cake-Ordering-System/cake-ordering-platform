@@ -639,11 +639,6 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                 }))
             };
 
-            // Enhanced logging for debugging
-            console.log('==== REORDER REQUEST BODY START ====');
-            console.log(JSON.stringify(reorderBody));
-            console.log('==== REORDER REQUEST BODY END ====');
-
             const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/orders', {
                 method: 'POST',
                 headers: {
@@ -655,10 +650,6 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
             });
 
             const data = await response.json();
-
-            // Log response for debugging
-            console.log('==== REORDER RESPONSE ====');
-            console.log(JSON.stringify(data, null, 2));
 
             if (response.ok && data.status_code === 200) {
                 toast.success('Đặt lại đơn hàng thành công!');
@@ -691,6 +682,10 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                     },
                     qrLink: `https://img.vietqr.io/image/TPBank-00005992966-qr_only.jpg?amount=${data.payload.total_customer_paid}&addInfo=${data.payload.order_code}`
                 };
+
+                // Reset payment countdown timer
+                localStorage.removeItem('paymentCountdown');
+                localStorage.removeItem('paymentTimestamp');
 
                 // Save to localStorage for QR payment page to use
                 localStorage.setItem('currentOrder', JSON.stringify(orderDetails));
@@ -847,7 +842,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                                                 quantity: detail.quantity,
                                                 sub_total_price: detail.sub_total_price,
                                                 main_image: {
-                                                    file_url: detail.custom_cake_id ? <Package className="h-8 w-8 text-gray-400" /> : (cakeImages[detail.available_cake_id] || <Package className="h-8 w-8 text-gray-400" />)
+                                                    file_url: detail.custom_cake_id ? null : (cakeImages[detail.available_cake_id] || null)
                                                 },
                                                 custom_cake_id: detail.custom_cake_id || null,
                                                 available_cake_id: detail.custom_cake_id ? null : detail.available_cake_id
@@ -862,8 +857,12 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                                         qrLink: `https://img.vietqr.io/image/TPBank-00005992966-qr_only.jpg?amount=${order.total_customer_paid}&addInfo=${order.order_code}`
                                     };
 
-                                    // Save to localStorage
-                                    localStorage.setItem('currentOrder', JSON.stringify(orderDetails));
+                                    // // Reset payment countdown timer
+                                    // localStorage.removeItem('paymentCountdown');
+                                    // localStorage.removeItem('paymentTimestamp');
+
+                                    // // Save to localStorage
+                                    // localStorage.setItem('currentOrder', JSON.stringify(orderDetails));
 
                                     // Navigate to QR payment page
                                     const paymentUrl = `/qr-payment`;

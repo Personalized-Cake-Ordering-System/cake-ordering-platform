@@ -693,7 +693,17 @@ const CheckoutPage = () => {
               qrLink
             };
 
+            // Reset payment countdown timer to ensure it starts from 15 minutes
+            localStorage.removeItem('paymentCountdown');
+            localStorage.removeItem('paymentTimestamp');
+
+            // Save order details to localStorage
             localStorage.setItem('currentOrder', JSON.stringify(orderDetails));
+
+            // Clear cart after successful order
+            localStorage.removeItem('cart');
+
+            // Navigate to QR payment page
             router.push('/qr-payment');
           } else {
             console.error('Order creation failed:', response.errors);
