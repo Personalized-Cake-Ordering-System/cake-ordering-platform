@@ -49,7 +49,7 @@ const OrderHistoryPage = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [sortBy, setSortBy] = useState<SortOption>('newest');
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-    const itemsPerPage = 5;
+    const itemsPerPage = 1000;
 
     useEffect(() => {
         const fetchOrders = async () => {

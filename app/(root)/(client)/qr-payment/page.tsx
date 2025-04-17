@@ -73,6 +73,17 @@ const QRPaymentPage = () => {
     const savedOrder = localStorage.getItem("currentOrder");
     if (savedOrder) {
       setOrderDetails(JSON.parse(savedOrder));
+    } else {
+      console.error("No order data found in localStorage");
+      // Show error toast when no order data is found
+      toast({
+        title: "Lỗi tải dữ liệu đơn hàng",
+        description: "Không tìm thấy thông tin đơn hàng. Vui lòng thử lại.",
+        duration: 3000,
+        variant: "destructive"
+      });
+      // Redirect to checkout after a delay
+      setTimeout(() => router.push('/checkout'), 3000);
     }
 
     // Get JWT token from localStorage
@@ -102,7 +113,7 @@ const QRPaymentPage = () => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [router, toast]);
 
   const handlePaymentSuccess = useCallback((orderCode: string) => {
     console.log("Payment success handler called for order:", orderCode);
@@ -179,7 +190,25 @@ const QRPaymentPage = () => {
     }
   }, [paymentSuccess]);
 
-  if (!orderDetails) return null;
+  if (!orderDetails) return (
+    <div className="container mx-auto px-4 py-16 max-w-md">
+      <Card className="p-6 text-center">
+        <div className="mb-4 flex justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+        <h2 className="text-xl font-bold mb-2">Đang tải thông tin thanh toán...</h2>
+        <p className="text-muted-foreground">Vui lòng đợi hoặc quay lại trang thanh toán nếu không có gì hiển thị.</p>
+        <Button
+          variant="outline"
+          className="mt-4"
+          onClick={() => router.push('/checkout')}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Quay lại thanh toán
+        </Button>
+      </Card>
+    </div>
+  );
 
   return (
     <motion.div
@@ -202,14 +231,6 @@ const QRPaymentPage = () => {
           Quay lại thanh toán
         </Button>
       </motion.div>
-
-      {/* SignalR Notification Component */}
-      {/* {userId && (
-        <SignalRNotificationComponent
-          userId={userId}
-          onPaymentSuccess={handlePaymentSuccess}
-        />
-      )} */}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* QR Code Section */}

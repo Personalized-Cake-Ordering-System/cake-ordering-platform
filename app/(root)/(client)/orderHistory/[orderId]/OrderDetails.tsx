@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Calendar, Clock, MapPin, Package, ArrowLeft, CreditCard, Truck, Star } from 'lucide-react';
+import { Calendar, Clock, MapPin, Package, ArrowLeft, CreditCard, Truck, Star, RefreshCw } from 'lucide-react';
 import { format, parse } from 'date-fns';
 import { decodeJWT } from '@/lib/utils';
 import Image from 'next/image';
@@ -359,6 +359,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
     const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
     const [isCancelling, setIsCancelling] = useState(false);
     const [isMovingNext, setIsMovingNext] = useState(false);
+    const [isReordering, setIsReordering] = useState(false);
 
     const fetchOrder = useCallback(async () => {
         try {
@@ -601,6 +602,106 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
         }
     };
 
+    const handleReorder = async () => {
+        try {
+            setIsReordering(true);
+            const accessToken = localStorage.getItem('accessToken');
+            if (!accessToken) {
+                toast.error('Vui lòng đăng nhập để đặt lại đơn hàng');
+                return;
+            }
+
+            if (!order) {
+                toast.error('Không tìm thấy thông tin đơn hàng');
+                return;
+            }
+
+            // Create the reorder request body
+            const reorderBody = {
+                bakery_id: order.bakery.id,
+                order_note: order.order_note || "",
+                phone_number: order.phone_number || order.customer.phone,
+                shipping_address: order.shipping_address || order.customer.address,
+                latitude: order.latitude || "0",
+                longitude: order.longitude || "0",
+                pickup_time: order.pickup_time,
+                shipping_type: order.shipping_type,
+                payment_type: order.payment_type,
+                voucher_code: "",
+                order_detail_create_models: order.order_details.map(detail => ({
+                    available_cake_id: detail.available_cake_id,
+                    custom_cake_id: null,
+                    cake_note: detail.cake_note || "",
+                    quantity: detail.quantity,
+                    price: detail.sub_total_price
+                }))
+            };
+
+            // Enhanced logging for debugging
+            console.log('==== REORDER REQUEST BODY START ====');
+            console.log(JSON.stringify(reorderBody));
+            console.log('==== REORDER REQUEST BODY END ====');
+
+            const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/orders', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                    'accept': '*/*'
+                },
+                body: JSON.stringify(reorderBody)
+            });
+
+            const data = await response.json();
+
+            // Log response for debugging
+            console.log('==== REORDER RESPONSE ====');
+            console.log(JSON.stringify(data, null, 2));
+
+            if (response.ok && data.status_code === 200) {
+                toast.success('Đặt lại đơn hàng thành công!');
+
+                // Create the order details for QR payment page
+                const orderDetails = {
+                    customerInfo: {
+                        fullName: order.customer.name,
+                        email: order.customer.email,
+                        phone: order.phone_number || order.customer.phone,
+                        address: order.shipping_address || order.customer.address,
+                    },
+                    orderInfo: {
+                        items: order.order_details.map(detail => ({
+                            cake_name: detail.cake_name || "Cake",
+                            quantity: detail.quantity,
+                            sub_total_price: detail.sub_total_price,
+                            main_image: detail.shop_image_files
+                        })),
+                        total: data.payload.total_customer_paid,
+                        orderCode: data.payload.order_code,
+                        totalProductPrice: data.payload.total_product_price,
+                        shippingDistance: data.payload.shipping_distance || 0,
+                        shippingFee: data.payload.shipping_fee || 0,
+                        discountAmount: data.payload.discount_amount || 0
+                    },
+                    qrLink: `https://img.vietqr.io/image/TPBank-00005992966-qr_only.jpg?amount=${data.payload.total_customer_paid}&addInfo=${data.payload.order_code}`
+                };
+
+                // Save to localStorage for QR payment page to use
+                localStorage.setItem('currentOrder', JSON.stringify(orderDetails));
+
+                // Navigate to payment page
+                router.push('/qr-payment');
+            } else {
+                throw new Error(data.errors?.[0] || 'Không thể đặt lại đơn hàng');
+            }
+        } catch (err: any) {
+            console.error('Reorder error:', err);
+            toast.error(err.message || 'Không thể đặt lại đơn hàng');
+        } finally {
+            setIsReordering(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="container mx-auto px-4 py-8">
@@ -673,6 +774,68 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                     </div>
 
                     <div className="flex gap-2">
+                        {order?.order_status === 'COMPLETED' && (
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        disabled={isReordering}
+                                        className="bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600"
+                                    >
+                                        {isReordering ? (
+                                            <span className="flex items-center">
+                                                <span className="animate-spin mr-2">
+                                                    <RefreshCw className="h-4 w-4" />
+                                                </span>
+                                                Đang xử lý...
+                                            </span>
+                                        ) : (
+                                            <span className="flex items-center">
+                                                <RefreshCw className="h-4 w-4 mr-2" />
+                                                Đặt lại đơn hàng
+                                            </span>
+                                        )}
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent className="bg-white rounded-lg p-6">
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle className="text-xl font-semibold">Xác nhận đặt lại đơn hàng</AlertDialogTitle>
+                                        <AlertDialogDescription className="text-gray-600 space-y-2">
+                                            <p>Bạn có chắc chắn muốn đặt lại đơn hàng này?</p>
+                                            <ul className="list-disc pl-4 space-y-1 mt-2">
+                                                <li>Một đơn hàng mới sẽ được tạo với cùng sản phẩm</li>
+                                                <li>Bạn sẽ được chuyển đến trang thanh toán</li>
+                                                <li>Đơn hàng hiện tại vẫn được giữ nguyên</li>
+                                            </ul>
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter className="mt-6">
+                                        <AlertDialogCancel className="bg-gray-100 hover:bg-gray-200">Hủy bỏ</AlertDialogCancel>
+                                        <AlertDialogAction
+                                            onClick={handleReorder}
+                                            className="bg-blue-500 hover:bg-blue-600 text-white"
+                                        >
+                                            Xác nhận đặt lại
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        )}
+
+                        {order?.order_status === 'PENDING' && (
+                            <Button
+                                variant="default"
+                                className="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white"
+                                onClick={() => {
+                                    const paymentUrl = `/qr-payment?orderId=${order.id}`;
+                                    router.push(paymentUrl);
+                                }}
+                            >
+                                <CreditCard className="h-4 w-4 mr-2" />
+                                Thanh toán đơn hàng
+                            </Button>
+                        )}
+
                         {(order?.order_status === 'SHIPPING' || order?.order_status === 'READY_FOR_PICKUP') && (
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
@@ -751,15 +914,6 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                 {/* Add Progress Bar */}
                 <Card className="mb-8 border-none shadow-lg">
                     <CardContent className="p-6">
-                        {order && (
-                            <div className="mb-4">
-                                <div className="text-xs text-gray-500">
-                                    <p>Debug Info:</p>
-                                    <p>Order Status: {order.order_status}</p>
-                                    <p>Shipping Type: {order.shipping_type}</p>
-                                </div>
-                            </div>
-                        )}
                         <OrderProgressBar currentStatus={order?.order_status || ''} shippingType={order?.shipping_type || 'DELIVERY'} />
                     </CardContent>
                 </Card>
