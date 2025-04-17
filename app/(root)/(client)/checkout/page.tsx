@@ -119,6 +119,30 @@ type CartItem = {
   bakery_id?: string;
 };
 
+// Add interface for JWT payload
+interface JWTPayload {
+  id: string;
+  [key: string]: any;
+}
+
+// Add interface for Customer Voucher
+interface CustomerVoucher {
+  customer_id: string;
+  voucher: {
+    code: string;
+    discount_percentage: number;
+    min_order_amount: number;
+    max_discount_amount: number;
+    expiration_date: string;
+    quantity: number;
+    usage_count: number;
+    description: string;
+    voucher_type: string;
+  };
+  is_applied: boolean;
+  applied_at: string | null;
+}
+
 const CheckoutPage = () => {
   const router = useRouter();
   // State for order confirmation
@@ -131,6 +155,7 @@ const CheckoutPage = () => {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [vouchers, setVouchers] = React.useState<any[]>([]);
+  const [customerVouchers, setCustomerVouchers] = React.useState<any[]>([]);
   const [selectedVoucher, setSelectedVoucher] = React.useState<any>(null);
   const [isVoucherDialogOpen, setIsVoucherDialogOpen] = React.useState(false);
 
@@ -283,50 +308,111 @@ const CheckoutPage = () => {
     target.src = '/imagecake.jpg'; // Fallback image
   };
 
-  // Add function to fetch vouchers with logging
-  const fetchVouchers = async (bakeryId: string) => {
+  // Add function to decode JWT and get customer ID
+  const getCustomerId = (): string | null => {
+    try {
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) return null;
+
+      const tokenParts = accessToken.split('.');
+      const payload = JSON.parse(atob(tokenParts[1]));
+      return payload.id;
+    } catch (error) {
+      console.error('Error decoding JWT:', error);
+      return null;
+    }
+  };
+
+  // Function to fetch customer-specific vouchers
+  const fetchCustomerVouchers = React.useCallback(async (bakeryId: string) => {
+    try {
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) return [];
+
+      // Get customer ID from JWT token
+      const tokenParts = accessToken.split('.');
+      const payload = JSON.parse(atob(tokenParts[1]));
+      const customerId = payload.id;
+
+      const response = await fetch(
+        `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/customers/${customerId}/vouchers?isApplied=true&pageIndex=0&pageSize=10`,
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'accept': '*/*'
+          }
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.status_code === 200) {
+        console.log('Customer vouchers:', data.payload);
+        const validCustomerVouchers = data.payload.filter((voucherData: any) => {
+          const voucher = voucherData.voucher;
+          const isExpired = new Date(voucher.expiration_date) < new Date();
+          const isFullyUsed = voucher.usage_count >= voucher.quantity;
+          return !isExpired && !isFullyUsed;
+        });
+        setCustomerVouchers(validCustomerVouchers);
+        return validCustomerVouchers;
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching customer vouchers:', error);
+      return [];
+    }
+  }, []);
+
+  // Function to fetch all vouchers (both global and customer-specific)
+  const fetchVouchers = React.useCallback(async (bakeryId: string) => {
     try {
       const accessToken = localStorage.getItem('accessToken');
       console.log('Fetching vouchers with:', { bakeryId, accessToken: !!accessToken });
 
       if (!accessToken) return;
 
-      const response = await voucherService.getVouchers(bakeryId, accessToken);
-      console.log('Voucher API Response:', response);
+      // Fetch global vouchers
+      const globalResponse = await voucherService.getVouchers(bakeryId, accessToken);
+      console.log('Global Voucher API Response:', globalResponse);
 
-      if (response.status_code === 200) {
-        // Filter out expired and fully used vouchers
-        const validVouchers = response.payload.filter((voucher: any) => {
+      // Fetch customer vouchers
+      const customerVouchersData = await fetchCustomerVouchers(bakeryId);
+
+      if (globalResponse.status_code === 200) {
+        // Filter valid global vouchers
+        const validGlobalVouchers = globalResponse.payload.filter((voucher: any) => {
           const isExpired = new Date(voucher.expiration_date) < new Date();
           const isFullyUsed = voucher.usage_count >= voucher.quantity;
-          const isValid = !isExpired && !isFullyUsed;
-          console.log('Voucher validation:', {
-            code: voucher.code,
-            isExpired,
-            isFullyUsed,
-            isValid,
-            expirationDate: voucher.expiration_date,
-            usageCount: voucher.usage_count,
-            quantity: voucher.quantity
-          });
-          return isValid;
+          const isGlobalType = voucher.voucher_type === 'GLOBAL';
+          return !isExpired && !isFullyUsed && isGlobalType;
         });
-        console.log('Valid vouchers:', validVouchers);
-        setVouchers(validVouchers);
+
+        // Combine both types of vouchers
+        const allVouchers = [
+          ...validGlobalVouchers,
+          ...customerVouchersData.map((cv: any) => ({
+            ...cv.voucher,
+            isCustomerVoucher: true
+          }))
+        ];
+
+        console.log('All available vouchers:', allVouchers);
+        setVouchers(allVouchers);
       }
     } catch (error) {
       console.error('Error fetching vouchers:', error);
     }
-  };
+  }, [fetchCustomerVouchers]);
 
   // Add useEffect to fetch vouchers when bakery_id is available
   React.useEffect(() => {
     if (cartItems.length > 0 && cartItems[0].bakery_id) {
       fetchVouchers(cartItems[0].bakery_id);
     }
-  }, [cartItems]);
+  }, [cartItems, fetchVouchers]);
 
-  // Add function to handle voucher selection
+  // Update handleVoucherSelect to handle both types of vouchers
   const handleVoucherSelect = (voucher: any) => {
     if (subtotal < voucher.min_order_amount) {
       toast.error(`Đơn hàng tối thiểu ${formatVND(voucher.min_order_amount)} để sử dụng mã này`);
