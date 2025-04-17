@@ -9,6 +9,7 @@ export const NotificationTypes = {
   CANCELED_ORDER: "CANCELED_ORDER",
   NEW_BAKERY_REGISTRATION: "NEW_BAKERY_REGISTRATION",
   NEW_REPORT: "NEW_REPORT",
+  
 };
 
 export const getNotificationMessage = (type: string): string => {
@@ -34,6 +35,6 @@ export const getNotificationMessage = (type: string): string => {
     case NotificationTypes.NEW_REPORT:
       return "Có báo cáo mới được gửi.";
     default:
-      return "Loại thông báo không xác định.";
+      return "Cửa hàng hoàn thành bánh";
   }
 };

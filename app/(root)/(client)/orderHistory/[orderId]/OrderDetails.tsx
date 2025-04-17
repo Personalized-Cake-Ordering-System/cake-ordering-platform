@@ -244,35 +244,56 @@ interface ProgressStep {
     description: string;
 }
 
-const OrderProgressBar = ({ currentStatus }: { currentStatus: string }) => {
-    const steps: ProgressStep[] = [
-        {
-            status: 'PENDING',
-            label: 'Chờ xác nhận',
-            description: 'Đơn hàng đang chờ xác nhận'
-        },
-        {
-            status: 'PROCESSING',
-            label: 'Đang xử lý',
-            description: 'Tiệm bánh đang chuẩn bị đơn hàng'
-        },
-        {
-            status: 'READY_FOR_PICKUP',
-            label: 'Sẵn sàng giao',
-            description: 'Đơn hàng đã sẵn sàng để giao'
-        },
-        {
-            status: 'SHIPPING',
-            label: 'Đang giao hàng',
-            description: 'Đơn hàng đang được giao đến bạn'
-        },
-        {
+const OrderProgressBar = ({ currentStatus, shippingType }: { currentStatus: string, shippingType: string }) => {
+    console.log('Current Status:', currentStatus);
+    console.log('Shipping Type:', shippingType);
+
+    const getSteps = (): ProgressStep[] => {
+        const baseSteps: ProgressStep[] = [
+            {
+                status: 'PENDING',
+                label: 'Chưa quét mã',
+                description: 'Đơn hàng đang chờ xác nhận'
+            },
+            {
+                status: 'WAITING_BAKERY_CONFIRM',
+                label: 'Chờ cừa hàng xác nhận',
+                description: 'Đơn hàng đang chờ cửa hàng xác nhận'
+            },
+            {
+                status: 'PROCESSING',
+                label: 'Đang xử lý',
+                description: 'Tiệm bánh đang chuẩn bị đơn hàng'
+            }
+        ];
+
+        console.log('Condition check:', shippingType === 'PICKUP');
+        console.log('Available statuses in order:');
+
+        if (shippingType === 'PICKUP') {
+            baseSteps.push({
+                status: 'READY_FOR_PICKUP',
+                label: 'Bánh đã sẵng sàng tại cửa hàng',
+                description: 'Đơn hàng đã sẵn sàng để nhận tại cửa hàng'
+            });
+        } else {
+            baseSteps.push({
+                status: 'SHIPPING',
+                label: 'Đang giao hàng',
+                description: 'Đơn hàng đang được giao đến bạn'
+            });
+        }
+
+        baseSteps.push({
             status: 'COMPLETED',
             label: 'Hoàn thành',
-            description: 'Đơn hàng đã được giao thành công'
-        }
-    ];
+            description: 'Đơn hàng đã được hoàn thành'
+        });
 
+        return baseSteps;
+    };
+
+    const steps = getSteps();
     const currentStepIndex = steps.findIndex(step => step.status === currentStatus);
     const isCancelled = currentStatus === 'CANCELED';
 
@@ -372,6 +393,11 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
             }
 
             const orderData = data.payload;
+
+            console.log('Order Data:', orderData);
+            console.log('Shipping Type:', orderData.shipping_type);
+            console.log('Order Status:', orderData.order_status);
+
             setOrder({
                 id: orderData.id,
                 order_code: orderData.order_code,
@@ -725,7 +751,16 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                 {/* Add Progress Bar */}
                 <Card className="mb-8 border-none shadow-lg">
                     <CardContent className="p-6">
-                        <OrderProgressBar currentStatus={order?.order_status || ''} />
+                        {order && (
+                            <div className="mb-4">
+                                <div className="text-xs text-gray-500">
+                                    <p>Debug Info:</p>
+                                    <p>Order Status: {order.order_status}</p>
+                                    <p>Shipping Type: {order.shipping_type}</p>
+                                </div>
+                            </div>
+                        )}
+                        <OrderProgressBar currentStatus={order?.order_status || ''} shippingType={order?.shipping_type || 'DELIVERY'} />
                     </CardContent>
                 </Card>
 
@@ -782,11 +817,11 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                                                         <h4 className="font-medium text-lg text-blue-700">
                                                             {cakeNames[item.available_cake_id] || 'Cake Custom'}
                                                         </h4>
-                                                        {item.cake_note && (
+                                                        {/* {item.cake_note && (
                                                             <p className="text-sm text-gray-600 mt-1">
                                                                 Ghi chú: {item.cake_note}
                                                             </p>
-                                                        )}
+                                                        )} */}
                                                         <div className="flex justify-between items-center mt-2">
                                                             <p className="text-sm text-gray-600">
                                                                 {item.quantity} x {formatVND(item.sub_total_price)}
