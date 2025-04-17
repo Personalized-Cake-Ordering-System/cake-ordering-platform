@@ -47,6 +47,7 @@ interface Order {
         shop_image_files?: {
             file_url: string;
         };
+        custom_cake_id?: string;
     }[];
     customer: {
         name: string;
@@ -427,7 +428,8 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                     cake_note: detail.cake_note,
                     available_cake_id: detail.available_cake_id,
                     cake_name: detail.available_cake?.cake_name,
-                    shop_image_files: detail.available_cake?.shop_image_files?.[0]
+                    shop_image_files: detail.available_cake?.shop_image_files?.[0],
+                    custom_cake_id: detail.custom_cake_id,
                 })),
                 customer: {
                     name: orderData.customer.name,
@@ -671,12 +673,14 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                     },
                     orderInfo: {
                         items: order.order_details.map(detail => ({
-                            cake_name: cakeNames[detail.available_cake_id] || "Cake",
+                            cake_name: detail.custom_cake_id ? "Custom Cake" : (cakeNames[detail.available_cake_id] || "Cake"),
                             quantity: detail.quantity,
                             sub_total_price: detail.sub_total_price,
                             main_image: {
-                                file_url: cakeImages[detail.available_cake_id] || null
-                            }
+                                file_url: detail.custom_cake_id ? null : (cakeImages[detail.available_cake_id] || null)
+                            },
+                            custom_cake_id: detail.custom_cake_id || null,
+                            available_cake_id: detail.custom_cake_id ? null : detail.available_cake_id
                         })),
                         total: data.payload.total_customer_paid,
                         orderCode: data.payload.order_code,
@@ -829,7 +833,40 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                                 variant="default"
                                 className="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white"
                                 onClick={() => {
-                                    const paymentUrl = `/qr-payment?orderId=${order.id}`;
+                                    // Prepare order details for QR payment page
+                                    const orderDetails = {
+                                        customerInfo: {
+                                            fullName: order.customer.name,
+                                            email: order.customer.email,
+                                            phone: order.phone_number || order.customer.phone,
+                                            address: order.shipping_address || order.customer.address,
+                                        },
+                                        orderInfo: {
+                                            items: order.order_details.map(detail => ({
+                                                cake_name: detail.custom_cake_id ? "Custom Cake" : (cakeNames[detail.available_cake_id] || "Cake"),
+                                                quantity: detail.quantity,
+                                                sub_total_price: detail.sub_total_price,
+                                                main_image: {
+                                                    file_url: detail.custom_cake_id ? <Package className="h-8 w-8 text-gray-400" /> : (cakeImages[detail.available_cake_id] || <Package className="h-8 w-8 text-gray-400" />)
+                                                },
+                                                custom_cake_id: detail.custom_cake_id || null,
+                                                available_cake_id: detail.custom_cake_id ? null : detail.available_cake_id
+                                            })),
+                                            total: order.total_customer_paid,
+                                            orderCode: order.order_code,
+                                            totalProductPrice: order.total_product_price,
+                                            shippingDistance: order.shipping_distance || 0,
+                                            shippingFee: order.shipping_fee || 0,
+                                            discountAmount: 0
+                                        },
+                                        qrLink: `https://img.vietqr.io/image/TPBank-00005992966-qr_only.jpg?amount=${order.total_customer_paid}&addInfo=${order.order_code}`
+                                    };
+
+                                    // Save to localStorage
+                                    localStorage.setItem('currentOrder', JSON.stringify(orderDetails));
+
+                                    // Navigate to QR payment page
+                                    const paymentUrl = `/qr-payment`;
                                     router.push(paymentUrl);
                                 }}
                             >
@@ -956,7 +993,17 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                                                     whileHover={{ scale: 1.01 }}
                                                 >
                                                     <div className="relative h-24 w-24 flex-shrink-0 rounded-lg overflow-hidden">
-                                                        {cakeImages[item.available_cake_id] ? (
+                                                        {item.custom_cake_id ? (
+                                                            // <div className="w-full h-full bg-gray-200 rounded-md flex items-center justify-center">
+                                                            //     <Package className="h-8 w-8 text-gray-400" />
+                                                            // </div>
+                                                            <Image
+                                                                src={cakeImages[item.custom_cake_id]}
+                                                                alt={item.custom_cake_id}
+                                                                fill
+                                                                className="object-cover"
+                                                            />
+                                                        ) : cakeImages[item.available_cake_id] ? (
                                                             <Image
                                                                 src={cakeImages[item.available_cake_id]}
                                                                 alt={item.available_cake_id}
@@ -971,7 +1018,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                                                     </div>
                                                     <div className="flex-1">
                                                         <h4 className="font-medium text-lg text-blue-700">
-                                                            {cakeNames[item.available_cake_id] || 'Cake Custom'}
+                                                            {item.custom_cake_id ? "Custom Cake" : (cakeNames[item.available_cake_id] || 'Cake Custom')}
                                                         </h4>
                                                         {/* {item.cake_note && (
                                                             <p className="text-sm text-gray-600 mt-1">
