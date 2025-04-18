@@ -565,8 +565,9 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
             // Prepare the API request body
             const requestBody = {
                 cake_name: `Custom ${config.size} Cake`,
-                cake_description: `${config.sponge} sponge with ${config.filling} filling and ${config.outerIcing} icing`,
+                cake_description: `Delicious ${config.size} cake with ${getSelectedOption('Sponge', config.sponge)?.name || 'Unknown'} sponge, filled with ${getSelectedOption('Filling', config.filling)?.name || 'Unknown'}, and covered in ${getSelectedOption('Icing', config.outerIcing)?.name || 'Unknown'} icing${config.goo ? `, topped with ${getSelectedOption('Goo', config.goo)?.name || ''} drip` : ''}${Array.isArray(config.extras) && config.extras.length > 0 ? `. With ${config.extras.length} special extras added` : ''}.${config.message ? ` Personalized with "${config.message}"` : ''}`,
                 bakery_id: storeId,
+                price: config.price, // Add explicit price field to ensure consistency
                 message_selection: {
                     text: config.message,
                     message_type: config.messageType === 'edible' ? 'IMAGE' : config.messageType === 'piped' ? 'TEXT' : 'NONE',
@@ -646,8 +647,9 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                             file_url: cakeImageUrl || "/imagecake.jpg"
                         },
                         quantity: 1,
-                        cake_note: `${config.sponge} sponge with ${config.filling} filling and ${config.outerIcing} icing`,
+                        cake_note: `Delicious ${config.size} cake with ${getSelectedOption('Sponge', config.sponge)?.name || 'Unknown'} sponge, filled with ${getSelectedOption('Filling', config.filling)?.name || 'Unknown'}, and covered in ${getSelectedOption('Icing', config.outerIcing)?.name || 'Unknown'} icing${config.goo ? `, topped with ${getSelectedOption('Goo', config.goo)?.name || ''} drip` : ''}${Array.isArray(config.extras) && config.extras.length > 0 ? `. With ${config.extras.length} special extras added` : ''}.${config.message ? ` Personalized with "${config.message}"` : ''}`,
                         sub_total_price: config.price,
+                        total_price: config.price, // Add total_price field for consistency
                         available_cake_id: null,
                         custom_cake_id: data.payload.id,
                         bakery_id: storeId
@@ -685,7 +687,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                 config: {
                     ...config,
                     name: `Custom ${config.size} Cake`,
-                    description: `${config.sponge} sponge with ${config.filling} filling and ${config.outerIcing} icing`,
+                    description: `Delicious ${config.size} cake with ${getSelectedOption('Sponge', config.sponge)?.name || 'Unknown'} sponge, filled with ${getSelectedOption('Filling', config.filling)?.name || 'Unknown'}, and covered in ${getSelectedOption('Icing', config.outerIcing)?.name || 'Unknown'} icing${config.goo ? `, topped with ${getSelectedOption('Goo', config.goo)?.name || ''} drip` : ''}${Array.isArray(config.extras) && config.extras.length > 0 ? `. With ${config.extras.length} special extras added` : ''}.${config.message ? ` Personalized with "${config.message}"` : ''}`,
                     type: 'custom',
                     extras: Array.isArray(config.extras) ? config.extras : [],
                     imageUrl: cakeImageUrl // Add the captured image URL
@@ -2191,7 +2193,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                 uploadedImage: config.uploadedImage,
                 topping: config.topping,
                 name: `Custom ${config.size} Cake`,
-                description: `${config.sponge} sponge with ${config.filling} filling and ${config.outerIcing} icing`,
+                description: `Delicious ${config.size} cake with ${getSelectedOption('Sponge', config.sponge)?.name || 'Unknown'} sponge, filled with ${getSelectedOption('Filling', config.filling)?.name || 'Unknown'}, and covered in ${getSelectedOption('Icing', config.outerIcing)?.name || 'Unknown'} icing${config.goo ? `, topped with ${getSelectedOption('Goo', config.goo)?.name || ''} drip` : ''}${Array.isArray(config.extras) && config.extras.length > 0 ? `. With ${config.extras.length} special extras added` : ''}.${config.message ? ` Personalized with "${config.message}"` : ''}`,
                 type: 'custom'
             }
         };

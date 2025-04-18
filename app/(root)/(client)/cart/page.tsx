@@ -358,12 +358,12 @@ const CartPage = () => {
                             </div>
 
                             <div className="mt-4 space-y-3 bg-muted/5 p-4 rounded-lg border border-muted/10">
-                              {/* {item.cake_note && (
+                              {item.cake_note && (
                                 <div className="flex items-start gap-2">
                                   <span className="text-muted-foreground text-sm font-medium min-w-[80px]">Ghi chú:</span>
                                   <p className="text-sm">{item.cake_note}</p>
                                 </div>
-                              )} */}
+                              )}
 
                               <div className="flex items-start gap-2">
                                 <span className="text-muted-foreground text-sm font-medium min-w-[80px]">Giá một cái:</span>
@@ -546,14 +546,14 @@ const CartPage = () => {
                       <h4 className="font-medium text-sm text-gray-500">Số lượng</h4>
                       <p className="font-medium text-gray-900">{selectedCake.quantity}</p>
                     </div>
-                    {/* {selectedCake.cake_note && (
+                    {selectedCake.cake_note && (
                       <div className="col-span-2 space-y-2">
                         <h4 className="font-medium text-sm text-gray-500">Ghi chú</h4>
                         <p className="text-sm text-gray-700 bg-white p-3 rounded-lg border border-gray-200">
                           {selectedCake.cake_note}
                         </p>
                       </div>
-                    )} */}
+                    )}
                   </div>
                 </div>
 

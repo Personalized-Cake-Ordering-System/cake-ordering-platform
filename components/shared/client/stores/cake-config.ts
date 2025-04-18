@@ -9,7 +9,7 @@ interface CakeConfigStore {
 }
 
 const defaultConfig: CakeConfig = {
-    size: '8"',
+    size: '',
     price: 95.99,
     sponge: 'vanilla',
     outerIcing: 'pink-vanilla',

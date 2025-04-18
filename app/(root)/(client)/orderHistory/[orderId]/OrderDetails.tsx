@@ -1021,11 +1021,11 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                                                         <h4 className="font-medium text-lg text-blue-700">
                                                             {item.custom_cake_id ? "Custom Cake" : (cakeNames[item.available_cake_id] || 'Cake Custom')}
                                                         </h4>
-                                                        {/* {item.cake_note && (
+                                                        {item.cake_note && (
                                                             <p className="text-sm text-gray-600 mt-1">
-                                                                Ghi chú: {item.cake_note}
+                                                                Ghi chú bánh: {item.cake_note}
                                                             </p>
-                                                        )} */}
+                                                        )}
                                                         <div className="flex justify-between items-center mt-2">
                                                             <p className="text-sm text-gray-600">
                                                                 {item.quantity} x {formatVND(item.sub_total_price)}
@@ -1060,6 +1060,18 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                                             </div>
                                         </div>
                                     </div>
+
+                                    {order.order_note && (
+                                        <>
+                                            <Separator className="my-4" />
+                                            <div>
+                                                <h3 className="font-semibold text-lg mb-3">Ghi chú đơn hàng</h3>
+                                                <div className="bg-blue-50 p-4 rounded-lg">
+                                                    <p className="text-gray-700">{order.order_note}</p>
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             </CardContent>
                         </Card>
