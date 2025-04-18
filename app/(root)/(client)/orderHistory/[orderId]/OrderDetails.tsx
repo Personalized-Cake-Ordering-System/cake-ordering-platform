@@ -558,8 +558,10 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
 
             if (response.ok) {
                 toast.success('Đơn hàng đã được hủy thành công');
-                router.refresh();
-                router.push('/orderHistory');
+                // Wait a moment for the toast to be visible before redirecting
+                setTimeout(() => {
+                    router.push('/orderHistory');
+                }, 1000);
             } else {
                 const data = await response.json();
                 throw new Error(data.errors?.[0] || 'Không thể hủy đơn hàng');
@@ -588,7 +590,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                 }
             });
 
-            if (response.ok) {
+            if (response.status === 200) {
                 toast.success('Cập nhật trạng thái đơn hàng thành công');
                 router.refresh();
                 // Refresh the order data
@@ -910,7 +912,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                             </AlertDialog>
                         )}
 
-                        {(order?.order_status === 'PENDING' || order?.order_status === 'WAITING_BAKERY_CONFIRM') && (
+                        {(order?.order_status === 'PENDING') && (
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                     <Button

@@ -106,6 +106,21 @@ export default function WalletPage() {
             const walletId = localStorage.getItem('walletId');
             console.log("Wallet ID:", walletId);
 
+            // First fetch the wallet balance
+            const balanceResponse = await fetch(
+                `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/wallets/${walletId}/transactions`,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'accept': '*/*',
+                    },
+                }
+            );
+            const balanceData = await balanceResponse.json();
+            console.log("Balance API Response:", balanceData);
+            const balance = balanceData.status_code === 200 ? balanceData.payload?.balance || 0 : 0;
+
+            // Then fetch transactions
             const response = await fetch(
                 `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/wallets/${walletId}/transactions?pageIndex=${page}&pageSize=${pageSize}`,
                 {
@@ -117,11 +132,12 @@ export default function WalletPage() {
             );
 
             const data = await response.json();
-            if (data.status_code === 200) {
+            console.log("Transactions API Response:", data);
+            if (data.status_code === 200 && data.payload && data.payload.length > 0) {
                 setWalletData({
-                    balance: data.payload[0]?.auth?.balance || 0,
+                    balance: data.payload[0].wallet.balance || 0,
                     transactions: data.payload || [],
-                    totalPages: Math.ceil((data.total_count || 0) / pageSize),
+                    totalPages: Math.ceil((data.meta_data?.total_items_count || 0) / pageSize),
                     currentPage: page,
                 });
             }
