@@ -9,7 +9,7 @@ export const NotificationTypes = {
   CANCELED_ORDER: "CANCELED_ORDER",
   NEW_BAKERY_REGISTRATION: "NEW_BAKERY_REGISTRATION",
   NEW_REPORT: "NEW_REPORT",
-  
+
 };
 
 export const getNotificationMessage = (type: string): string => {
@@ -27,7 +27,7 @@ export const getNotificationMessage = (type: string): string => {
     case NotificationTypes.READY_FOR_PICKUP:
       return "Đơn hàng đã sẵn sàng để nhận.";
     case NotificationTypes.COMPLETED_ORDER:
-      return "Đơn hàng đã hoàn tất.";
+      return "Đơn hàng đã hoàn tất quá trình.";
     case NotificationTypes.CANCELED_ORDER:
       return "Đơn hàng đã bị hủy.";
     case NotificationTypes.NEW_BAKERY_REGISTRATION:
