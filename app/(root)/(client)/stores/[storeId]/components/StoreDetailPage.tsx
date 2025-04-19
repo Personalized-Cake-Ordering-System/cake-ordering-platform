@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MapPin, Phone, Mail, Calendar, Store, Image as ImageIcon, Heart, ShoppingCart, Minus, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MapPin, Phone, Mail, Calendar, Store, Image as ImageIcon, Heart, ShoppingCart, Minus, Plus, ChevronLeft, ChevronRight, Star, AlertTriangle } from 'lucide-react';
 import StoreHeader from './StoreHeader';
 import { useToast } from '@/components/ui/use-toast';
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import Image from 'next/image';
 import axios from 'axios';
 import CakeCustomizer from '@/components/3d-custom/cake-customize';
@@ -14,6 +14,8 @@ import { useCart } from '@/app/store/useCart';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 // API response interfaces
 interface FileData {
@@ -117,6 +119,31 @@ interface ApiResponse {
   payload: AvailableCake[];
 }
 
+interface Review {
+  id: string;
+  rating: number;
+  comment: string;
+  created_at: string;
+  user: {
+    name: string;
+    avatar_url?: string;
+  };
+}
+
+interface ReviewApiResponse {
+  status_code: number;
+  errors: any[];
+  meta_data: {
+    total_items_count: number;
+    page_size: number;
+    total_pages_count: number;
+    page_index: number;
+    has_next: boolean;
+    has_previous: boolean;
+  };
+  payload: Review[];
+}
+
 export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('info');
@@ -138,6 +165,21 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
     totalPages: 1,
     totalItems: 0
   });
+
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewPagination, setReviewPagination] = useState({
+    currentPage: 0,
+    pageSize: 5,
+    totalPages: 1,
+    totalItems: 0
+  });
+
+  const [userRating, setUserRating] = useState(5);
+  const [userReview, setUserReview] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [selectedReviewId, setSelectedReviewId] = useState<string | null>(null);
+  const [reportReason, setReportReason] = useState('');
 
   // Filter and sort cakes
   const filteredAndSortedCakes = useMemo(() => {
@@ -241,6 +283,41 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
     }
   }, [bakery?.id, toast, pagination.currentPage, pagination.pageSize, sortBy, filterBy]);
 
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        const response = await axios.get<ReviewApiResponse>(
+          `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/bakeries/${bakery.id}/reviews`,
+          {
+            params: {
+              'page-index': reviewPagination.currentPage,
+              'page-size': reviewPagination.pageSize,
+            }
+          }
+        );
+        if (response.data.status_code === 200) {
+          setReviews(response.data.payload);
+          setReviewPagination(prev => ({
+            ...prev,
+            totalPages: response.data.meta_data.total_pages_count,
+            totalItems: response.data.meta_data.total_items_count
+          }));
+        }
+      } catch (error) {
+        console.error("Error fetching reviews:", error);
+        toast({
+          title: "Error fetching reviews",
+          description: "There was a problem loading the store reviews",
+          variant: "destructive"
+        });
+      }
+    };
+
+    if (bakery?.id) {
+      fetchReviews();
+    }
+  }, [bakery?.id, reviewPagination.currentPage, reviewPagination.pageSize]);
+
   const handleWishlistToggle = (cake: AvailableCake) => {
     const isInWishlist = items.some(item => item.id === cake.id);
 
@@ -271,6 +348,94 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
     }));
   };
 
+  const handleReviewPageChange = (newPage: number) => {
+    setReviewPagination(prev => ({
+      ...prev,
+      currentPage: newPage
+    }));
+  };
+
+  const handleCreateReview = async () => {
+    if (!userReview.trim()) {
+      toast({
+        title: "Lỗi",
+        description: "Vui lòng nhập nội dung đánh giá",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await axios.post(
+        `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/bakeries/${bakery.id}/reviews`,
+        {
+          rating: userRating,
+          comment: userReview
+        }
+      );
+
+      if (response.data.status_code === 200) {
+        toast({
+          title: "Thành công",
+          description: "Đánh giá của bạn đã được gửi thành công",
+        });
+        setUserReview('');
+        setUserRating(5);
+        // Refresh reviews
+        const currentPage = reviewPagination.currentPage;
+        setReviewPagination(prev => ({ ...prev, currentPage: 0 }));
+        setTimeout(() => setReviewPagination(prev => ({ ...prev, currentPage })), 100);
+      }
+    } catch (error) {
+      console.error("Error creating review:", error);
+      toast({
+        title: "Lỗi",
+        description: "Có lỗi xảy ra khi gửi đánh giá",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleReportReview = async () => {
+    if (!selectedReviewId || !reportReason.trim()) {
+      toast({
+        title: "Lỗi",
+        description: "Vui lòng nhập lý do báo cáo",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/reviews/${selectedReviewId}/reports`,
+        {
+          reason: reportReason
+        }
+      );
+
+      if (response.data.status_code === 200) {
+        toast({
+          title: "Thành công",
+          description: "Báo cáo của bạn đã được gửi thành công",
+        });
+        setReportDialogOpen(false);
+        setReportReason('');
+        setSelectedReviewId(null);
+      }
+    } catch (error) {
+      console.error("Error reporting review:", error);
+      toast({
+        title: "Lỗi",
+        description: "Có lỗi xảy ra khi gửi báo cáo",
+        variant: "destructive"
+      });
+    }
+  };
+
   if (isLoading || !storeInfo) {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
@@ -284,7 +449,7 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
       <StoreHeader storeInfo={storeInfo} />
 
       <Tabs defaultValue="info" className="w-full" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-4 mb-6 rounded-lg bg-white p-1 shadow-sm border border-gray-100">
+        <TabsList className="grid grid-cols-5 mb-6 rounded-lg bg-white p-1 shadow-sm border border-gray-100">
           <TabsTrigger value="info" className="flex items-center gap-2 data-[state=active]:bg-custom-teal data-[state=active]:text-white transition-all duration-200">
             <Store className="w-4 h-4" />
             Thông tin cửa hàng
@@ -300,6 +465,10 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
           <TabsTrigger value="customCake" className="flex items-center gap-2 data-[state=active]:bg-custom-teal data-[state=active]:text-white transition-all duration-200">
             <ImageIcon className="w-4 h-4" />
             Tạo bánh
+          </TabsTrigger>
+          <TabsTrigger value="reviews" className="flex items-center gap-2 data-[state=active]:bg-custom-teal data-[state=active]:text-white transition-all duration-200">
+            <Star className="w-4 h-4" />
+            Đánh giá
           </TabsTrigger>
         </TabsList>
 
@@ -667,6 +836,183 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
 
         <TabsContent value="customCake">
           <CakeCustomizer storeId={storeInfo.id} />
+        </TabsContent>
+
+        <TabsContent value="reviews" className="space-y-4">
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <h2 className="text-2xl font-semibold mb-6 text-custom-teal border-b border-gray-100 pb-4">Đánh giá của khách hàng</h2>
+
+            {/* Create Review Form */}
+            <div className="mb-8 bg-gray-50 rounded-lg p-6">
+              <h3 className="text-lg font-semibold mb-4">Viết đánh giá của bạn</h3>
+              <div className="space-y-4">
+                <div>
+                  <Label>Đánh giá của bạn</Label>
+                  <div className="flex items-center gap-1 mt-2">
+                    {Array.from({ length: 5 }).map((_, index) => (
+                      <Star
+                        key={index}
+                        className={`w-6 h-6 cursor-pointer ${index < userRating
+                          ? 'text-yellow-400 fill-yellow-400'
+                          : 'text-gray-300'
+                          }`}
+                        onClick={() => setUserRating(index + 1)}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <Label>Nội dung đánh giá</Label>
+                  <Textarea
+                    placeholder="Chia sẻ trải nghiệm của bạn về cửa hàng..."
+                    className="mt-2"
+                    value={userReview}
+                    onChange={(e) => setUserReview(e.target.value)}
+                  />
+                </div>
+                <Button
+                  onClick={handleCreateReview}
+                  disabled={isSubmitting}
+                  className="bg-custom-teal hover:bg-custom-teal/90"
+                >
+                  {isSubmitting ? 'Đang gửi...' : 'Gửi đánh giá'}
+                </Button>
+              </div>
+            </div>
+
+            {/* Existing Reviews List */}
+            {reviews.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">Chưa có đánh giá nào cho cửa hàng này</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {reviews.map((review) => (
+                  <div key={review.id} className="border-b border-gray-100 last:border-0 pb-6 last:pb-0">
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 relative flex-shrink-0">
+                        <Image
+                          src={review.user.avatar_url || '/images/default-avatar.png'}
+                          alt={review.user.name}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-semibold text-gray-900">{review.user.name}</h3>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-500">
+                              {new Date(review.created_at).toLocaleDateString('vi-VN')}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                              onClick={() => {
+                                setSelectedReviewId(review.id);
+                                setReportDialogOpen(true);
+                              }}
+                            >
+                              <AlertTriangle className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="flex items-center mt-1">
+                          {Array.from({ length: 5 }).map((_, index) => (
+                            <Star
+                              key={index}
+                              className={`w-4 h-4 ${index < review.rating
+                                ? 'text-yellow-400 fill-yellow-400'
+                                : 'text-gray-300'
+                                }`}
+                            />
+                          ))}
+                        </div>
+                        <p className="mt-2 text-gray-600">{review.comment}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Report Review Dialog */}
+            <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
+              <DialogContent>
+                <DialogTitle>Báo cáo đánh giá</DialogTitle>
+                <DialogDescription>
+                  Vui lòng cho chúng tôi biết lý do bạn muốn báo cáo đánh giá này
+                </DialogDescription>
+                <div className="space-y-4 mt-4">
+                  <div>
+                    <Label>Lý do báo cáo</Label>
+                    <Textarea
+                      placeholder="Nhập lý do báo cáo..."
+                      className="mt-2"
+                      value={reportReason}
+                      onChange={(e) => setReportReason(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setReportDialogOpen(false);
+                        setReportReason('');
+                        setSelectedReviewId(null);
+                      }}
+                    >
+                      Hủy
+                    </Button>
+                    <Button
+                      onClick={handleReportReview}
+                      className="bg-red-500 hover:bg-red-600 text-white"
+                    >
+                      Gửi báo cáo
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Existing Pagination */}
+            {reviewPagination.totalPages > 1 && (
+              <div className="mt-8 flex justify-center">
+                <div className="flex space-x-1">
+                  <Button
+                    variant="outline"
+                    className="w-10 h-10 p-0 border-gray-300 dark:border-gray-700"
+                    onClick={() => handleReviewPageChange(Math.max(0, reviewPagination.currentPage - 1))}
+                    disabled={reviewPagination.currentPage === 0}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+
+                  {Array.from({ length: reviewPagination.totalPages }, (_, i) => (
+                    <Button
+                      key={i}
+                      variant="outline"
+                      className={`w-10 h-10 p-0 border-gray-300 dark:border-gray-700 ${reviewPagination.currentPage === i ? "bg-custom-teal text-white" : ""
+                        }`}
+                      onClick={() => handleReviewPageChange(i)}
+                    >
+                      {i + 1}
+                    </Button>
+                  ))}
+
+                  <Button
+                    variant="outline"
+                    className="w-10 h-10 p-0 border-gray-300 dark:border-gray-700"
+                    onClick={() => handleReviewPageChange(Math.min(reviewPagination.totalPages - 1, reviewPagination.currentPage + 1))}
+                    disabled={reviewPagination.currentPage === reviewPagination.totalPages - 1}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         </TabsContent>
       </Tabs>
     </div>
