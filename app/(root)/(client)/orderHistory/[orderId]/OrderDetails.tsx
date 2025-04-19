@@ -912,7 +912,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                             </AlertDialog>
                         )}
 
-                        {(order?.order_status === 'PENDING') && (
+                        {(order?.order_status === 'PENDING' || order?.order_status === 'WAITING_BAKERY_CONFIRM') && (
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                     <Button

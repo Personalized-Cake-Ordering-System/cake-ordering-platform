@@ -19,6 +19,9 @@ interface StoreHighlightCardProps {
     reviewCount?: number;
     categories?: string[];
     priceRange?: string;
+    cake_description?: string;
+    price_description?: string;
+    bakery_description?: string;
   };
   bgColor?: string;
   textColor?: string;
@@ -78,9 +81,23 @@ export const StoreHighlightCard = ({
                 {store.categories ? store.categories.join(" • ") : "Bánh kem • Bánh ngọt"}
               </p>
 
-              <p className={`text-2xl ${textColor} dark:${textColor} font-bold`}>
-                {store.priceRange || "100k - 500k"}
-              </p>
+              {store.cake_description && (
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  {store.cake_description}
+                </p>
+              )}
+
+              {store.price_description && (
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  {store.price_description}
+                </p>
+              )}
+
+              {store.bakery_description && (
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  {store.bakery_description}
+                </p>
+              )}
 
               <Button
                 variant="link"

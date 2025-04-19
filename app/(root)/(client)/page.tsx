@@ -33,10 +33,13 @@ const HomePage = async () => {
                 store={{
                   id: featuredBakeries![0].id,
                   name: featuredBakeries![0].bakery_name,
-                  rating: 4.8,
+                  // rating: 4.8,
                   imageUrl:
                     featuredBakeries![0].shop_image_files[0].file_url! || "",
                   isFeatured: true,
+                  // cake_description: "Chuyên cung cấp các loại bánh kem tươi, bánh sinh nhật và bánh theo yêu cầu với nguyên liệu chất lượng cao.",
+                  price_description: "Giá cả hợp lý từ 150.000đ, tùy theo kích thước và thiết kế bánh.",
+                  // bakery_description: "Tiệm bánh gia đình với hơn 5 năm kinh nghiệm trong việc làm bánh và phục vụ khách hàng khu vực trung tâm Sài Gòn.",
                 }}
                 bgColor="bg-custom-pink/30"
                 textColor="text-custom-teal"
@@ -48,10 +51,13 @@ const HomePage = async () => {
                 store={{
                   id: featuredBakeries![1].id,
                   name: featuredBakeries![1].bakery_name,
-                  rating: 4.7,
+                  // rating: 4.7,
                   imageUrl:
                     featuredBakeries![1].shop_image_files[0].file_url! || "",
                   isFeatured: true,
+                  // cake_description: "Đa dạng các loại bánh kem cao cấp, bánh sinh nhật sáng tạo và bánh theo chủ đề với thiết kế độc đáo.",
+                  price_description: "Mức giá từ 200.000đ đến 2.000.000đ, phù hợp với mọi nhu cầu và ngân sách.",
+                  // bakery_description: "Thương hiệu bánh kem cao cấp với đội ngũ đầu bếp chuyên nghiệp, cam kết mang đến những chiếc bánh ngon và đẹp mắt.",
                 }}
                 bgColor="bg-custom-teal/30"
                 textColor="text-custom-pink"
@@ -135,11 +141,10 @@ const HomePage = async () => {
             ].map((category, index) => (
               <button
                 key={category}
-                className={`font-medium pb-2 whitespace-nowrap ${
-                  index === 0
-                    ? "text-custom-teal dark:text-custom-teal border-b-2 border-custom-teal dark:border-custom-teal"
-                    : "text-gray-700 dark:text-gray-400 hover:text-custom-pink dark:hover:text-custom-pink transition-colors duration-300"
-                }`}
+                className={`font-medium pb-2 whitespace-nowrap ${index === 0
+                  ? "text-custom-teal dark:text-custom-teal border-b-2 border-custom-teal dark:border-custom-teal"
+                  : "text-gray-700 dark:text-gray-400 hover:text-custom-pink dark:hover:text-custom-pink transition-colors duration-300"
+                  }`}
               >
                 {category}
               </button>

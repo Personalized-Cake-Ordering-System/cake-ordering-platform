@@ -647,7 +647,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                             file_url: cakeImageUrl || "/imagecake.jpg"
                         },
                         quantity: 1,
-                        cake_note: `Delicious ${config.size} cake with ${getSelectedOption('Sponge', config.sponge)?.name || 'Unknown'} sponge, filled with ${getSelectedOption('Filling', config.filling)?.name || 'Unknown'}, and covered in ${getSelectedOption('Icing', config.outerIcing)?.name || 'Unknown'} icing${config.goo ? `, topped with ${getSelectedOption('Goo', config.goo)?.name || ''} drip` : ''}${Array.isArray(config.extras) && config.extras.length > 0 ? `. With ${config.extras.length} special extras added` : ''}.${config.message ? ` Personalized with "${config.message}"` : ''}`,
+                        cake_note: `Delicious ${config.size} cake with ${getSelectedOption('Sponge', config.sponge)?.name || 'Unknown'} sponge, filled with ${getSelectedOption('Filling', config.filling)?.name || 'Unknown'}, and covered in ${getSelectedOption('Icing', config.outerIcing)?.name || ' '} icing${config.goo ? `, topped with ${getSelectedOption('Goo', config.goo)?.name || ''} drip` : ''}${Array.isArray(config.extras) && config.extras.length > 0 ? `. With ${config.extras.length} special extras added` : ''}.${config.message ? ` Personalized with "${config.message}"` : ''}`,
                         sub_total_price: config.price,
                         total_price: config.price, // Add total_price field for consistency
                         available_cake_id: null,

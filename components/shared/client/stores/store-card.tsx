@@ -123,6 +123,25 @@ export const StoreCard = ({ bakery, isFeatured = false }: StoreCardProps) => {
             <span className="font-medium">{bakery.phone}</span>
           </div>
 
+          {/* Description sections */}
+          <div className="space-y-3 mb-4">
+            {bakery.bakery_description && (
+              <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">
+                {bakery.bakery_description}
+              </p>
+            )}
+            {bakery.cake_description && (
+              <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+                {bakery.cake_description}
+              </p>
+            )}
+            {bakery.price_description && (
+              <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-1">
+                {bakery.price_description}
+              </p>
+            )}
+          </div>
+
           <div className="mb-4 flex flex-wrap gap-2">
             <span className="bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs rounded-full px-3 py-1 font-medium">
               Bánh ngọt
