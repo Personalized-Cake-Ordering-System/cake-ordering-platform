@@ -47,6 +47,10 @@ interface ApiCake {
     file_url: string;
     id: string;
   }[];
+  available_cake_size: string;
+  available_cake_serving_size: string;
+  has_low_shipping_fee: boolean;
+  is_quality_guaranteed: boolean;
   id: string;
   bakery_id?: string;
 }
@@ -303,19 +307,23 @@ const CakeDetail = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex items-center space-x-2">
                   <CalendarHeart className="h-5 w-5 text-pink-500" />
-                  <span className="text-gray-600 dark:text-gray-300">Kích thước: 15cm</span>
+                  <span className="text-gray-600 dark:text-gray-300">Kích thước: {cakeData.available_cake_size}</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Clock className="h-5 w-5 text-pink-500" />
-                  <span className="text-gray-600 dark:text-gray-300">Phù hợp: 8-10 người</span>
+                  <span className="text-gray-600 dark:text-gray-300">Phù hợp: {cakeData.available_cake_serving_size}</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Truck className="h-5 w-5 text-pink-500" />
-                  <span className="text-gray-600 dark:text-gray-300">Phí giao hàng thấp</span>
+                  <span className="text-gray-600 dark:text-gray-300">
+                    {cakeData.has_low_shipping_fee ? 'Phí giao hàng thấp' : 'Phí giao hàng cao'}
+                  </span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <ShieldCheck className="h-5 w-5 text-pink-500" />
-                  <span className="text-gray-600 dark:text-gray-300">Đảm bảo chất lượng</span>
+                  <span className="text-gray-600 dark:text-gray-300">
+                    {cakeData.is_quality_guaranteed ? 'Đảm bảo chất lượng' : 'Chất lượng không đảm bảo'}
+                  </span>
                 </div>
               </div>
             </div>

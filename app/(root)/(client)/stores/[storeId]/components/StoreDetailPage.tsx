@@ -80,6 +80,9 @@ interface StoreInfo {
   status: string;
   createdAt: string;
   taxCode?: string;
+  cake_description: string;
+  price_description: string;
+  bakery_description: string;
 }
 
 interface AvailableCake {
@@ -186,7 +189,10 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
         ].filter(Boolean) as string[],
         status: bakery.status,
         createdAt: new Date(bakery.created_at).toLocaleDateString(),
-        taxCode: bakery.tax_code
+        taxCode: bakery.tax_code,
+        cake_description: "Chuyên cung cấp các loại bánh kem tươi, bánh sinh nhật và bánh theo yêu cầu với nguyên liệu chất lượng cao.",
+        price_description: "Giá cả hợp lý từ 150.000đ, tùy theo kích thước và thiết kế bánh.",
+        bakery_description: "BreadTalk là tiệm bánh gia đình với hơn 5 năm kinh nghiệm trong việc làm bánh và phục vụ khách hàng khu vực trung tâm Sài Gòn."
       };
 
       setStoreInfo(storeData);
@@ -309,7 +315,6 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
                   <div>
                     <p className="text-sm font-medium text-gray-500 mb-1">Tên cửa hàng</p>
                     <p className="text-lg font-semibold text-gray-900">{storeInfo.name}</p>
-                    <p className="text-sm text-gray-500 mt-2">Tiệm bánh cao cấp chuyên về bánh kem và bánh ngọt</p>
                   </div>
                 </div>
 
@@ -320,7 +325,36 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
                   <div>
                     <p className="text-sm font-medium text-gray-500 mb-1">Địa chỉ</p>
                     <p className="text-lg font-semibold text-gray-900">{storeInfo.address}</p>
-                    <p className="text-sm text-gray-500 mt-2">Nằm ở trung tâm thành phố, có chỗ đậu xe rộng rãi</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4 p-4 hover:bg-gray-50 rounded-lg transition-colors">
+                  <div className="p-2 bg-custom-teal/10 rounded-lg">
+                    <Store className="w-5 h-5 text-custom-teal" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500 mb-1">Giới thiệu</p>
+                    <p className="text-sm text-gray-600">{storeInfo.bakery_description}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4 p-4 hover:bg-gray-50 rounded-lg transition-colors">
+                  <div className="p-2 bg-custom-teal/10 rounded-lg">
+                    <Store className="w-5 h-5 text-custom-teal" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500 mb-1">Sản phẩm</p>
+                    <p className="text-sm text-gray-600">{storeInfo.cake_description}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4 p-4 hover:bg-gray-50 rounded-lg transition-colors">
+                  <div className="p-2 bg-custom-teal/10 rounded-lg">
+                    <Store className="w-5 h-5 text-custom-teal" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500 mb-1">Giá cả</p>
+                    <p className="text-sm text-gray-600">{storeInfo.price_description}</p>
                   </div>
                 </div>
 
@@ -331,7 +365,6 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
                   <div>
                     <p className="text-sm font-medium text-gray-500 mb-1">Thông tin liên hệ</p>
                     <p className="text-lg font-semibold text-gray-900">{storeInfo.phone}</p>
-                    <p className="text-sm text-gray-500 mt-2">Mở cửa 7 ngày trong tuần, từ 9:00 sáng đến 8:00 tối</p>
                   </div>
                 </div>
 

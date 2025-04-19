@@ -38,6 +38,9 @@ export interface IBakery {
   tax_code: string;
   status: string;
   confirmed_at: string;
+  cake_description: string;
+  price_description: string;
+  bakery_description: string;
   shop_image_files: IShopImageFile[];
   notifications: any | null;
   custom_cakes: any | null;
@@ -86,4 +89,3 @@ export interface IShopImageFile {
   updated_by: string | null;
   is_deleted: boolean;
 }
-  
