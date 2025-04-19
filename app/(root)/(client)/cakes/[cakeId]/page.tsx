@@ -400,6 +400,54 @@ const CakeDetail = () => {
           </motion.div>
         </motion.div>
       </div>
+
+      {/* Reviews Section */}
+      <motion.div
+        variants={fadeIn}
+        initial="hidden"
+        animate="visible"
+        className="mt-16"
+      >
+        <h2 className="text-2xl font-bold mb-8">Đánh giá từ khách hàng</h2>
+
+        <div className="grid gap-6">
+          {reviews.map((review) => (
+            <motion.div
+              key={review.id}
+              variants={fadeIn}
+              className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm"
+            >
+              <div className="flex items-start gap-4">
+                <Image
+                  src={review.avatar}
+                  alt={review.name}
+                  width={48}
+                  height={48}
+                  className="rounded-full object-cover"
+                />
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-gray-900 dark:text-white">{review.name}</h3>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">{review.date}</span>
+                  </div>
+                  <div className="flex items-center mb-2">
+                    {[...Array(5)].map((_, index) => (
+                      <Star
+                        key={index}
+                        className={`h-4 w-4 ${index < review.rating
+                          ? 'text-yellow-400 fill-yellow-400'
+                          : 'text-gray-300'
+                          }`}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-gray-600 dark:text-gray-300">{review.comment}</p>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
     </div>
   );
 };
