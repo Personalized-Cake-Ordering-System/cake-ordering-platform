@@ -51,6 +51,12 @@ interface Order {
             file_url: string;
         };
         custom_cake_id?: string;
+        review?: {
+            image_id: string;
+            rating: number;
+            content: string;
+            created_at: string;
+        };
     }[];
     customer: {
         name: string;
@@ -373,6 +379,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
     const [isSubmittingStoreReport, setIsSubmittingStoreReport] = useState(false);
     const [uploadedFiles, setUploadedFiles] = useState<Array<{ id: string, name: string }>>([]);
     const [isUploading, setIsUploading] = useState(false);
+    const [reviewImage, setReviewImage] = useState<string | null>(null);
 
     const fetchOrder = useCallback(async () => {
         try {
@@ -442,6 +449,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                     cake_name: detail.available_cake?.cake_name,
                     shop_image_files: detail.available_cake?.shop_image_files?.[0],
                     custom_cake_id: detail.custom_cake_id,
+                    review: detail.review
                 })),
                 customer: {
                     name: orderData.customer.name,
@@ -804,6 +812,41 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
         }
     };
 
+    // Add this function to fetch review image
+    const fetchReviewImage = async (imageId: string) => {
+        try {
+            const accessToken = localStorage.getItem('accessToken');
+            if (!accessToken) {
+                throw new Error('Access token not found');
+            }
+
+            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/files/${imageId}`, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'accept': '*/*'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch review image');
+            }
+
+            const data = await response.json();
+            if (data.status_code === 200 && data.payload.file_url) {
+                setReviewImage(data.payload.file_url);
+            }
+        } catch (err: any) {
+            console.error('Error fetching review image:', err);
+        }
+    };
+
+    // Add this useEffect to fetch review image when order has a review
+    useEffect(() => {
+        if (order?.order_details[0]?.review?.image_id) {
+            fetchReviewImage(order.order_details[0].review.image_id);
+        }
+    }, [order]);
+
     if (loading) {
         return (
             <div className="container mx-auto px-4 py-8">
@@ -1094,15 +1137,15 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                                                 >
                                                     <div className="relative h-24 w-24 flex-shrink-0 rounded-lg overflow-hidden">
                                                         {item.custom_cake_id ? (
-                                                            // <div className="w-full h-full bg-gray-200 rounded-md flex items-center justify-center">
-                                                            //     <Package className="h-8 w-8 text-gray-400" />
-                                                            // </div>
-                                                            <Image
-                                                                src={cakeImages[item.custom_cake_id]}
-                                                                alt={item.custom_cake_id}
-                                                                fill
-                                                                className="object-cover"
-                                                            />
+                                                            <div className="w-full h-full bg-gray-200 rounded-md flex items-center justify-center">
+                                                                <Package className="h-8 w-8 text-gray-400" />
+                                                            </div>
+                                                            // <Image
+                                                            //     src={cakeImages[item.custom_cake_id]}
+                                                            //     alt={item.custom_cake_id}
+                                                            //     fill
+                                                            //     className="object-cover"
+                                                            // />
                                                         ) : cakeImages[item.available_cake_id] ? (
                                                             <Image
                                                                 src={cakeImages[item.available_cake_id]}
@@ -1174,6 +1217,76 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                                 </div>
                             </CardContent>
                         </Card>
+
+                        {/* Add this section after the order details card */}
+                        {order?.order_details[0]?.review && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.5 }}
+                            >
+                                <Card className="border-none shadow-lg hover:shadow-2xl transition-all duration-300 mt-6 bg-gradient-to-br from-white to-blue-50">
+                                    <CardHeader className="p-6 bg-gradient-to-r from-blue-500 to-purple-500 rounded-t-lg">
+                                        <div className="flex items-center justify-between">
+                                            <CardTitle className="text-lg font-bold text-white">Đánh giá của bạn</CardTitle>
+                                            <div className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-full">
+                                                <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                                                <span className="text-white text-sm font-medium">
+                                                    {order.order_details[0].review?.rating || 0}/5
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent className="p-6">
+                                        <div className="space-y-6">
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex">
+                                                    {[...Array(5)].map((_, index) => (
+                                                        <Star
+                                                            key={index}
+                                                            className={`h-6 w-6 transition-all duration-200 ${index < (order.order_details[0].review?.rating || 0)
+                                                                ? 'text-yellow-400 fill-yellow-400'
+                                                                : 'text-gray-200'
+                                                                }`}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                                                <p className="text-gray-700 leading-relaxed">
+                                                    {order.order_details[0].review?.content}
+                                                </p>
+                                            </div>
+
+                                            {reviewImage && (
+                                                <motion.div
+                                                    initial={{ opacity: 0, scale: 0.95 }}
+                                                    animate={{ opacity: 1, scale: 1 }}
+                                                    transition={{ duration: 0.3 }}
+                                                    className="relative h-64 w-full rounded-xl overflow-hidden shadow-lg"
+                                                >
+                                                    <Image
+                                                        src={reviewImage}
+                                                        alt="Review image"
+                                                        fill
+                                                        className="object-cover transition-transform duration-300 hover:scale-105"
+                                                    />
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                                                </motion.div>
+                                            )}
+
+                                            <div className="flex items-center gap-2 text-sm text-gray-500">
+                                                <Calendar className="h-4 w-4" />
+                                                <span>
+                                                    Đánh giá vào: {format(new Date(order.order_details[0].review?.created_at || ''), 'dd/MM/yyyy HH:mm')}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </motion.div>
+                        )}
                     </div>
 
                     {/* Customer and Delivery Information */}
