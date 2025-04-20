@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Calendar, Clock, MapPin, Package, ArrowLeft, CreditCard, Truck, Star, RefreshCw } from 'lucide-react';
+import { Calendar, Clock, MapPin, Package, ArrowLeft, CreditCard, Truck, Star, RefreshCw, AlertTriangle, FileText, Upload, X, Flag, AlertCircle } from 'lucide-react';
 import { format, parse } from 'date-fns';
 import { decodeJWT } from '@/lib/utils';
 import Image from 'next/image';
@@ -15,6 +15,9 @@ import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import axios from 'axios';
+import { Label } from '@/components/ui/label';
 
 interface Order {
     id: string;
@@ -361,6 +364,11 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
     const [isCancelling, setIsCancelling] = useState(false);
     const [isMovingNext, setIsMovingNext] = useState(false);
     const [isReordering, setIsReordering] = useState(false);
+    const [storeReportDialogOpen, setStoreReportDialogOpen] = useState(false);
+    const [storeReportContent, setStoreReportContent] = useState('');
+    const [isSubmittingStoreReport, setIsSubmittingStoreReport] = useState(false);
+    const [uploadedFiles, setUploadedFiles] = useState<Array<{ id: string, name: string }>>([]);
+    const [isUploading, setIsUploading] = useState(false);
 
     const fetchOrder = useCallback(async () => {
         try {
@@ -702,6 +710,93 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
             toast.error(err.message || 'Không thể đặt lại đơn hàng');
         } finally {
             setIsReordering(false);
+        }
+    };
+
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
+
+        setIsUploading(true);
+        const formData = new FormData();
+
+        try {
+            for (let i = 0; i < files.length; i++) {
+                formData.set('formFile', files[i]);
+
+                const response = await axios.post(
+                    'https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/files',
+                    formData,
+                    {
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                        },
+                    }
+                );
+
+                if (response.data.status_code === 200) {
+                    setUploadedFiles(prev => [...prev, {
+                        id: response.data.payload.id,
+                        name: response.data.payload.file_name
+                    }]);
+                }
+            }
+        } catch (error) {
+            console.error('Error uploading file:', error);
+            toast.error("Có lỗi xảy ra khi tải lên tệp");
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const handleRemoveFile = (fileId: string) => {
+        setUploadedFiles(prev => prev.filter(file => file.id !== fileId));
+    };
+
+    const handleStoreReport = async () => {
+        if (!storeReportContent.trim()) {
+            toast.error("Vui lòng nhập nội dung báo cáo");
+            return;
+        }
+
+        setIsSubmittingStoreReport(true);
+        try {
+            const accessToken = localStorage.getItem('accessToken');
+
+            if (!accessToken) {
+                toast.error("Vui lòng đăng nhập để báo cáo đơn hàng");
+                return;
+            }
+
+            const reportData = {
+                content: storeReportContent,
+                report_files: uploadedFiles.map(file => file.id),
+                order_id: orderId,
+                bakery_id: order?.bakery.id
+            };
+
+            const response = await axios.post(
+                'https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/reports',
+                reportData,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+
+            if (response.status === 201) {
+                toast.success("Báo cáo thành công! Chúng tôi đã nhận được báo cáo của bạn và sẽ xem xét trong thời gian sớm nhất");
+                setStoreReportDialogOpen(false);
+                setStoreReportContent('');
+                setUploadedFiles([]);
+            }
+        } catch (error: any) {
+            console.error("Error reporting order:", error);
+            toast.error(error.response?.data?.message || "Có lỗi xảy ra khi gửi báo cáo");
+        } finally {
+            setIsSubmittingStoreReport(false);
         }
     };
 
@@ -1213,13 +1308,21 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                             </Card>
                         )}
 
-                        <div className="flex justify-end">
+                        <div className="flex justify-end gap-2">
                             <Button
                                 variant="outline"
                                 className="mt-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600"
                                 onClick={() => setIsFeedbackModalOpen(true)}
                             >
                                 Gửi Phản Hồi
+                            </Button>
+                            <Button
+                                variant="outline"
+                                className="mt-4 bg-gradient-to-r from-red-500 to-pink-500 text-white hover:from-red-600 hover:to-pink-600"
+                                onClick={() => setStoreReportDialogOpen(true)}
+                            >
+                                <Flag className="w-4 h-4 mr-2" />
+                                Báo Cáo
                             </Button>
                         </div>
                     </div>
@@ -1235,6 +1338,167 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                         bakeryId={order?.bakery.id || ''}
                     />
                 </Modal>
+
+                {/* Report Dialog */}
+                <Dialog open={storeReportDialogOpen} onOpenChange={setStoreReportDialogOpen}>
+                    <DialogContent className="max-w-2xl bg-white max-h-[80vh] overflow-y-auto">
+                        <DialogTitle className="flex items-center gap-2 text-gray-900 pb-2 border-b sticky top-0 bg-white z-10">
+                            <AlertCircle className="w-5 h-5 text-red-500" />
+                            <span className="text-xl font-semibold">Báo cáo đơn hàng</span>
+                        </DialogTitle>
+
+                        <div className="space-y-6 mt-6">
+                            {/* Report Categories */}
+                            <div>
+                                <h3 className="text-base font-semibold text-gray-900 mb-3">Chọn loại báo cáo</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <button
+                                        type="button"
+                                        className="flex items-start gap-3 p-4 bg-white border-2 rounded-xl hover:border-red-500 hover:bg-red-50 transition-all duration-200 group text-left"
+                                        onClick={() => setStoreReportContent(prev => prev + "\n• Sản phẩm không đúng như mô tả")}
+                                    >
+                                        <div className="p-2 rounded-lg bg-red-100 text-red-500 group-hover:bg-red-200">
+                                            <AlertTriangle className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold text-gray-900 group-hover:text-red-500">Vấn đề về sản phẩm</h4>
+                                            <p className="text-sm text-gray-700 mt-1">Chất lượng, mô tả không chính xác, giá cả</p>
+                                        </div>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        className="flex items-start gap-3 p-4 bg-white border-2 rounded-xl hover:border-red-500 hover:bg-red-50 transition-all duration-200 group text-left"
+                                        onClick={() => setStoreReportContent(prev => prev + "\n• Dịch vụ khách hàng kém")}
+                                    >
+                                        <div className="p-2 rounded-lg bg-red-100 text-red-500 group-hover:bg-red-200">
+                                            <AlertTriangle className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold text-gray-900 group-hover:text-red-500">Vấn đề về dịch vụ</h4>
+                                            <p className="text-sm text-gray-700 mt-1">Thái độ phục vụ, thời gian phản hồi</p>
+                                        </div>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Report Content */}
+                            <div className="space-y-3">
+                                <div className="flex justify-between items-center">
+                                    <Label className="text-base font-semibold text-gray-900">Chi tiết báo cáo</Label>
+                                    <span className="text-sm text-gray-700">Vui lòng cung cấp thông tin chi tiết</span>
+                                </div>
+                                <Textarea
+                                    placeholder="Mô tả chi tiết vấn đề bạn gặp phải..."
+                                    className="min-h-[120px] resize-none border-2 border-gray-300 focus:border-red-500 focus:ring-red-500 rounded-xl text-gray-900 placeholder:text-gray-500 bg-white"
+                                    value={storeReportContent}
+                                    onChange={(e) => setStoreReportContent(e.target.value)}
+                                />
+                            </div>
+
+                            {/* File Upload Section */}
+                            <div className="space-y-3">
+                                <div className="flex justify-between items-center">
+                                    <Label className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                                        <FileText className="w-4 h-4 text-gray-700" />
+                                        Tệp đính kèm
+                                    </Label>
+                                    <span className="text-sm text-gray-700">Hỗ trợ: JPG, PNG, PDF, DOC (tối đa 5MB)</span>
+                                </div>
+
+                                <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 bg-white hover:bg-gray-50 transition-all duration-200">
+                                    <div className="flex flex-col items-center gap-3">
+                                        <input
+                                            type="file"
+                                            id="file-upload"
+                                            className="hidden"
+                                            onChange={handleFileUpload}
+                                            multiple
+                                            accept="image/*,.pdf,.doc,.docx"
+                                        />
+                                        <div className="p-3 bg-red-50 rounded-full">
+                                            <Upload className="w-6 h-6 text-red-500" />
+                                        </div>
+                                        <div className="text-center">
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={() => document.getElementById('file-upload')?.click()}
+                                                disabled={isUploading}
+                                                className="bg-white border-2 border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600 mb-2 font-semibold"
+                                            >
+                                                {isUploading ? (
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                                                        <span>Đang tải lên...</span>
+                                                    </div>
+                                                ) : (
+                                                    <span>Chọn tệp đính kèm</span>
+                                                )}
+                                            </Button>
+                                            <p className="text-sm text-gray-700">hoặc kéo thả tệp vào đây</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Uploaded Files List */}
+                                {uploadedFiles.length > 0 && (
+                                    <div className="mt-4 space-y-2">
+                                        <h4 className="text-base font-semibold text-gray-900 mb-3">Tệp đã tải lên ({uploadedFiles.length})</h4>
+                                        <div className="bg-white rounded-xl border-2 border-gray-300 divide-y divide-gray-200">
+                                            {uploadedFiles.map((file) => (
+                                                <div key={file.id} className="flex items-center justify-between p-3 group hover:bg-gray-50">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-gray-200">
+                                                            <FileText className="w-4 h-4 text-gray-700" />
+                                                        </div>
+                                                        <span className="text-sm text-gray-900 truncate">{file.name}</span>
+                                                    </div>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => handleRemoveFile(file.id)}
+                                                        className="text-gray-500 hover:text-red-500 hover:bg-red-50"
+                                                    >
+                                                        <X className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        setStoreReportDialogOpen(false);
+                                        setStoreReportContent('');
+                                        setUploadedFiles([]);
+                                    }}
+                                    className="bg-white hover:bg-gray-100 text-gray-900 border-2 border-gray-300 font-semibold"
+                                >
+                                    Hủy báo cáo
+                                </Button>
+                                <Button
+                                    onClick={handleStoreReport}
+                                    disabled={isSubmittingStoreReport || !storeReportContent.trim()}
+                                    className="bg-red-500 hover:bg-red-600 text-white min-w-[120px] disabled:bg-gray-300 disabled:text-gray-500 font-semibold"
+                                >
+                                    {isSubmittingStoreReport ? (
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                            <span>Đang gửi...</span>
+                                        </div>
+                                    ) : (
+                                        'Gửi báo cáo'
+                                    )}
+                                </Button>
+                            </div>
+                        </div>
+                    </DialogContent>
+                </Dialog>
             </motion.div>
         </div>
     );
