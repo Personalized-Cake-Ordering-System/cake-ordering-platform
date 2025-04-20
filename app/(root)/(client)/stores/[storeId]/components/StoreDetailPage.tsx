@@ -121,11 +121,15 @@ interface ApiResponse {
 interface Review {
   id: string;
   rating: number;
-  comment: string;
+  content: string | null;
+  image_id: string | null;
+  customer_id: string;
   created_at: string;
-  user: {
+  image?: {
+    file_url: string;
+  };
+  customer?: {
     name: string;
-    avatar_url?: string;
   };
 }
 
@@ -140,7 +144,15 @@ interface ReviewApiResponse {
     has_next: boolean;
     has_previous: boolean;
   };
-  payload: Review[];
+  payload: {
+    reviews: Review[];
+  };
+}
+
+// Add new interfaces for filters
+interface ReviewFilters {
+  rating: number | null;
+  sortBy: 'newest' | 'oldest' | 'highest' | 'lowest';
 }
 
 export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
@@ -184,37 +196,38 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
   const [uploadedFiles, setUploadedFiles] = useState<Array<{ id: string, name: string }>>([]);
   const [isUploading, setIsUploading] = useState(false);
 
-  // Filter and sort cakes
-  const filteredAndSortedCakes = useMemo(() => {
-    let result = [...cakes];
+  // Add filtered and sorted reviews
+  const [reviewFilters, setReviewFilters] = useState<ReviewFilters>({
+    rating: null,
+    sortBy: 'newest'
+  });
 
-    // Apply filter
-    if (filterBy === 'inStock') {
-      result = result.filter(cake => cake.available_cake_quantity > 0);
-    } else if (filterBy === 'outOfStock') {
-      result = result.filter(cake => cake.available_cake_quantity === 0);
+  const filteredAndSortedReviews = useMemo(() => {
+    let result = [...reviews];
+
+    // Apply rating filter
+    if (reviewFilters.rating !== null) {
+      result = result.filter(review => review.rating === reviewFilters.rating);
     }
 
-    // Apply sort
-    switch (sortBy) {
-      case 'priceAsc':
-        result.sort((a, b) => a.available_cake_price - b.available_cake_price);
-        break;
-      case 'priceDesc':
-        result.sort((a, b) => b.available_cake_price - a.available_cake_price);
-        break;
+    // Apply sorting
+    switch (reviewFilters.sortBy) {
       case 'newest':
         result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         break;
       case 'oldest':
         result.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
         break;
-      default:
+      case 'highest':
+        result.sort((a, b) => b.rating - a.rating);
+        break;
+      case 'lowest':
+        result.sort((a, b) => a.rating - b.rating);
         break;
     }
 
     return result;
-  }, [cakes, sortBy, filterBy]);
+  }, [reviews, reviewFilters]);
 
   useEffect(() => {
     if (!bakery) return;
@@ -282,7 +295,7 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
     const fetchReviews = async () => {
       try {
         const response = await axios.get<ReviewApiResponse>(
-          `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/bakeries/${bakery.id}/reviews`,
+          `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/bakeries/${bakery.id}`,
           {
             params: {
               'page-index': reviewPagination.currentPage,
@@ -291,11 +304,69 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
           }
         );
         if (response.data.status_code === 200) {
-          setReviews(response.data.payload);
+          // Fetch additional data for each review
+          const reviewsWithDetails = await Promise.all(
+            response.data.payload.reviews.map(async (review) => {
+              let imageUrl = null;
+              let customerName = 'Anonymous';
+
+              // Fetch image if image_id exists
+              if (review.image_id) {
+                try {
+                  const imageResponse = await axios.get(
+                    `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/files/${review.image_id}`
+                  );
+                  if (imageResponse.data.status_code === 200) {
+                    imageUrl = imageResponse.data.payload.file_url;
+                  }
+                } catch (error) {
+                  console.error("Error fetching review image:", error);
+                }
+              }
+
+              // Fetch customer details
+              try {
+                console.log('Fetching customer details for ID:', review.customer_id);
+                const accessToken = localStorage.getItem('accessToken');
+                if (!accessToken) {
+                  console.log('No access token found');
+                  return;
+                }
+
+                const customerResponse = await axios.get(
+                  `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/customers/${review.customer_id}`,
+                  {
+                    headers: {
+                      'Authorization': `Bearer ${accessToken}`,
+                      'accept': '*/*'
+                    }
+                  }
+                );
+                console.log('Customer response:', customerResponse.data);
+                if (customerResponse.data.status_code === 200 && customerResponse.data.payload) {
+                  customerName = customerResponse.data.payload.name;
+                  console.log('Found customer name:', customerName);
+                } else {
+                  console.log('No customer data found in response');
+                }
+              } catch (error) {
+                console.error("Error fetching customer details:", error);
+                console.error("Customer ID that failed:", review.customer_id);
+              }
+
+              return {
+                ...review,
+                image: imageUrl ? { file_url: imageUrl } : undefined,
+                customer: { name: customerName }
+              };
+            })
+          );
+
+          setReviews(reviewsWithDetails as Review[]);
           setReviewPagination(prev => ({
             ...prev,
-            totalPages: response.data.meta_data.total_pages_count,
-            totalItems: response.data.meta_data.total_items_count
+            totalPages: Math.ceil(response.data.payload.reviews.length / reviewPagination.pageSize),
+            totalItems: response.data.payload.reviews.length
           }));
         }
       } catch (error) {
@@ -962,7 +1033,7 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
 
             {/* Cakes Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredAndSortedCakes.map((cake) => (
+              {cakes.map((cake) => (
                 <div
                   key={cake.id}
                   className="bg-white rounded-xl shadow-sm overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 group border border-gray-100"
@@ -1080,6 +1151,47 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
             <h2 className="text-2xl font-semibold mb-6 text-custom-teal border-b border-gray-100 pb-4">Đánh giá của khách hàng</h2>
 
+            {/* Review Filters */}
+            <div className="mb-6 flex flex-wrap gap-4 items-center">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500">Lọc theo:</span>
+                <select
+                  className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-custom-teal"
+                  value={reviewFilters.rating?.toString() || ''}
+                  onChange={(e) => setReviewFilters(prev => ({
+                    ...prev,
+                    rating: e.target.value ? parseInt(e.target.value) : null
+                  }))}
+                >
+                  <option value="">Tất cả đánh giá</option>
+                  <option value="5">5 sao</option>
+                  <option value="4">4 sao</option>
+                  <option value="3">3 sao</option>
+                  <option value="2">2 sao</option>
+                  <option value="1">1 sao</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500">Sắp xếp theo:</span>
+                <select
+                  className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-custom-teal"
+                  value={reviewFilters.sortBy}
+                  onChange={(e) => setReviewFilters(prev => ({
+                    ...prev,
+                    sortBy: e.target.value as ReviewFilters['sortBy']
+                  }))}
+                >
+                  <option value="newest">Mới nhất</option>
+                  <option value="oldest">Cũ nhất</option>
+                  <option value="highest">Đánh giá cao nhất</option>
+                  <option value="lowest">Đánh giá thấp nhất</option>
+                </select>
+              </div>
+              <div className="ml-auto text-sm text-gray-500">
+                Hiển thị {filteredAndSortedReviews.length} trên tổng số {reviews.length} đánh giá
+              </div>
+            </div>
+
             {/* Create Review Form */}
             <div className="mb-8 bg-gray-50 rounded-lg p-6">
               <h3 className="text-lg font-semibold mb-4">Viết đánh giá của bạn</h3>
@@ -1157,56 +1269,83 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
               </div>
             </div>
 
-            {/* Existing Reviews List */}
-            {reviews.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-gray-500">Chưa có đánh giá nào cho cửa hàng này</p>
+            {/* Reviews List */}
+            {filteredAndSortedReviews.length === 0 ? (
+              <div className="text-center py-12 bg-gray-50 rounded-xl">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+                  <Star className="w-8 h-8 text-gray-400" />
+                </div>
+                <p className="text-gray-500 text-lg">Không tìm thấy đánh giá phù hợp</p>
               </div>
             ) : (
               <div className="space-y-6">
-                {reviews.map((review) => (
-                  <div key={review.id} className="border-b border-gray-100 last:border-0 pb-6 last:pb-0">
+                {filteredAndSortedReviews.map((review) => (
+                  <div key={review.id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 p-6">
                     <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 relative flex-shrink-0">
+                      <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 relative flex-shrink-0 ring-2 ring-white shadow-sm">
                         <Image
-                          src={review.user.avatar_url || '/images/default-avatar.png'}
-                          alt={review.user.name}
+                          src="/images/default-avatar.png"
+                          alt={review.customer?.name || 'Anonymous'}
                           fill
                           className="object-cover"
                         />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
-                          <h3 className="font-semibold text-gray-900">{review.user.name}</h3>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-500">
-                              {new Date(review.created_at).toLocaleDateString('vi-VN')}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                              onClick={() => {
-                                setSelectedReviewId(review.id);
-                                setReportDialogOpen(true);
-                              }}
-                            >
-                              <AlertTriangle className="w-4 h-4" />
-                            </Button>
+                          <div>
+                            <h3 className="font-semibold text-gray-900 text-lg">{review.customer?.name || 'Anonymous'}</h3>
+                            <div className="flex items-center gap-2 mt-1">
+                              <div className="flex items-center">
+                                {Array.from({ length: 5 }).map((_, index) => (
+                                  <Star
+                                    key={index}
+                                    className={`w-4 h-4 ${index < review.rating
+                                      ? 'text-yellow-400 fill-yellow-400'
+                                      : 'text-gray-200'
+                                      }`}
+                                  />
+                                ))}
+                              </div>
+                              <span className="text-sm text-gray-500">
+                                {new Date(review.created_at).toLocaleDateString('vi-VN', {
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric'
+                                })}
+                              </span>
+                            </div>
                           </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-gray-400 hover:text-red-500 hover:bg-red-50"
+                            onClick={() => {
+                              setSelectedReviewId(review.id);
+                              setReportDialogOpen(true);
+                            }}
+                          >
+                            <AlertTriangle className="w-4 h-4" />
+                          </Button>
                         </div>
-                        <div className="flex items-center mt-1">
-                          {Array.from({ length: 5 }).map((_, index) => (
-                            <Star
-                              key={index}
-                              className={`w-4 h-4 ${index < review.rating
-                                ? 'text-yellow-400 fill-yellow-400'
-                                : 'text-gray-300'
-                                }`}
-                            />
-                          ))}
-                        </div>
-                        <p className="mt-2 text-gray-600">{review.comment}</p>
+
+                        {review.content ? (
+                          <p className="mt-4 text-gray-600 leading-relaxed">{review.content}</p>
+                        ) : (
+                          <p className="mt-4 text-gray-400 italic">Không có nội dung đánh giá</p>
+                        )}
+
+                        {review.image?.file_url && (
+                          <div className="mt-4">
+                            <div className="relative w-48 h-48 rounded-lg overflow-hidden">
+                              <Image
+                                src={review.image.file_url}
+                                alt="Review image"
+                                fill
+                                className="object-cover"
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1214,78 +1353,87 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
               </div>
             )}
 
-            {/* Report Review Dialog */}
-            <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
-              <DialogContent>
-                <DialogTitle>Báo cáo đánh giá</DialogTitle>
-                <DialogDescription>
-                  Vui lòng cho chúng tôi biết lý do bạn muốn báo cáo đánh giá này
-                </DialogDescription>
-                <div className="space-y-4 mt-4">
-                  <div>
-                    <Label>Lý do báo cáo</Label>
-                    <Textarea
-                      placeholder="Nhập lý do báo cáo..."
-                      className="mt-2"
-                      value={reportReason}
-                      onChange={(e) => setReportReason(e.target.value)}
-                    />
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setReportDialogOpen(false);
-                        setReportReason('');
-                        setSelectedReviewId(null);
-                      }}
-                    >
-                      Hủy
-                    </Button>
-                    <Button
-                      onClick={handleReportReview}
-                      className="bg-red-500 hover:bg-red-600 text-white"
-                    >
-                      Gửi báo cáo
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-
-            {/* Existing Pagination */}
+            {/* Enhanced Pagination */}
             {reviewPagination.totalPages > 1 && (
-              <div className="mt-8 flex justify-center">
-                <div className="flex space-x-1">
-                  <Button
-                    variant="outline"
-                    className="w-10 h-10 p-0 border-gray-300 dark:border-gray-700"
-                    onClick={() => handleReviewPageChange(Math.max(0, reviewPagination.currentPage - 1))}
-                    disabled={reviewPagination.currentPage === 0}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-
-                  {Array.from({ length: reviewPagination.totalPages }, (_, i) => (
+              <div className="mt-8">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="text-sm text-gray-500">
+                    Trang {reviewPagination.currentPage + 1} / {reviewPagination.totalPages}
+                  </div>
+                  <div className="flex items-center gap-2">
                     <Button
-                      key={i}
                       variant="outline"
-                      className={`w-10 h-10 p-0 border-gray-300 dark:border-gray-700 ${reviewPagination.currentPage === i ? "bg-custom-teal text-white" : ""
-                        }`}
-                      onClick={() => handleReviewPageChange(i)}
+                      size="sm"
+                      className="w-10 h-10 p-0 border-gray-200 hover:border-custom-teal hover:text-custom-teal"
+                      onClick={() => handleReviewPageChange(0)}
+                      disabled={reviewPagination.currentPage === 0}
                     >
-                      {i + 1}
+                      <ChevronLeft className="h-4 w-4" />
+                      <ChevronLeft className="h-4 w-4 -ml-1" />
                     </Button>
-                  ))}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-10 h-10 p-0 border-gray-200 hover:border-custom-teal hover:text-custom-teal"
+                      onClick={() => handleReviewPageChange(Math.max(0, reviewPagination.currentPage - 1))}
+                      disabled={reviewPagination.currentPage === 0}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
 
-                  <Button
-                    variant="outline"
-                    className="w-10 h-10 p-0 border-gray-300 dark:border-gray-700"
-                    onClick={() => handleReviewPageChange(Math.min(reviewPagination.totalPages - 1, reviewPagination.currentPage + 1))}
-                    disabled={reviewPagination.currentPage === reviewPagination.totalPages - 1}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
+                    {Array.from({ length: reviewPagination.totalPages }, (_, i) => {
+                      // Show first page, last page, current page, and pages around current page
+                      if (
+                        i === 0 ||
+                        i === reviewPagination.totalPages - 1 ||
+                        (i >= reviewPagination.currentPage - 1 && i <= reviewPagination.currentPage + 1)
+                      ) {
+                        return (
+                          <Button
+                            key={i}
+                            variant={reviewPagination.currentPage === i ? "default" : "outline"}
+                            size="sm"
+                            className={`w-10 h-10 p-0 ${reviewPagination.currentPage === i
+                              ? "bg-custom-teal text-white"
+                              : "border-gray-200 hover:border-custom-teal hover:text-custom-teal"
+                              }`}
+                            onClick={() => handleReviewPageChange(i)}
+                          >
+                            {i + 1}
+                          </Button>
+                        );
+                      }
+                      // Show ellipsis
+                      if (i === 1 || i === reviewPagination.totalPages - 2) {
+                        return (
+                          <span key={i} className="text-gray-400">
+                            ...
+                          </span>
+                        );
+                      }
+                      return null;
+                    })}
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-10 h-10 p-0 border-gray-200 hover:border-custom-teal hover:text-custom-teal"
+                      onClick={() => handleReviewPageChange(Math.min(reviewPagination.totalPages - 1, reviewPagination.currentPage + 1))}
+                      disabled={reviewPagination.currentPage === reviewPagination.totalPages - 1}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-10 h-10 p-0 border-gray-200 hover:border-custom-teal hover:text-custom-teal"
+                      onClick={() => handleReviewPageChange(reviewPagination.totalPages - 1)}
+                      disabled={reviewPagination.currentPage === reviewPagination.totalPages - 1}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                      <ChevronRight className="h-4 w-4 -ml-1" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
