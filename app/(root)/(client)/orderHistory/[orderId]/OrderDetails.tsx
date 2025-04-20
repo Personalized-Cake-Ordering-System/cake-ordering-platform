@@ -140,10 +140,12 @@ const FeedbackForm = ({ orderId, orderDetailId, availableCakeId, bakeryId }: Fee
                 image_id: imageId,
                 order_detail_id: orderDetailId,
                 available_cake_id: availableCakeId,
-                bakery_id: bakeryId
+                bakery_id: bakeryId,
+                customer_id: customerId,
+                review_type: "AVAILABLE_CAKE_REVIEW"
             });
 
-            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/cake_reviews`, {
+            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/reviews`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
@@ -155,11 +157,13 @@ const FeedbackForm = ({ orderId, orderDetailId, availableCakeId, bakeryId }: Fee
                     image_id: imageId,
                     order_detail_id: orderDetailId,
                     available_cake_id: availableCakeId,
-                    bakery_id: bakeryId
+                    bakery_id: bakeryId,
+                    customer_id: customerId,
+                    review_type: "AVAILABLE_CAKE_REVIEW"
                 })
             });
 
-            if (response.ok) {
+            if (response.status === 200) {
                 toast.success('Phản hồi đã được gửi thành công!');
                 router.push('/orderHistory');
             } else {

@@ -348,11 +348,31 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
 
     setIsSubmitting(true);
     try {
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) {
+        toast.error("Vui lòng đăng nhập để đánh giá cửa hàng");
+        return;
+      }
+
+      // Decode JWT to get customer_id
+      const tokenPayload = JSON.parse(atob(accessToken.split('.')[1]));
+      const customerId = tokenPayload.sub;
+
       const response = await axios.post(
-        `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/bakeries/${bakery.id}/reviews`,
+        `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/reviews`,
         {
           rating: userRating,
-          comment: userReview
+          comment: userReview,
+          customer_id: customerId,
+          review_type: "BAKERY_REVIEW",
+          image_id: uploadedFiles.length > 0 ? uploadedFiles[0].id : null,
+          bakery_id: bakery.id
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          }
         }
       );
 
@@ -360,14 +380,15 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
         toast.success("Đánh giá của bạn đã được gửi thành công");
         setUserReview('');
         setUserRating(5);
+        setUploadedFiles([]); // Clear uploaded files after successful submission
         // Refresh reviews
         const currentPage = reviewPagination.currentPage;
         setReviewPagination(prev => ({ ...prev, currentPage: 0 }));
         setTimeout(() => setReviewPagination(prev => ({ ...prev, currentPage })), 100);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating review:", error);
-      toast.error("Có lỗi xảy ra khi gửi đánh giá");
+      toast.error(error.response?.data?.message || "Có lỗi xảy ra khi gửi đánh giá");
     } finally {
       setIsSubmitting(false);
     }
@@ -1086,6 +1107,45 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
                     value={userReview}
                     onChange={(e) => setUserReview(e.target.value)}
                   />
+                </div>
+                <div>
+                  <Label>Hình ảnh đánh giá</Label>
+                  <div className="mt-2 space-y-4">
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+                      <input
+                        type="file"
+                        id="review-image"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handleFileUpload}
+                      />
+                      <label
+                        htmlFor="review-image"
+                        className="flex flex-col items-center justify-center cursor-pointer"
+                      >
+                        <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                        <span className="text-sm text-gray-500">
+                          {isUploading ? 'Đang tải lên...' : 'Nhấn để tải lên hình ảnh'}
+                        </span>
+                      </label>
+                    </div>
+                    {uploadedFiles.length > 0 && (
+                      <div className="grid grid-cols-2 gap-2">
+                        {uploadedFiles.map((file) => (
+                          <div key={file.id} className="relative group flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                            <span className="text-sm text-gray-600 truncate">{file.id}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveFile(file.id)}
+                              className="p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <Button
                   onClick={handleCreateReview}
