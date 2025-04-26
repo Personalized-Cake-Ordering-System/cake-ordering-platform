@@ -39,13 +39,18 @@ const bakerySchema = z.object({
   identity_card_number: z.string().min(9, "Số CMND/CCCD không hợp lệ"),
   email: z.string().email("Email không hợp lệ"),
   // Default values for coordinates
-  latitude: z.string().default("0"),
-  longitude: z.string().default("0"),
+  latitude: z.string(),
+  longitude: z.string(),
   // File IDs for each image type
   shop_image_file_ids: z.array(z.string()).min(1, "Cần có hình ảnh cửa hàng"),
   avatar_file_id: z.string().min(1, "Vui lòng tải lên logo cửa hàng"),
   front_card_file_id: z.string().min(1, "Vui lòng tải lên mặt trước CMND/CCCD"),
-  back_card_file_id: z.string().min(1, "Vui lòng tải lên mặt sau CMND/CCCD")
+  back_card_file_id: z.string().min(1, "Vui lòng tải lên mặt sau CMND/CCCD"),
+  business_license_file_id: z.string().min(1, "Vui lòng tải lên giấy phép kinh doanh"),
+  food_safety_certificate_file_id: z.string().min(1, "Vui lòng tải lên giấy chứng nhận ATTP"),
+  cake_description: z.string().min(1, "Vui lòng nhập mô tả bánh"),
+  price_description: z.string().min(1, "Vui lòng nhập mô tả giá"),
+  bakery_description: z.string().min(1, "Vui lòng nhập mô tả cửa hàng"),
 });
 
 type BakeryFormData = z.infer<typeof bakerySchema>;
@@ -192,6 +197,12 @@ const BakerySignUpPage = () => {
   const [frontCardImageUrl, setFrontCardImageUrl] = useState<string | null>(null);
   const [backCardImageUrl, setBackCardImageUrl] = useState<string | null>(null);
   
+  // New states for business license and food safety certificate
+  const [businessLicenseImageUrl, setBusinessLicenseImageUrl] = useState<string | null>(null);
+  const [businessLicenseImageLoading, setBusinessLicenseImageLoading] = useState(false);
+  const [foodSafetyCertificateImageUrl, setFoodSafetyCertificateImageUrl] = useState<string | null>(null);
+  const [foodSafetyCertificateImageLoading, setFoodSafetyCertificateImageLoading] = useState(false);
+  
   const { 
     register, 
     handleSubmit,
@@ -209,12 +220,17 @@ const BakerySignUpPage = () => {
       tax_code: "",
       identity_card_number: "",
       email: "",
-      latitude: "0",
-      longitude: "0",
+      latitude: "",
+      longitude: "",
       shop_image_file_ids: [],
       avatar_file_id: "",
       front_card_file_id: "",
-      back_card_file_id: ""
+      back_card_file_id: "",
+      business_license_file_id: "",
+      food_safety_certificate_file_id: "",
+      cake_description: "",
+      price_description: "",
+      bakery_description: ""
     }
   });
 
@@ -346,6 +362,54 @@ const BakerySignUpPage = () => {
     }
   };
 
+  // Handle business license upload
+  const handleBusinessLicenseUpload = async (file: File) => {
+    try {
+      setBusinessLicenseImageLoading(true);
+      const previewUrl = URL.createObjectURL(file);
+      setBusinessLicenseImageUrl(previewUrl);
+      const base64 = await convertFileToBase64(file);
+      const result = await uploadFile(base64, `business_license_${Date.now()}.jpg`);
+      if (!result.success) {
+        toast.error(result.error || "Failed to upload business license");
+        setBusinessLicenseImageUrl(null);
+        return;
+      }
+      setValue('business_license_file_id', result.data!.id);
+      setBusinessLicenseImageUrl(result.data!.file_url);
+      toast.success("Tải lên giấy phép kinh doanh thành công!");
+    } catch (error) {
+      toast.error("Lỗi khi tải giấy phép kinh doanh");
+      setBusinessLicenseImageUrl(null);
+    } finally {
+      setBusinessLicenseImageLoading(false);
+    }
+  };
+
+  // Handle food safety certificate upload
+  const handleFoodSafetyCertificateUpload = async (file: File) => {
+    try {
+      setFoodSafetyCertificateImageLoading(true);
+      const previewUrl = URL.createObjectURL(file);
+      setFoodSafetyCertificateImageUrl(previewUrl);
+      const base64 = await convertFileToBase64(file);
+      const result = await uploadFile(base64, `food_safety_certificate_${Date.now()}.jpg`);
+      if (!result.success) {
+        toast.error(result.error || "Failed to upload food safety certificate");
+        setFoodSafetyCertificateImageUrl(null);
+        return;
+      }
+      setValue('food_safety_certificate_file_id', result.data!.id);
+      setFoodSafetyCertificateImageUrl(result.data!.file_url);
+      toast.success("Tải lên giấy chứng nhận ATTP thành công!");
+    } catch (error) {
+      toast.error("Lỗi khi tải giấy chứng nhận ATTP");
+      setFoodSafetyCertificateImageUrl(null);
+    } finally {
+      setFoodSafetyCertificateImageLoading(false);
+    }
+  };
+
   const onSubmit = async (data: BakeryFormData) => {
     console.log(data);
     setIsLoading(true);
@@ -376,6 +440,29 @@ const BakerySignUpPage = () => {
         return;
       }
 
+      if (!data.business_license_file_id) {
+        toast.error("Vui lòng tải lên giấy phép kinh doanh");
+        setIsLoading(false);
+        return;
+      }
+
+      if (!data.food_safety_certificate_file_id) {
+        toast.error("Vui lòng tải lên giấy chứng nhận ATTP");
+        setIsLoading(false);
+        return;
+      }
+
+      // Generate random latitude and longitude (for demonstration)
+      const randomLatitude = (Math.random() * (23 - 8) + 8).toFixed(6);
+      const randomLongitude = (Math.random() * (109 - 102) + 102).toFixed(6);
+
+      // Set generated coordinates to form data
+      setValue('latitude', randomLatitude);
+      setValue('longitude', randomLongitude);
+
+      // Now use the updated data object for submission
+      const dataWithCoords = { ...data, latitude: randomLatitude, longitude: randomLongitude };
+
       // Submit bakery registration
       const toastId = toast.loading("Đang đăng ký cửa hàng...");
       
@@ -384,7 +471,7 @@ const BakerySignUpPage = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(dataWithCoords),
       });
 
       const responseData = await response.json();
@@ -544,6 +631,43 @@ const BakerySignUpPage = () => {
                       <p className="text-sm text-red-500">{errors.identity_card_number.message}</p>
                     )}
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="cake_description">Mô tả bánh</Label>
+                    <Input
+                      id="cake_description"
+                      placeholder="Nhập mô tả bánh"
+                      {...register("cake_description")}
+                      className="bg-white dark:bg-gray-700"
+                    />
+                    {errors.cake_description && (
+                      <p className="text-sm text-red-500">{errors.cake_description.message}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="price_description">Mô tả giá</Label>
+                    <Input
+                      id="price_description"
+                      placeholder="Nhập mô tả giá"
+                      {...register("price_description")}
+                      className="bg-white dark:bg-gray-700"
+                    />
+                    {errors.price_description && (
+                      <p className="text-sm text-red-500">{errors.price_description.message}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="bakery_description">Mô tả cửa hàng</Label>
+                    <Input
+                      id="bakery_description"
+                      placeholder="Nhập mô tả cửa hàng"
+                      {...register("bakery_description")}
+                      className="bg-white dark:bg-gray-700"
+                    />
+                    {errors.bakery_description && (
+                      <p className="text-sm text-red-500">{errors.bakery_description.message}</p>
+                    )}
+                  </div>
                 </div>
               </div>
               
@@ -593,10 +717,30 @@ const BakerySignUpPage = () => {
                 </div>
               </div>
               
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-6 space-y-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                  Giấy tờ pháp lý
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <ImageUploader
+                    label="Giấy phép kinh doanh"
+                    imageUrl={businessLicenseImageUrl}
+                    isLoading={businessLicenseImageLoading}
+                    onUpload={handleBusinessLicenseUpload}
+                  />
+                  <ImageUploader
+                    label="Giấy chứng nhận ATTP"
+                    imageUrl={foodSafetyCertificateImageUrl}
+                    isLoading={foodSafetyCertificateImageLoading}
+                    onUpload={handleFoodSafetyCertificateUpload}
+                  />
+                </div>
+              </div>
+              
               <div className="flex flex-col pt-6">
                 <Button
                   type="submit"
-                  disabled={isLoading || shopImageLoading || avatarImageLoading || frontCardImageLoading || backCardImageLoading}
+                  disabled={isLoading || shopImageLoading || avatarImageLoading || frontCardImageLoading || backCardImageLoading || businessLicenseImageLoading || foodSafetyCertificateImageLoading}
                   className="w-full bg-custom-teal hover:bg-custom-teal/90 text-white rounded-lg py-2.5"
                 >
                   {isLoading ? (
