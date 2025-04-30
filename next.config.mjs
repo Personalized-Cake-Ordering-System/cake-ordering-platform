@@ -4,36 +4,13 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "utfs.io",
+        hostname: "**",
       },
       {
-        protocol: "https",
-        hostname: "github.com",
+        protocol: "http",
+        hostname: "**",
       },
-      {
-        protocol: "https",
-        hostname: "res.cloudinary.com",
-      },
-      {
-        protocol: "https",
-        hostname: "plus.unsplash.com",
-      },
-      {
-        protocol: "https",
-        hostname: "images.unsplash.com",
-      },
-      {
-        protocol: 'https',
-        hostname: 'firebasestorage.googleapis.com',
-        pathname: '/v0/b/digital-dynamo-cb555.appspot.com/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'img.vietqr.io',
-        pathname: '/image/**',
-      }
     ],
-    domains: ['img.vietqr.io'],
   },
 };
 
