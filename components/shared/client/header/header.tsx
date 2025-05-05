@@ -268,10 +268,7 @@ const Header = () => {
             </div>
 
             <div className="flex items-center py-4">
-              <div className="flex items-center space-x-2 text-gray-800 dark:text-gray-300 font-medium">
-                <Zap className="h-5 w-5 text-custom-teal animate-pulse" />
-                <span>Giao hàng miễn phí toàn quốc</span>
-              </div>
+            
             </div>
           </div>
         </div>

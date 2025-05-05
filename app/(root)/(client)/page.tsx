@@ -18,6 +18,9 @@ const HomePage = async () => {
   const bakeries = await getBakeries();
   const cakes = await getCakes({});
   const featuredBakeries = bakeries.data?.data?.slice(0, 8);
+  
+  // Filter bakeries to only show confirmed ones
+  const confirmedBakeries = featuredBakeries?.filter(bakery => bakery.status === "CONFIRMED") || [];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 to-white dark:from-gray-950 dark:to-gray-900">
@@ -28,14 +31,14 @@ const HomePage = async () => {
           </div>
 
           <div className="space-y-6 flex flex-col h-full">
-            {featuredBakeries!.length >= 1 && (
+            {confirmedBakeries.length >= 1 && (
               <StoreHighlightCard
                 store={{
-                  id: featuredBakeries![0].id,
-                  name: featuredBakeries![0].bakery_name,
+                  id: confirmedBakeries[0].id,
+                  name: confirmedBakeries[0].bakery_name,
                   // rating: 4.8,
                   imageUrl:
-                    featuredBakeries![0].shop_image_files[0].file_url! || "",
+                    confirmedBakeries[0].shop_image_files[0].file_url! || "",
                   isFeatured: true,
                   // cake_description: "Chuyên cung cấp các loại bánh kem tươi, bánh sinh nhật và bánh theo yêu cầu với nguyên liệu chất lượng cao.",
                   price_description: "Giá cả hợp lý từ 150.000đ, tùy theo kích thước và thiết kế bánh.",
@@ -46,14 +49,14 @@ const HomePage = async () => {
               />
             )}
 
-            {featuredBakeries!.length >= 2 && (
+            {confirmedBakeries.length >= 2 && (
               <StoreHighlightCard
                 store={{
-                  id: featuredBakeries![1].id,
-                  name: featuredBakeries![1].bakery_name,
+                  id: confirmedBakeries[1].id,
+                  name: confirmedBakeries[1].bakery_name,
                   // rating: 4.7,
                   imageUrl:
-                    featuredBakeries![1].shop_image_files[0].file_url! || "",
+                    confirmedBakeries[1].shop_image_files[0].file_url! || "",
                   isFeatured: true,
                   // cake_description: "Đa dạng các loại bánh kem cao cấp, bánh sinh nhật sáng tạo và bánh theo chủ đề với thiết kế độc đáo.",
                   price_description: "Mức giá từ 200.000đ đến 2.000.000đ, phù hợp với mọi nhu cầu và ngân sách.",
@@ -84,7 +87,7 @@ const HomePage = async () => {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-            {featuredBakeries!.map((bakery) => (
+            {confirmedBakeries.map((bakery) => (
               <StoreItem
                 key={bakery.id}
                 icon={
