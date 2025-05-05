@@ -265,7 +265,7 @@ const CakeDetail = () => {
         }
       });
     }
-  }, [cakeData]);
+  }, [cakeData, customerDetails, reviewImages]);
 
   // Add handleAddToCart function
   const handleAddToCart = async () => {

@@ -89,7 +89,7 @@ const OrderConfirmationPage = () => {
       <div className="container mx-auto px-4 py-16 max-w-md">
         <Card className="p-6 text-center border dark:border-border">
           <h2 className="text-xl font-bold mb-4">No order information found</h2>
-          <p className="text-muted-foreground mb-6">We couldn't find any details for your order.</p>
+          <p className="text-muted-foreground mb-6">We couldn&apos;t find any details for your order.</p>
           <Button asChild>
             <Link href="/checkout">Return to Checkout</Link>
           </Button>
