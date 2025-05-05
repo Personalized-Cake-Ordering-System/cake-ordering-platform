@@ -31,6 +31,7 @@ import { Input } from "@/components/ui/input";
 import { ModeToggleAnimate } from "@/components/shared/custom-ui/mode-toggle-animate";
 import { cn } from "@/lib/utils";
 import { NotificationDropdown } from "@/components/shared/notification/notification-dropdown";
+import { useCart } from "@/app/store/useCart";
 
 interface BadgeProps {
   count: number;
@@ -73,6 +74,8 @@ const Header = () => {
   const pathname = usePathname();
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { items } = useCart();
+  const cartCount = items.length;
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
@@ -87,7 +90,6 @@ const Header = () => {
 
   const messageCount = 1;
   const wishlistCount = 1;
-  const cartCount = 1;
 
   const navLinks: NavItemType[] = [
     { href: "/", label: "Trang chủ" },
@@ -198,7 +200,7 @@ const Header = () => {
                     </Link>
                     <Link href="/cart" className="relative group">
                       <ShoppingCart className="h-6 w-6 text-gray-800 dark:text-gray-300 group-hover:text-custom-teal dark:group-hover:text-custom-teal transition-colors duration-200" />
-                      {/* <NotificationBadge count={cartCount} /> */}
+                      <NotificationBadge count={cartCount} />
                     </Link>
                   </>
                 ) : (

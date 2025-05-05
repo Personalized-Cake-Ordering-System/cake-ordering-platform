@@ -160,6 +160,7 @@ const CheckoutPage = () => {
   const [customerVouchers, setCustomerVouchers] = React.useState<any[]>([]);
   const [selectedVoucher, setSelectedVoucher] = React.useState<any>(null);
   const [isVoucherDialogOpen, setIsVoucherDialogOpen] = React.useState(false);
+  const { clearCart } = useCart();
 
   // Delivery fees
   const standardDelivery = 50000; // 50,000 VND
@@ -732,14 +733,14 @@ const CheckoutPage = () => {
             // Save order details to localStorage
             localStorage.setItem('currentOrder', JSON.stringify(orderDetails));
 
-            // Clear cart after successful order
-            localStorage.removeItem('cart');
-
             // Redirect based on payment type
             if (data.paymentType === 'QR_CODE') {
               // Reset payment countdown timer to ensure it starts from 15 minutes
               localStorage.removeItem('paymentCountdown');
               localStorage.removeItem('paymentTimestamp');
+              
+              // Clear cart after successful order creation
+              clearCart();
               
               // Navigate to QR payment page
               router.push('/qr-payment');
@@ -747,6 +748,9 @@ const CheckoutPage = () => {
               try {
                 // For wallet payments, call the move-to-next API before redirecting
                 await moveOrderToNextState(orderId);
+                
+                // Clear cart after successful wallet payment
+                clearCart();
                 
                 // Show success message and redirect to order confirmation
                 toast.success('Thanh toán thành công từ ví của bạn!');
