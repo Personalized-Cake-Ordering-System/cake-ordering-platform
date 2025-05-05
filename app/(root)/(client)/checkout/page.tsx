@@ -253,6 +253,7 @@ const CheckoutPage = () => {
   };
 
   // Add logging to useEffect for cart items
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   React.useEffect(() => {
     const fetchCart = async () => {
       const accessToken = localStorage.getItem('accessToken');
@@ -411,6 +412,7 @@ const CheckoutPage = () => {
   }, [fetchCustomerVouchers]);
 
   // Add useEffect to fetch vouchers when bakery_id is available
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   React.useEffect(() => {
     if (cartItems.length > 0 && cartItems[0].bakery_id) {
       fetchVouchers(cartItems[0].bakery_id);

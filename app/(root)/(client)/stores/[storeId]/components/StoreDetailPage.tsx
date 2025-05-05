@@ -259,7 +259,7 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
       console.error("Error processing bakery data:", error);
       toast.error("Có lỗi xảy ra khi chuẩn bị thông tin cửa hàng");
     }
-  }, [bakery, toast]);
+  }, [bakery]);
 
   useEffect(() => {
     const fetchCakes = async () => {
@@ -289,7 +289,7 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
     if (bakery?.id) {
       fetchCakes();
     }
-  }, [bakery?.id, toast, pagination.currentPage, pagination.pageSize, sortBy, filterBy]);
+  }, [bakery?.id, pagination.currentPage, pagination.pageSize, sortBy, filterBy]);
 
   useEffect(() => {
     const fetchReviews = async () => {
