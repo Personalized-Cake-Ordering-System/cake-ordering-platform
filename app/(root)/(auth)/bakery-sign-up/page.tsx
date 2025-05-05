@@ -41,6 +41,9 @@ const bakerySchema = z.object({
   // Default values for coordinates
   latitude: z.string(),
   longitude: z.string(),
+  // Opening and closing times
+  open_time: z.string().min(1, "Vui lòng chọn giờ mở cửa"),
+  close_time: z.string().min(1, "Vui lòng chọn giờ đóng cửa"),
   // File IDs for each image type
   shop_image_file_ids: z.array(z.string()).min(1, "Cần có hình ảnh cửa hàng"),
   avatar_file_id: z.string().min(1, "Vui lòng tải lên logo cửa hàng"),
@@ -222,6 +225,8 @@ const BakerySignUpPage = () => {
       email: "",
       latitude: "",
       longitude: "",
+      open_time: "07:00",
+      close_time: "20:00",
       shop_image_file_ids: [],
       avatar_file_id: "",
       front_card_file_id: "",
@@ -233,6 +238,22 @@ const BakerySignUpPage = () => {
       bakery_description: ""
     }
   });
+
+  // Generate time options for dropdowns
+  const generateTimeOptions = () => {
+    const options = [];
+    for (let hour = 0; hour < 24; hour++) {
+      for (let minute = 0; minute < 60; minute += 30) {
+        const formattedHour = hour.toString().padStart(2, '0');
+        const formattedMinute = minute.toString().padStart(2, '0');
+        const time = `${formattedHour}:${formattedMinute}`;
+        options.push(time);
+      }
+    }
+    return options;
+  };
+
+  const timeOptions = generateTimeOptions();
 
   // Handle shop image upload
   const handleShopImageUpload = async (file: File) => {
@@ -460,8 +481,18 @@ const BakerySignUpPage = () => {
       setValue('latitude', randomLatitude);
       setValue('longitude', randomLongitude);
 
+      // Format time values by adding seconds for API compatibility
+      const formattedOpenTime = data.open_time + ":00";
+      const formattedCloseTime = data.close_time + ":00";
+
       // Now use the updated data object for submission
-      const dataWithCoords = { ...data, latitude: randomLatitude, longitude: randomLongitude };
+      const dataWithCoords = { 
+        ...data, 
+        latitude: randomLatitude, 
+        longitude: randomLongitude,
+        open_time: formattedOpenTime,
+        close_time: formattedCloseTime
+      };
 
       // Submit bakery registration
       const toastId = toast.loading("Đang đăng ký cửa hàng...");
@@ -629,6 +660,42 @@ const BakerySignUpPage = () => {
                     />
                     {errors.identity_card_number && (
                       <p className="text-sm text-red-500">{errors.identity_card_number.message}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="open_time">Giờ mở cửa</Label>
+                    <select
+                      id="open_time"
+                      {...register("open_time")}
+                      className="w-full h-10 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-custom-teal focus:border-custom-teal"
+                    >
+                      {timeOptions.map((time) => (
+                        <option key={`open-${time}`} value={time}>
+                          {time}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.open_time && (
+                      <p className="text-sm text-red-500">{errors.open_time.message}</p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="close_time">Giờ đóng cửa</Label>
+                    <select
+                      id="close_time"
+                      {...register("close_time")}
+                      className="w-full h-10 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-custom-teal focus:border-custom-teal"
+                    >
+                      {timeOptions.map((time) => (
+                        <option key={`close-${time}`} value={time}>
+                          {time}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.close_time && (
+                      <p className="text-sm text-red-500">{errors.close_time.message}</p>
                     )}
                   </div>
 
