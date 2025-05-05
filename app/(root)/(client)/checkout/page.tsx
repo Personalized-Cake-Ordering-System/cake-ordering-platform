@@ -2,7 +2,7 @@
 import { useCart } from '@/app/store/useCart';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { motion } from 'framer-motion';
-import { AlertCircle, ArrowLeft, Check, ChevronDown, ChevronUp, MapPin, PackageCheck, ShieldCheck, Ticket } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Check, ChevronDown, ChevronUp, CreditCard, MapPin, PackageCheck, ShieldCheck, Ticket, Wallet, Truck } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import * as React from 'react';
@@ -44,6 +44,7 @@ import { cartService } from '@/app/services/cartService';
 import { ShoppingBag } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { voucherService } from '@/app/services/voucherService';
+import axios from 'axios';
 
 type GeocodingResponse = {
   results: Array<{
@@ -69,6 +70,7 @@ const checkoutSchema = z.object({
   address: z.string().min(5, { message: 'Địa chỉ không được để trống' }),
   deliveryMethod: z.enum(['standard', 'express']),
   deliveryType: z.enum(['DELIVERY', 'PICKUP']),
+  paymentType: z.enum(['QR_CODE', 'WALLET']),
   specialInstructions: z.string().optional(),
   formatted_address: z.string().optional(),
   latitude: z.number().optional(),
@@ -175,13 +177,15 @@ const CheckoutPage = () => {
       address: '',
       deliveryMethod: 'standard',
       deliveryType: 'DELIVERY',
+      paymentType: 'QR_CODE',
       specialInstructions: '',
     },
   });
 
-  // Get the delivery method and type values from the form
+  // Get the delivery method, type, and payment type values from the form
   const deliveryMethod = form.watch('deliveryMethod');
   const deliveryType = form.watch('deliveryType');
+  const paymentType = form.watch('paymentType');
 
   // Add VND currency formatter
   const formatVND = (amount: number) => {
@@ -606,6 +610,37 @@ const CheckoutPage = () => {
     </div>
   );
 
+  // Add function to move order to next state
+  const moveOrderToNextState = async (orderId: string) => {
+    try {
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) {
+        throw new Error('No access token found');
+      }
+
+      // Create form data for the multipart/form-data request
+      const formData = new FormData();
+      
+      // Make the API call to move the order to the next state
+      const response = await axios.put(
+        `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/orders/${orderId}/move-to-next`,
+        formData,
+        {
+          headers: {
+            'accept': '*/*',
+            'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${accessToken}`
+          }
+        }
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error('Error moving order to next state:', error);
+      throw error;
+    }
+  };
+
   // Add onSubmit handler
   const onSubmit = async (data: CheckoutFormValues) => {
     setIsProcessing(true);
@@ -641,7 +676,7 @@ const CheckoutPage = () => {
             longitude: geocodeResult.location.lng.toString(),
             pickup_time: data.deliveryType === 'PICKUP' ? new Date().toISOString() : null,
             shipping_type: data.deliveryType,
-            payment_type: "QR_CODE",
+            payment_type: data.paymentType,
             voucher_code: selectedVoucher?.code || "",
             order_detail_create_models: cartItems.map((item) => ({
               available_cake_id: item.available_cake_id || null,
@@ -662,7 +697,8 @@ const CheckoutPage = () => {
               total_product_price,
               shipping_distance,
               discount_amount,
-              shipping_fee
+              shipping_fee,
+              id: orderId // Extract order ID
             } = response.payload;
             const qrLink = `https://img.vietqr.io/image/TPBank-00005992966-qr_only.jpg?amount=${total_customer_paid}&addInfo=${order_code}`;
 
@@ -693,18 +729,34 @@ const CheckoutPage = () => {
               qrLink
             };
 
-            // Reset payment countdown timer to ensure it starts from 15 minutes
-            localStorage.removeItem('paymentCountdown');
-            localStorage.removeItem('paymentTimestamp');
-
             // Save order details to localStorage
             localStorage.setItem('currentOrder', JSON.stringify(orderDetails));
 
             // Clear cart after successful order
             localStorage.removeItem('cart');
 
-            // Navigate to QR payment page
-            router.push('/qr-payment');
+            // Redirect based on payment type
+            if (data.paymentType === 'QR_CODE') {
+              // Reset payment countdown timer to ensure it starts from 15 minutes
+              localStorage.removeItem('paymentCountdown');
+              localStorage.removeItem('paymentTimestamp');
+              
+              // Navigate to QR payment page
+              router.push('/qr-payment');
+            } else {
+              try {
+                // For wallet payments, call the move-to-next API before redirecting
+                await moveOrderToNextState(orderId);
+                
+                // Show success message and redirect to order confirmation
+                toast.success('Thanh toán thành công từ ví của bạn!');
+                router.push('/order-confirmation');
+              } catch (moveError) {
+                console.error('Error moving order to next state:', moveError);
+                toast.error('Đã xảy ra lỗi khi xử lý thanh toán');
+                setIsProcessing(false);
+              }
+            }
           } else {
             console.error('Order creation failed:', response.errors);
             toast.error('Failed to create order');
@@ -1073,16 +1125,23 @@ const CheckoutPage = () => {
                             <Label
                               htmlFor="pickup"
                               className={`
-                                flex flex-col p-4 border rounded-lg cursor-pointer h-full
+                                flex flex-col p-4 border-2 rounded-lg cursor-pointer h-full transition-all duration-200
                                 ${field.value === 'PICKUP'
-                                  ? 'border-primary bg-primary/5'
-                                  : 'border-muted-foreground/20 hover:border-primary/50'}
+                                  ? 'border-primary bg-primary/5 dark:bg-primary/10 shadow-md'
+                                  : 'border-muted hover:border-primary/50 dark:border-muted-foreground/30 dark:hover:border-primary/50'}
                               `}
                             >
                               <div className="flex items-start mb-1">
-                                <RadioGroupItem value="PICKUP" id="pickup" className="mt-1 mr-2" />
+                                <div className="flex items-center justify-center mt-1 mr-3">
+                                  <RadioGroupItem value="PICKUP" id="pickup" className="mt-0" />
+                                </div>
                                 <div>
-                                  <span className="font-medium">Tại cửa hàng</span>
+                                  <div className="flex items-center gap-2">
+                                    <div className={`p-1.5 rounded-md ${field.value === 'PICKUP' ? 'bg-primary/20 dark:bg-primary/30' : 'bg-muted dark:bg-muted/30'}`}>
+                                      <ShoppingBag className={`h-5 w-5 ${field.value === 'PICKUP' ? 'text-primary' : 'text-muted-foreground'}`} />
+                                    </div>
+                                    <span className={`font-medium ${field.value === 'PICKUP' ? 'text-primary' : ''}`}>Tại cửa hàng</span>
+                                  </div>
                                   <p className="text-sm text-muted-foreground mt-1">
                                     Nhận bánh trực tiếp tại cửa hàng
                                   </p>
@@ -1099,21 +1158,126 @@ const CheckoutPage = () => {
                             <Label
                               htmlFor="delivery"
                               className={`
-                                flex flex-col p-4 border rounded-lg cursor-pointer h-full
+                                flex flex-col p-4 border-2 rounded-lg cursor-pointer h-full transition-all duration-200
                                 ${field.value === 'DELIVERY'
-                                  ? 'border-primary bg-primary/5'
-                                  : 'border-muted-foreground/20 hover:border-primary/50'}
+                                  ? 'border-primary bg-primary/5 dark:bg-primary/10 shadow-md'
+                                  : 'border-muted hover:border-primary/50 dark:border-muted-foreground/30 dark:hover:border-primary/50'}
                               `}
                             >
                               <div className="flex items-start mb-1">
-                                <RadioGroupItem value="DELIVERY" id="delivery" className="mt-1 mr-2" />
+                                <div className="flex items-center justify-center mt-1 mr-3">
+                                  <RadioGroupItem value="DELIVERY" id="delivery" className="mt-0" />
+                                </div>
                                 <div>
-                                  <span className="font-medium">Giao tận nơi</span>
+                                  <div className="flex items-center gap-2">
+                                    <div className={`p-1.5 rounded-md ${field.value === 'DELIVERY' ? 'bg-primary/20 dark:bg-primary/30' : 'bg-muted dark:bg-muted/30'}`}>
+                                      <Truck className={`h-5 w-5 ${field.value === 'DELIVERY' ? 'text-primary' : 'text-muted-foreground'}`} />
+                                    </div>
+                                    <span className={`font-medium ${field.value === 'DELIVERY' ? 'text-primary' : ''}`}>Giao tận nơi</span>
+                                  </div>
                                   <p className="text-sm text-muted-foreground mt-1">
                                     Shipper sẽ giao tận nhà
                                   </p>
                                 </div>
                               </div>
+                            </Label>
+                          </motion.div>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Separator className="my-6" />
+
+                <FormField
+                  control={form.control}
+                  name="paymentType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base mb-4 block">Phương thức thanh toán</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          className="flex flex-col md:flex-row gap-4"
+                        >
+                          <motion.div
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            className="flex-1"
+                          >
+                            <Label
+                              htmlFor="qr-code"
+                              className={`
+                                flex flex-col p-4 border-2 rounded-lg cursor-pointer h-full transition-all duration-200
+                                ${field.value === 'QR_CODE'
+                                  ? 'border-primary bg-primary/5 dark:bg-primary/10 shadow-md'
+                                  : 'border-muted hover:border-primary/50 dark:border-muted-foreground/30 dark:hover:border-primary/50'}
+                              `}
+                            >
+                              <div className="flex items-start mb-2">
+                                <div className="flex items-center justify-center mt-1 mr-3">
+                                  <RadioGroupItem value="QR_CODE" id="qr-code" className="mt-0" />
+                                </div>
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <div className={`p-1.5 rounded-md ${field.value === 'QR_CODE' ? 'bg-primary/20 dark:bg-primary/30' : 'bg-muted dark:bg-muted/30'}`}>
+                                      <CreditCard className={`h-5 w-5 ${field.value === 'QR_CODE' ? 'text-primary' : 'text-muted-foreground'}`} />
+                                    </div>
+                                    <span className={`font-medium ${field.value === 'QR_CODE' ? 'text-primary' : ''}`}>Thanh toán ngân hàng</span>
+                                  </div>
+                                  <p className="text-sm text-muted-foreground mt-1">
+                                    Quét mã QR qua ứng dụng ngân hàng
+                                  </p>
+                                </div>
+                              </div>
+                              {field.value === 'QR_CODE' && (
+                                <div className="mt-2 rounded-md bg-primary/10 dark:bg-primary/20 p-2 flex items-center text-xs">
+                                  <ShieldCheck className="h-4 w-4 mr-2 text-primary" />
+                                  <span className="text-primary dark:text-primary-foreground">Thanh toán an toàn qua ngân hàng của bạn</span>
+                                </div>
+                              )}
+                            </Label>
+                          </motion.div>
+
+                          <motion.div
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            className="flex-1"
+                          >
+                            <Label
+                              htmlFor="wallet"
+                              className={`
+                                flex flex-col p-4 border-2 rounded-lg cursor-pointer h-full transition-all duration-200
+                                ${field.value === 'WALLET'
+                                  ? 'border-primary bg-primary/5 dark:bg-primary/10 shadow-md'
+                                  : 'border-muted hover:border-primary/50 dark:border-muted-foreground/30 dark:hover:border-primary/50'}
+                              `}
+                            >
+                              <div className="flex items-start mb-2">
+                                <div className="flex items-center justify-center mt-1 mr-3">
+                                  <RadioGroupItem value="WALLET" id="wallet" className="mt-0" />
+                                </div>
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <div className={`p-1.5 rounded-md ${field.value === 'WALLET' ? 'bg-primary/20 dark:bg-primary/30' : 'bg-muted dark:bg-muted/30'}`}>
+                                      <Wallet className={`h-5 w-5 ${field.value === 'WALLET' ? 'text-primary' : 'text-muted-foreground'}`} />
+                                    </div>
+                                    <span className={`font-medium ${field.value === 'WALLET' ? 'text-primary' : ''}`}>Ví điện tử</span>
+                                  </div>
+                                  <p className="text-sm text-muted-foreground mt-1">
+                                    Thanh toán bằng số dư trong ví của bạn
+                                  </p>
+                                </div>
+                              </div>
+                              {field.value === 'WALLET' && (
+                                <div className="mt-2 rounded-md bg-primary/10 dark:bg-primary/20 p-2 flex items-center text-xs">
+                                  <ShieldCheck className="h-4 w-4 mr-2 text-primary" />
+                                  <span className="text-primary dark:text-primary-foreground">Thanh toán nhanh chóng và an toàn</span>
+                                </div>
+                              )}
                             </Label>
                           </motion.div>
                         </RadioGroup>

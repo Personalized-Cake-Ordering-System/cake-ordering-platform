@@ -11,7 +11,7 @@ export type GeocodingResponse = {
     status: string;
 };
 
-export type CheckoutFormValues = {
+export interface CheckoutFormValues {
     fullName: string;
     email: string;
     phone: string;
@@ -20,12 +20,13 @@ export type CheckoutFormValues = {
     address: string;
     deliveryMethod: 'standard' | 'express';
     deliveryType: 'DELIVERY' | 'PICKUP';
+    paymentType: 'QR_CODE' | 'WALLET';
     specialInstructions?: string;
     formatted_address?: string;
     latitude?: number;
     longitude?: number;
     voucher_code?: string;
-};
+}
 
 export type CakeConfig = {
     size: string;
