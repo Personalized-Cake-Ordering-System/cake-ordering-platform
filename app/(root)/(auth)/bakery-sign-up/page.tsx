@@ -482,8 +482,8 @@ const BakerySignUpPage = () => {
       setValue('longitude', randomLongitude);
 
       // Format time values by adding seconds for API compatibility
-      const formattedOpenTime = data.open_time + ":00";
-      const formattedCloseTime = data.close_time + ":00";
+      const formattedOpenTime = data.open_time ;
+      const formattedCloseTime = data.close_time ;
 
       // Now use the updated data object for submission
       const dataWithCoords = { 
