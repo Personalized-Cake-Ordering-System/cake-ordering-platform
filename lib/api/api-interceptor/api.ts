@@ -3,7 +3,7 @@ import axios from "axios";
 import refreshToken from "./refresh-token-server";
 import { auth, update } from "@/lib/next-auth/auth";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = "https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api";
 
 export const api = axios.create({
   baseURL: API_URL,

@@ -19,7 +19,7 @@ export const getBakeries = async (
   const safeParams = searchParams ? { ...searchParams } : undefined;
 
   const result = await fetchListData<IBakery>("/bakeries", safeParams);
-
+  console.log("Bakery data:", result);
   if (!result.success) {
     console.error("Failed to fetch list IBarkery:", result.error);
     return {

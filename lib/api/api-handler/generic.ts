@@ -44,6 +44,7 @@ export async function apiRequest<T>(
 ): Promise<Result<T>> {
   try {
     const response = await request();
+    console.log("Response:", response.data);
     return { success: true, data: response.data };
   } catch (error) {
     // if (axios.isAxiosError(error)) {
@@ -72,7 +73,6 @@ export async function fetchListData<T>(
       has_previous?: boolean;
     };
   }>(() => axiosAuth.get(url, { params: searchParams }));
-
   if (result.success) {
     const { payload, meta_data } = result.data;
 
