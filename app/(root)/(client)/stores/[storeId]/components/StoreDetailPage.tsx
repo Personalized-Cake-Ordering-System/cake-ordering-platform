@@ -165,6 +165,10 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
   const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
   const { addToWishlist, removeFromWishlist, items } = useWishlist();
 
+  const token = localStorage.getItem('accessToken');
+
+  console.log(token);
+
   // Add new state for filters
   const [sortBy, setSortBy] = useState('newest');
   const [filterBy, setFilterBy] = useState('all');
