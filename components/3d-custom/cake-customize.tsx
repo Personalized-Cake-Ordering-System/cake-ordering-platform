@@ -180,13 +180,13 @@ type MessageOption = {
     name: string;
     price: number;
     icon: string;
-}
+};
 
 // Add message options
 const messageOptions: MessageOption[] = [
     { id: 'none', name: 'NONE', price: 0, icon: '✖️' },
-    { id: 'piped', name: 'PIPED MESSAGE', price: 7.00, icon: '✍️' },
-    { id: 'edible', name: 'EDIBLE IMAGE', price: 8.00, icon: '🖼️' }
+    { id: 'piped', name: 'PIPED MESSAGE', price: 0, icon: '✍️' },
+    { id: 'edible', name: 'EDIBLE IMAGE', price: 0, icon: '🖼️' }
 ];
 
 // Add these types
@@ -194,7 +194,7 @@ type PlaqueColor = {
     id: string;
     name: string;
     color: string;
-}
+};
 
 // Add these options
 const plaqueColors: PlaqueColor[] = [
@@ -276,6 +276,7 @@ type StepStatus = {
     extras: boolean;
 };
 
+// Update getInitialCakeConfig to only have placeholders for required fields
 const getInitialCakeConfig = (): CakeConfig => {
     if (typeof window === 'undefined') {
         // Return default config when running on server
@@ -288,9 +289,9 @@ const getInitialCakeConfig = (): CakeConfig => {
             topping: null,
             message: '',
             candles: null,
-            board: 'round-board', // Set default board
+            board: '',
             goo: null,
-            extras: ['round-board'], // Include board in extras
+            extras: [],
             messageType: 'none',
             plaqueColor: 'white',
             uploadedImage: null,
@@ -313,15 +314,15 @@ const getInitialCakeConfig = (): CakeConfig => {
     return {
         size: '',
         price: 0,
-        sponge: 'vanilla',
-        outerIcing: 'pink-vanilla',
-        filling: 'white-vanilla',
+        sponge: '',
+        outerIcing: '',
+        filling: '',
         topping: null,
         message: '',
         candles: null,
-        board: 'round-board', // Set default board
+        board: '',
         goo: null,
-        extras: ['round-board'], // Include board in extras
+        extras: [],
         messageType: 'none',
         plaqueColor: 'white',
         uploadedImage: null,
@@ -395,9 +396,9 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
         const defaultConfig: CakeConfig = {
             size: '',
             price: 0,
-            sponge: 'vanilla',
-            outerIcing: 'pink-vanilla',
-            filling: 'white-vanilla',
+            sponge: '',
+            outerIcing: '',
+            filling: '',
             topping: null,
             message: '',
             candles: null,
@@ -454,30 +455,77 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
 
     // Update price handling to maintain number type
     const handleOptionSelect = (optionType: 'outerIcing' | 'filling' | 'candles' | 'board', optionId: string) => {
-        // Get the current option's price before updating
-        const currentOption = extraOptions.find(group => group.type === optionType)?.items.find(option => option.id === config[optionType]);
+        // Get the group that contains this option type
+        let group;
+        let currentOptionId = config[optionType];
+        
+        if (optionType === 'outerIcing') {
+            group = decorationOptions.find(g => g.items.some(item => item.id === optionId));
+        } else if (optionType === 'filling') {
+            group = partOptions.find(g => g.type === 'Filling');
+        } else if (optionType === 'candles' || optionType === 'board') {
+            group = extraOptions.find(g => g.type === (optionType === 'candles' ? 'Candles' : 'CakeBoard'));
+        }
+        
+        // Find current and new options to calculate price difference
+        const currentOption = group?.items.find(item => item.id === currentOptionId);
+        const newOption = group?.items.find(item => item.id === optionId);
+        
         const currentPrice = currentOption?.price || 0;
-
-        // Get the new option's price
-        const newOption = extraOptions.find(group => group.type === optionType)?.items.find(option => option.id === optionId);
         const newPrice = newOption?.price || 0;
-
-        // Update the configuration
+        const priceDifference = newPrice - currentPrice;
+        
+        // Update the configuration with new price
         setConfig(prev => ({
             ...prev,
             [optionType]: optionId,
-            // Only update price if there's a change in price
-            price: prev.price - currentPrice + newPrice
+            price: prev.price + priceDifference
         }));
+        
+        // If it's a board or candles, also update extras array
+        if (optionType === 'board' || optionType === 'candles') {
+            const extras = Array.isArray(config.extras) ? config.extras : [];
+            
+            // Remove any existing option of the same type from extras array
+            const extrasWithoutType = extras.filter(id => {
+                const item = extraOptions.find(group => 
+                    group.items.some(item => item.id === id)
+                )?.items.find(item => item.id === id);
+                return item?.type !== (optionType === 'candles' ? 'Candles' : 'CakeBoard');
+            });
+            
+            setConfig(prev => ({
+                ...prev,
+                extras: [...extrasWithoutType, optionId]
+            }));
+        }
     };
 
     // Update the candles removal handler
     const handleRemoveCandles = () => {
+        // Find the price of the current candles to subtract it
+        const currentCandles = extraOptions.find(group => 
+            group.type === 'Candles'
+        )?.items.find(item => 
+            item.id === config.candles
+        );
+        
+        const candlesPrice = currentCandles?.price || 0;
+        
         setConfig(prev => ({
             ...prev,
             candles: null,
-            price: prev.price - 4.99
+            price: prev.price - candlesPrice
         }));
+        
+        // Also remove from extras array
+        if (Array.isArray(config.extras)) {
+            setConfig(prev => ({
+                ...prev,
+                extras: prev.extras.filter(id => id !== config.candles)
+            }));
+        }
+        
         setSelectedPart(null);
     };
 
@@ -556,48 +604,67 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
             // Collect all selected message option IDs
             const messageOptionIds = [
                 selectedMessageType?.id,
-                selectedPlaqueColor?.id,
-                selectedPipingColor?.id
+                config.messageType === 'piped' ? selectedPlaqueColor?.id : null,
+                config.messageType === 'piped' ? selectedPipingColor?.id : null
             ].filter(Boolean) as string[];
 
             console.log('Selected message option IDs:', messageOptionIds);
+
+            // Ensure we have valid GUID IDs for all selections
+            const defaultGuid = '3fa85f64-5717-4562-b3fc-2c963f66afa6';
+            
+            // Helper to ensure we have valid GUIDs
+            const getValidGuid = (id: string | undefined): string => {
+                if (!id) return defaultGuid;
+                // Simple validation - GUIDs should be in format like '00000000-0000-0000-0000-000000000000'
+                const guidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                return guidPattern.test(id) ? id : defaultGuid;
+            };
 
             // Prepare the API request body
             const requestBody = {
                 cake_name: `Custom ${config.size} Cake`,
                 cake_description: `Delicious ${config.size} cake with ${getSelectedOption('Sponge', config.sponge)?.name || 'Unknown'} sponge, filled with ${getSelectedOption('Filling', config.filling)?.name || 'Unknown'}, and covered in ${getSelectedOption('Icing', config.outerIcing)?.name || 'Unknown'} icing${config.goo ? `, topped with ${getSelectedOption('Goo', config.goo)?.name || ''} drip` : ''}${Array.isArray(config.extras) && config.extras.length > 0 ? `. With ${config.extras.length} special extras added` : ''}.${config.message ? ` Personalized with "${config.message}"` : ''}`,
                 bakery_id: storeId,
+                model: "CustomCake", // Add required model field
                 price: config.price, // Add explicit price field to ensure consistency
                 message_selection: {
                     text: config.message,
                     message_type: config.messageType === 'edible' ? 'IMAGE' : config.messageType === 'piped' ? 'TEXT' : 'NONE',
-                    image_id: config.uploadedImage ? "3fa85f64-5717-4562-b3fc-2c963f66afa6" : null,
-                    cake_message_option_ids: selectedMessageType?.id
+                    image_id: config.uploadedImage ? defaultGuid : null,
+                    cake_message_option_ids: messageOptionIds.map(getValidGuid)
                 },
                 part_selections: [
                     {
                         part_type: "SIZE",
-                        part_option_id: partOptions.find(group => group.type === 'Size')?.items.find(item => item.name === config.size)?.id || ''
+                        part_option_id: getValidGuid(partOptions.find(group => group.type === 'Size')?.items.find(item => item.name === config.size)?.id)
                     },
                     {
                         part_type: "SPONGE",
-                        part_option_id: config.sponge
+                        part_option_id: getValidGuid(partOptions.find(group => group.type === 'Sponge')?.items.find(item => item.id === config.sponge)?.id)
                     },
                     {
                         part_type: "FILLING",
-                        part_option_id: config.filling
+                        part_option_id: getValidGuid(partOptions.find(group => group.type === 'Filling')?.items.find(item => item.id === config.filling)?.id)
                     }
                 ],
                 decoration_selections: [
                     {
                         decoration_type: "OUTER_ICING",
-                        decoration_option_id: decorationOptions.find(group => group.items.some(item => item.id === config.outerIcing))?.items.find(item => item.id === config.outerIcing)?.id || ''
+                        decoration_option_id: getValidGuid(decorationOptions.find(group => group.items.some(item => item.id === config.outerIcing))?.items.find(item => item.id === config.outerIcing)?.id)
                     }
                 ],
-                extra_selections: Array.isArray(config.extras) ? config.extras.map(id => ({
-                    extra_type: extraOptions.find(group => group.items.some(item => item.id === id))?.type,
-                    extra_option_id: id
-                })) : []
+                extra_selections: Array.isArray(config.extras) ? config.extras.filter(id => {
+                    // Only include extras that actually exist in the extraOptions array
+                    const option = extraOptions.flatMap(group => group.items).find(item => item.id === id);
+                    return !!option; // Only keep extras that exist
+                }).map(id => {
+                    const option = extraOptions.flatMap(group => group.items).find(item => item.id === id);
+                    return {
+                        extra_type: option?.type || "UNKNOWN",
+                        extra_option_id: getValidGuid(option?.id)
+                    };
+                }) : []
             };
             console.log('Prepared request body:', requestBody);
 
@@ -612,12 +679,29 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                 body: JSON.stringify(requestBody)
             });
 
-            if (!response.ok) {
-                console.error('API request failed:', response.status, response.statusText);
-                throw new Error('Failed to create custom cake');
+            const responseText = await response.text();
+            console.log('API raw response:', responseText);
+            
+            let data;
+            try {
+                data = JSON.parse(responseText);
+                console.log('Parsed API response:', data);
+            } catch (parseError) {
+                console.error('Error parsing API response:', parseError);
+                toast.error(`Server responded with invalid JSON. Check console for details.`);
+                return;
             }
 
-            const data = await response.json();
+            if (!response.ok) {
+                console.error('API request failed:', response.status, response.statusText);
+                const errorMessage = data?.errors && Array.isArray(data.errors) && data.errors.length > 0 
+                    ? `Error: ${data.errors.join(', ')}` 
+                    : 'Failed to create custom cake';
+                toast.error(errorMessage);
+                return;
+            }
+
+            // Continue with the rest of the code
             console.log('API response:', data);
 
             // Prepare the cart data according to the API requirements
@@ -791,59 +875,160 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
 
     // Add these handler functions with proper types
     const handleSizeSelect = (option: SizeOption) => {
+        // Tìm giá từ API
+        const apiOption = partOptions.find(group => group.type === 'Size')?.items.find(item => item.name === option.size);
+        const apiPrice = apiOption?.price || 0;
+        
+        // Khi thay đổi kích thước, thiết lập lại hoàn toàn giá tiền dựa trên kích thước mới
         setConfig({
             ...config,
             size: option.size,
-            price: option.price
+            price: apiPrice // Lấy giá từ API
         });
     };
 
     const handleSpongeSelect = (option: SpongeOption) => {
+        // Tìm loại bánh hiện tại để trừ giá (từ API)
+        const currentSpongeId = config.sponge;
+        const currentSponge = partOptions.find(group => group.type === 'Sponge')?.items.find(item => item.id === currentSpongeId);
+        const currentSpongePrice = currentSponge?.price || 0;
+        
+        // Tìm giá mới từ API
+        const newSponge = partOptions.find(group => group.type === 'Sponge')?.items.find(item => item.id === option.id);
+        const newSpongePrice = newSponge?.price || 0;
+        
+        // Chỉ tính phần chênh lệch giá giữa option cũ và mới
+        const priceDifference = newSpongePrice - currentSpongePrice;
+        
         setConfig({
             ...config,
             sponge: option.id,
-            price: config.price + (option.price || 0)
+            price: config.price + priceDifference
         });
     };
 
     const handleFillingSelect = (option: FillingOption) => {
+        // Tìm loại nhân hiện tại để trừ giá (từ API)
+        const currentFillingId = config.filling;
+        const currentFilling = partOptions.find(group => group.type === 'Filling')?.items.find(item => item.id === currentFillingId);
+        const currentFillingPrice = currentFilling?.price || 0;
+        
+        // Tìm giá mới từ API 
+        const newFilling = partOptions.find(group => group.type === 'Filling')?.items.find(item => item.id === option.id);
+        const newFillingPrice = newFilling?.price || 0;
+        
+        // Chỉ tính phần chênh lệch giá
+        const priceDifference = newFillingPrice - currentFillingPrice;
+        
         setConfig({
             ...config,
-            filling: option.id
+            filling: option.id,
+            price: config.price + priceDifference
         });
     };
 
     const handleGooSelect = (option: GooOption) => {
+        // Tìm loại goo hiện tại để trừ giá (từ API)
+        const currentGooId = config.goo;
+        const currentGoo = partOptions.find(group => group.type === 'Goo')?.items.find(item => item.id === currentGooId);
+        const currentGooPrice = currentGoo?.price || 0;
+        
+        // Tìm giá mới từ API
+        const newGoo = partOptions.find(group => group.type === 'Goo')?.items.find(item => item.id === option.id);
+        const newGooPrice = newGoo?.price || 0;
+        
+        // Tính chênh lệch giá
+        const priceDifference = newGooPrice - currentGooPrice;
+        
         setConfig({
             ...config,
             goo: option.id,
-            price: config.price + option.price
+            price: config.price + priceDifference
         });
     };
 
     const handleExtraSelect = (option: ExtraOption) => {
         const currentExtras = Array.isArray(config.extras) ? config.extras : [];
-        const newExtras = currentExtras.includes(option.id)
-            ? currentExtras.filter(id => id !== option.id)
-            : [...currentExtras, option.id];
-
+        
+        // Check if the option is already selected
+        const isAlreadySelected = currentExtras.includes(option.id);
+        
+        // If it's the same type as an existing option, we need to handle replacement
+        const existingOptionOfSameType = currentExtras.find(id => {
+            const existingOption = extraOptions.flatMap(group => group.items).find(item => item.id === id);
+            return existingOption?.type === option.type && id !== option.id;
+        });
+        
+        let newExtras = [...currentExtras];
+        let priceDifference = 0;
+        
+        if (isAlreadySelected) {
+            // Remove the option if it's already selected
+            newExtras = newExtras.filter(id => id !== option.id);
+            priceDifference = -option.price;
+        } else {
+            // If there's an existing option of the same type, replace it
+            if (existingOptionOfSameType) {
+                const existingOption = extraOptions.flatMap(group => group.items).find(item => item.id === existingOptionOfSameType);
+                // Remove existing option and its price
+                newExtras = newExtras.filter(id => id !== existingOptionOfSameType);
+                priceDifference = option.price - (existingOption?.price || 0);
+            } else {
+                // Otherwise just add the new option
+                priceDifference = option.price;
+            }
+            newExtras.push(option.id);
+        }
+        
+        // Create update object with the right types
+        const updateObj: Partial<CakeConfig> = {
+            extras: newExtras,
+            price: config.price + priceDifference
+        };
+        
+        // Update specific fields with proper types
+        if (option.type === 'Candles') {
+            updateObj.candles = isAlreadySelected ? undefined : option.id;
+        } else if (option.type === 'CakeBoard') {
+            updateObj.board = isAlreadySelected ? undefined : option.id;
+        }
+        
+        // Apply the update
         setConfig({
             ...config,
-            extras: newExtras,
-            price: config.price + (newExtras.includes(option.id) ? option.price : -option.price)
+            ...updateObj
         });
     };
 
+    // Cập nhật handleMessageSelect để sử dụng giá từ API
     const handleMessageSelect = (option: MessageOption) => {
+        // Tìm tùy chọn hiện tại từ API
+        const currentMessageType = config.messageType;
+        const currentMessageOption = messageOptions.find(group => group.type === 'MESSAGE_TYPE')?.items.find(item => 
+            (currentMessageType === 'none' && item.name === 'NONE') ||
+            (currentMessageType === 'piped' && item.name === 'PIPED MESSAGE') ||
+            (currentMessageType === 'edible' && item.name === 'EDIBLE IMAGE')
+        );
+        
+        // Tìm tùy chọn mới từ API
+        const newMessageOption = messageOptions.find(group => group.type === 'MESSAGE_TYPE')?.items.find(item => 
+            (option.id === 'none' && item.name === 'NONE') ||
+            (option.id === 'piped' && item.name === 'PIPED MESSAGE') ||
+            (option.id === 'edible' && item.name === 'EDIBLE IMAGE')
+        );
+        
+        // Tính chênh lệch giá
+        const currentPrice = currentMessageOption?.price || 0;
+        const newPrice = newMessageOption?.price || 0;
+        const priceDifference = newPrice - currentPrice;
+        
         setConfig({
             ...config,
             messageType: option.id,
             // Reset related fields when changing message type
             message: option.id === 'none' ? '' : config.message,
             uploadedImage: option.id === 'none' ? null : config.uploadedImage,
-            price: option.id === 'none'
-                ? config.price - (config.messageType === 'piped' ? 7.00 : config.messageType === 'edible' ? 8.00 : 0)
-                : config.price + option.price - (config.messageType === 'piped' ? 7.00 : config.messageType === 'edible' ? 8.00 : 0)
+            price: config.price + priceDifference
         });
     };
 
@@ -976,6 +1161,19 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
             }));
 
             setPartOptions(processedData);
+            
+            // Set default size and initial price if not set yet
+            const sizeGroup = processedData.find(group => group.type === 'Size');
+            if (!config.size && sizeGroup && sizeGroup.items.length > 0) {
+                const defaultSize = sizeGroup.items[0];
+                if (defaultSize) {
+                    setConfig(prev => ({
+                        ...prev,
+                        size: defaultSize.name,
+                        price: defaultSize.price || 0
+                    }));
+                }
+            }
         } catch (error) {
             console.error('Error fetching part options:', error);
             setError({
@@ -1589,7 +1787,24 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                         animate={config.outerIcing === option.id ? "selected" : "unselected"}
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
-                                        onClick={() => handleOptionSelect('outerIcing', option.id)}
+                                        onClick={() => {
+                                            // Find current decoration option to calculate price difference
+                                            const currentIcingId = config.outerIcing;
+                                            const currentIcing = decorationOptions
+                                                .flatMap(g => g.items)
+                                                .find(item => item.id === currentIcingId);
+                                            
+                                            // Calculate price difference
+                                            const currentPrice = currentIcing?.price || 0;
+                                            const newPrice = option.price || 0;
+                                            const priceDifference = newPrice - currentPrice;
+                                            
+                                            setConfig(prev => ({
+                                                ...prev,
+                                                outerIcing: option.id,
+                                                price: prev.price + priceDifference
+                                            }));
+                                        }}
                                         className={`relative flex flex-col p-4 rounded-xl border-2
                                             ${config.outerIcing === option.id
                                                 ? 'border-pink-500 bg-gradient-to-br from-pink-50 to-purple-50'
@@ -1649,8 +1864,8 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
             case 'message':
                 const messageTypeOptions: MessageOption[] = [
                     { id: 'none', name: 'KHÔNG', price: 0, icon: '✖️' },
-                    { id: 'piped', name: 'CHỮ VIẾT TAY', price: 7.00, icon: '✍️' },
-                    { id: 'edible', name: 'HÌNH ẢNH ĂN ĐƯỢC', price: 8.00, icon: '🖼️' }
+                    { id: 'piped', name: 'CHỮ VIẾT TAY', price: 0, icon: '✍️' },
+                    { id: 'edible', name: 'HÌNH ẢNH ĂN ĐƯỢC', price: 0, icon: '🖼️' }
                 ];
 
                 return (
@@ -1946,21 +2161,32 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                             whileHover={{ scale: 1.02 }}
                                             whileTap={{ scale: 0.98 }}
                                             onClick={() => {
+                                                // Find current candle option and get its price
+                                                const currentCandles = config.candles;
+                                                const currentOption = extraOptions.find(group => 
+                                                    group.type === 'Candles'
+                                                )?.items.find(item => 
+                                                    item.id === currentCandles
+                                                );
+                                                
+                                                // Calculate price difference
+                                                const currentPrice = currentOption?.price || 0;
+                                                const priceDifference = option.price - currentPrice;
+                                                
                                                 if (Array.isArray(config.extras)) {
-                                                    // Remove any existing items of the same type
-                                                    const extrasWithoutType = config.extras.filter(id => {
+                                                    // Remove any existing candle from extras array
+                                                    const extrasWithoutCandles = config.extras.filter(id => {
                                                         const item = extraOptions.find(group =>
                                                             group.items.some(item => item.id === id)
                                                         )?.items.find(item => item.id === id);
-                                                        return item?.type !== option.type;
+                                                        return item?.type !== 'Candles';
                                                     });
 
                                                     setConfig(prev => ({
                                                         ...prev,
-                                                        extras: [...extrasWithoutType, option.id],
-                                                        // Update the specific type in config
-                                                        ...(option.type === 'Candles' ? { candles: option.id } : {}),
-                                                        ...(option.type === 'CakeBoard' ? { board: option.id } : {})
+                                                        extras: [...extrasWithoutCandles, option.id],
+                                                        candles: option.id,
+                                                        price: prev.price + priceDifference
                                                     }));
                                                 }
                                             }}
@@ -2027,21 +2253,32 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                             whileHover={{ scale: 1.02 }}
                                             whileTap={{ scale: 0.98 }}
                                             onClick={() => {
+                                                // Find current board option and get its price
+                                                const currentBoard = config.board;
+                                                const currentOption = extraOptions.find(group => 
+                                                    group.type === 'CakeBoard'
+                                                )?.items.find(item => 
+                                                    item.id === currentBoard
+                                                );
+                                                
+                                                // Calculate price difference
+                                                const currentPrice = currentOption?.price || 0;
+                                                const priceDifference = option.price - currentPrice;
+                                                
                                                 if (Array.isArray(config.extras)) {
-                                                    // Remove any existing items of the same type
-                                                    const extrasWithoutType = config.extras.filter(id => {
+                                                    // Remove any existing board from extras array
+                                                    const extrasWithoutBoards = config.extras.filter(id => {
                                                         const item = extraOptions.find(group =>
                                                             group.items.some(item => item.id === id)
                                                         )?.items.find(item => item.id === id);
-                                                        return item?.type !== option.type;
+                                                        return item?.type !== 'CakeBoard';
                                                     });
 
                                                     setConfig(prev => ({
                                                         ...prev,
-                                                        extras: [...extrasWithoutType, option.id],
-                                                        // Update the specific type in config
-                                                        ...(option.type === 'Candles' ? { candles: option.id } : {}),
-                                                        ...(option.type === 'CakeBoard' ? { board: option.id } : {})
+                                                        extras: [...extrasWithoutBoards, option.id],
+                                                        board: option.id,
+                                                        price: prev.price + priceDifference
                                                     }));
                                                 }
                                             }}
@@ -2325,13 +2562,120 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                     </svg>
                                 </motion.button>
                             </div>
-                            {/* <motion.div
+                            <motion.div
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
-                                className="text-3xl font-bold text-pink-600 mt-2"
+                                className="text-3xl font-bold text-pink-600 mt-2 flex items-center"
                             >
-                                {config.price.toFixed(2)} VND
-                            </motion.div> */}
+                                {config.price.toLocaleString()} VND
+                                <motion.button 
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="ml-2 text-sm bg-pink-100 hover:bg-pink-200 text-pink-700 px-2 py-1 rounded-full transition-colors"
+                                    onClick={() => setShowJson(!showJson)}
+                                >
+                                    {showJson ? 'Ẩn chi tiết' : 'Xem chi tiết'}
+                                </motion.button>
+                            </motion.div>
+                            
+                            {/* Price summary section */}
+                            <AnimatePresence>
+                                {showJson && (
+                                    <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: 'auto', opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        className="overflow-hidden"
+                                    >
+                                        <div className="mt-4 bg-pink-50 rounded-lg p-4 text-sm">
+                                            <h3 className="font-bold text-pink-700 mb-2">Chi tiết giá:</h3>
+                                            <ul className="space-y-1">
+                                                {config.size && (
+                                                    <li className="flex justify-between">
+                                                        <span>Kích thước ({config.size}):</span>
+                                                        <span className="font-medium">
+                                                            {partOptions.find(group => group.type === 'Size')?.items
+                                                                .find(item => item.name === config.size)?.price.toLocaleString() || 0} VND
+                                                        </span>
+                                                    </li>
+                                                )}
+                                                {config.sponge && (
+                                                    <li className="flex justify-between">
+                                                        <span>Bánh bột ({getSelectedOption('Sponge', config.sponge)?.name}):</span>
+                                                        <span className="font-medium">
+                                                            {(getSelectedOption('Sponge', config.sponge)?.price || 0).toLocaleString()} VND
+                                                        </span>
+                                                    </li>
+                                                )}
+                                                {config.filling && (
+                                                    <li className="flex justify-between">
+                                                        <span>Nhân bánh ({getSelectedOption('Filling', config.filling)?.name}):</span>
+                                                        <span className="font-medium">
+                                                            {(getSelectedOption('Filling', config.filling)?.price || 0).toLocaleString()} VND
+                                                        </span>
+                                                    </li>
+                                                )}
+                                                {config.outerIcing && (
+                                                    <li className="flex justify-between">
+                                                        <span>Trang trí ({decorationOptions.find(group => 
+                                                            group.items.some(item => item.id === config.outerIcing))?.items
+                                                            .find(item => item.id === config.outerIcing)?.name}):</span>
+                                                        <span className="font-medium">
+                                                            {(decorationOptions.find(group => 
+                                                                group.items.some(item => item.id === config.outerIcing))?.items
+                                                                .find(item => item.id === config.outerIcing)?.price || 0).toLocaleString()} VND
+                                                        </span>
+                                                    </li>
+                                                )}
+                                                {config.goo && (
+                                                    <li className="flex justify-between">
+                                                        <span>Nước sốt ({getSelectedOption('Goo', config.goo)?.name}):</span>
+                                                        <span className="font-medium">
+                                                            {(getSelectedOption('Goo', config.goo)?.price || 0).toLocaleString()} VND
+                                                        </span>
+                                                    </li>
+                                                )}
+                                                {config.messageType !== 'none' && (
+                                                    <li className="flex justify-between">
+                                                        <span>Thông điệp ({config.messageType === 'piped' ? 'Chữ viết tay' : 'Hình ảnh ăn được'}):</span>
+                                                        <span className="font-medium">
+                                                            {messageOptions.find(group => group.type === 'MESSAGE_TYPE')?.items.find(item => 
+                                                                (config.messageType === 'none' && item.name === 'NONE') ||
+                                                                (config.messageType === 'piped' && item.name === 'PIPED MESSAGE') ||
+                                                                (config.messageType === 'edible' && item.name === 'EDIBLE IMAGE')
+                                                            )?.price.toLocaleString() || 0} VND
+                                                        </span>
+                                                    </li>
+                                                )}
+                                                {config.candles && (
+                                                    <li className="flex justify-between">
+                                                        <span>Nến ({extraOptions.find(group => group.type === 'Candles')?.items
+                                                            .find(item => item.id === config.candles)?.name}):</span>
+                                                        <span className="font-medium">
+                                                            {(extraOptions.find(group => group.type === 'Candles')?.items
+                                                                .find(item => item.id === config.candles)?.price || 0).toLocaleString()} VND
+                                                        </span>
+                                                    </li>
+                                                )}
+                                                {config.board && (
+                                                    <li className="flex justify-between">
+                                                        <span>Đế bánh ({extraOptions.find(group => group.type === 'CakeBoard')?.items
+                                                            .find(item => item.id === config.board)?.name}):</span>
+                                                        <span className="font-medium">
+                                                            {(extraOptions.find(group => group.type === 'CakeBoard')?.items
+                                                                .find(item => item.id === config.board)?.price || 0).toLocaleString()} VND
+                                                        </span>
+                                                    </li>
+                                                )}
+                                                <li className="pt-2 mt-1 border-t border-pink-200 flex justify-between font-bold">
+                                                    <span>Tổng tiền:</span>
+                                                    <span>{config.price.toLocaleString()} VND</span>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </motion.div>
 
                         <div className="max-h-[60vh] overflow-y-auto custom-scrollbar">

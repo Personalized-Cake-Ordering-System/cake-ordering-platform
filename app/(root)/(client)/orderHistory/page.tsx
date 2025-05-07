@@ -8,9 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Calendar, Clock, MapPin, Package, ArrowRight, ChevronLeft, ChevronRight, ArrowUpDown } from 'lucide-react';
+import { Calendar, Clock, MapPin, Package, ArrowRight, ChevronLeft, ChevronRight, ArrowUpDown, Truck, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
-import { decodeJWT } from '@/lib/utils';
+import { decodeJWT, cn } from '@/lib/utils';
 import {
     Select,
     SelectContent,
@@ -18,6 +18,21 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+
+// Order status constants
+const OrderStatus = {
+  WAITING_BAKERY_CONFIRM: 1,
+  PROCESSING: 2,
+  SHIPPING: 3,
+  SHIPPING_COMPLETED: 4,
+  COMPLETED: 5,
+  PICKUP: 3,
+  READY_FOR_PICKUP: 3,
+  REPORT_PENDING: -2,
+  FAULTY: -3,
+  CANCELED: -1,
+  PENDING: 0,
+};
 
 interface Order {
     id: string;
@@ -36,10 +51,11 @@ interface Order {
     paid_at: string | null;
     pickup_time: string;
     payment_type: string;
+    canceled_reason?: string;
 }
 
 type SortOption = 'newest' | 'oldest' | 'highest' | 'lowest' | 'status';
-type StatusFilter = 'all' | 'PENDING' | 'SHIPPING' | 'COMPLETED';
+type StatusFilter = 'all' | 'PENDING' | 'WAITING_BAKERY_CONFIRM' | 'PROCESSING' | 'SHIPPING' | 'SHIPPING_COMPLETED' | 'READY_FOR_PICKUP' | 'COMPLETED' | 'CANCELED' | 'REPORT_PENDING' | 'FAULTY';
 
 const OrderHistoryPage = () => {
     const router = useRouter();
@@ -101,26 +117,69 @@ const OrderHistoryPage = () => {
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'COMPLETED':
-                return 'bg-green-500/10 text-green-500';
-            case 'SHIPPING':
-                return 'bg-blue-500/10 text-blue-500';
+                return 'bg-green-500/10 dark:bg-green-500/20 text-green-500 dark:text-green-400';
+            case 'PROCESSING':
+                return 'bg-custom-teal/10 dark:bg-custom-teal/20 text-custom-teal dark:text-custom-teal/90';
+            case 'WAITING_BAKERY_CONFIRM':
+                return 'bg-yellow-500/10 dark:bg-yellow-500/20 text-yellow-500 dark:text-yellow-400';
             case 'PENDING':
-                return 'bg-yellow-500/10 text-yellow-500';
+                return 'bg-blue-400/10 dark:bg-blue-400/20 text-blue-500 dark:text-blue-400';
+            case 'SHIPPING':
+            case 'READY_FOR_PICKUP':
+                return 'bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-500 dark:text-indigo-400';
+            case 'SHIPPING_COMPLETED':
+                return 'bg-purple-500/10 dark:bg-purple-500/20 text-purple-500 dark:text-purple-400';
+            case 'CANCELED':
+                return 'bg-red-500/10 dark:bg-red-500/20 text-red-500 dark:text-red-400';
+            case 'REPORT_PENDING':
+                return 'bg-orange-500/10 dark:bg-orange-500/20 text-orange-500 dark:text-orange-400';
+            case 'FAULTY':
+                return 'bg-red-500/10 dark:bg-red-500/20 text-red-500 dark:text-red-400';
             default:
-                return 'bg-gray-500/10 text-gray-500';
+                return 'bg-gray-500/10 dark:bg-gray-500/20 text-gray-500 dark:text-gray-400';
         }
     };
 
-    const getStatusText = (status: string) => {
+    const getStatusText = (status: string, shippingType?: string) => {
+        const isPickup = shippingType?.toUpperCase() === 'PICKUP';
+        
         switch (status) {
             case 'COMPLETED':
                 return 'Đã hoàn thành';
             case 'SHIPPING':
-                return 'Đang giao hàng';
+                return isPickup ? 'Lấy tại cửa hàng' : 'Đang giao hàng';
+            case 'SHIPPING_COMPLETED':
+                return 'Giao hàng hoàn tất';
+            case 'READY_FOR_PICKUP':
+                return 'Sẵn sàng nhận hàng';
             case 'PENDING':
-                return 'Đang chờ xác nhận';
+                return 'Chưa thanh toán';
+            case 'WAITING_BAKERY_CONFIRM':
+                return 'Chờ xác nhận';
+            case 'PROCESSING':
+                return 'Đang xử lý';
+            case 'CANCELED':
+                return 'Đã hủy';
+            case 'REPORT_PENDING':
+                return 'Đang xử lý khiếu nại';
+            case 'FAULTY':
+                return 'Đơn hàng lỗi';
             default:
                 return status;
+        }
+    };
+
+    const getStatusIcon = (status: string) => {
+        switch (status) {
+            case 'CANCELED':
+                return <AlertTriangle className="h-4 w-4 mr-1" />;
+            case 'SHIPPING':
+            case 'SHIPPING_COMPLETED':
+                return <Truck className="h-4 w-4 mr-1" />;
+            case 'READY_FOR_PICKUP':
+                return <MapPin className="h-4 w-4 mr-1" />;
+            default:
+                return null;
         }
     };
 
@@ -140,8 +199,10 @@ const OrderHistoryPage = () => {
                 case 'lowest':
                     return a.total_customer_paid - b.total_customer_paid;
                 case 'status':
-                    const statusOrder: Record<string, number> = { 'COMPLETED': 0, 'SHIPPING': 1, 'PENDING': 2 };
-                    return (statusOrder[a.order_status] || 3) - (statusOrder[b.order_status] || 3);
+                    const statusOrder = (status: string) => {
+                        return OrderStatus[status as keyof typeof OrderStatus] || 999;
+                    };
+                    return statusOrder(a.order_status) - statusOrder(b.order_status);
                 default:
                     return 0;
             }
@@ -243,14 +304,21 @@ const OrderHistoryPage = () => {
                                         setCurrentPage(1);
                                     }}
                                 >
-                                    <SelectTrigger className="w-[180px]">
+                                    <SelectTrigger className="w-[200px]">
                                         <SelectValue placeholder="Lọc theo trạng thái" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="all">Tất cả</SelectItem>
-                                        <SelectItem value="PENDING">Đang chờ xác nhận</SelectItem>
+                                        <SelectItem value="all">Tất cả trạng thái</SelectItem>
+                                        <SelectItem value="PENDING">Chưa thanh toán</SelectItem>
+                                        <SelectItem value="WAITING_BAKERY_CONFIRM">Chờ xác nhận</SelectItem>
+                                        <SelectItem value="PROCESSING">Đang xử lý</SelectItem>
                                         <SelectItem value="SHIPPING">Đang giao hàng</SelectItem>
+                                        <SelectItem value="READY_FOR_PICKUP">Sẵn sàng nhận hàng</SelectItem>
+                                        <SelectItem value="SHIPPING_COMPLETED">Giao hàng hoàn tất</SelectItem>
                                         <SelectItem value="COMPLETED">Đã hoàn thành</SelectItem>
+                                        <SelectItem value="CANCELED">Đã hủy</SelectItem>
+                                        <SelectItem value="REPORT_PENDING">Đang xử lý khiếu nại</SelectItem>
+                                        <SelectItem value="FAULTY">Đơn hàng lỗi</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -319,18 +387,22 @@ const OrderHistoryPage = () => {
                                                                 {format(new Date(order.created_at), 'dd/MM/yyyy')}
                                                             </span>
                                                         </div>
-                                                        {/* <div className="flex items-center gap-1 text-muted-foreground">
+                                                        <div className="flex items-center gap-1 text-muted-foreground">
                                                             <Clock className="h-4 w-4" />
                                                             <span className="text-sm">
                                                                 {format(new Date(order.created_at), 'HH:mm')}
                                                             </span>
-                                                        </div> */}
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <Badge
-                                                    className={`${getStatusColor(order.order_status)} px-4 py-1.5 rounded-full font-medium`}
+                                                    className={cn(
+                                                        "px-3 py-1.5 rounded-full font-medium flex items-center",
+                                                        getStatusColor(order.order_status)
+                                                    )}
                                                 >
-                                                    {getStatusText(order.order_status)}
+                                                    {getStatusIcon(order.order_status)}
+                                                    {getStatusText(order.order_status, order.shipping_type)}
                                                 </Badge>
                                             </div>
                                         </CardHeader>
@@ -350,7 +422,7 @@ const OrderHistoryPage = () => {
                                                         </div>
                                                         <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted/50 transition-colors">
                                                             <div className="bg-primary/10 p-2 rounded-full">
-                                                                <Package className="h-4 w-4 text-primary" />
+                                                                <Truck className="h-4 w-4 text-primary" />
                                                             </div>
                                                             <div>
                                                                 <p className="text-sm font-medium">Phí vận chuyển</p>
