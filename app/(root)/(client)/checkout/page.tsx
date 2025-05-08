@@ -68,7 +68,6 @@ const checkoutSchema = z.object({
   province: z.string().min(2, { message: 'Tỉnh/Thành phố không được để trống' }),
   district: z.string().min(2, { message: 'Quận/Huyện không được để trống' }),
   address: z.string().min(5, { message: 'Địa chỉ không được để trống' }),
-  deliveryMethod: z.enum(['standard', 'express']),
   deliveryType: z.enum(['DELIVERY', 'PICKUP']),
   paymentType: z.enum(['QR_CODE', 'WALLET']),
   specialInstructions: z.string().optional(),
@@ -160,11 +159,17 @@ const CheckoutPage = () => {
   const [customerVouchers, setCustomerVouchers] = React.useState<any[]>([]);
   const [selectedVoucher, setSelectedVoucher] = React.useState<any>(null);
   const [isVoucherDialogOpen, setIsVoucherDialogOpen] = React.useState(false);
+  const [bakeryId, setBakeryId] = React.useState<string | null>(null);
+  const [bakery, setBakery] = React.useState<any>(null);
+  const [shippingInfo, setShippingInfo] = React.useState<{
+    shipping_time: number;
+    shipping_distance: number;
+    shipping_fee: number;
+  } | null>(null);
   const { clearCart } = useCart();
 
   // Delivery fees
-  const standardDelivery = 50000; // 50,000 VND
-  const expressDelivery = 100000; // 100,000 VND
+  const standardDelivery = shippingInfo?.shipping_fee || 50000; // Default to 50,000 VND if shipping info not available
 
   // Form setup
   const form = useForm<CheckoutFormValues>({
@@ -176,7 +181,6 @@ const CheckoutPage = () => {
       province: '',
       district: '',
       address: '',
-      deliveryMethod: 'standard',
       deliveryType: 'DELIVERY',
       paymentType: 'QR_CODE',
       specialInstructions: '',
@@ -184,7 +188,6 @@ const CheckoutPage = () => {
   });
 
   // Get the delivery method, type, and payment type values from the form
-  const deliveryMethod = form.watch('deliveryMethod');
   const deliveryType = form.watch('deliveryType');
   const paymentType = form.watch('paymentType');
 
@@ -198,7 +201,7 @@ const CheckoutPage = () => {
 
   // Calculate totals based on actual cart items
   const subtotal = cartItems.reduce((sum, item) => sum + item.sub_total_price, 0);
-  const deliveryFee = deliveryType === 'DELIVERY' ? (deliveryMethod === 'express' ? expressDelivery : standardDelivery) : 0;
+  const deliveryFee = deliveryType === 'DELIVERY' ? standardDelivery : 0;
 
   const calculateDiscount = () => {
     if (!selectedVoucher) return 0;
@@ -207,7 +210,10 @@ const CheckoutPage = () => {
   };
 
   const discount = calculateDiscount();
-  const total = subtotal - discount;
+  const total = subtotal + deliveryFee - discount;
+
+  // Add visual indicators for shipping calculation
+  const [isCalculatingShipping, setIsCalculatingShipping] = React.useState(false);
 
   // Handle province change
   const handleProvinceChange = (provinceCode: string) => {
@@ -217,6 +223,8 @@ const CheckoutPage = () => {
       setAvailableDistricts(province.districts);
       form.setValue('province', province.name);
       form.setValue('district', '');
+      // Clear previous shipping calculations when province changes
+      setShippingInfo(null);
     }
   };
 
@@ -225,10 +233,53 @@ const CheckoutPage = () => {
     const district = availableDistricts.find(d => d.code === districtCode);
     if (district) {
       form.setValue('district', district.name);
+      // Recalculate shipping after district changes
+      handleAddressChange();
     }
   };
 
-  // Add new function to handle geocoding
+  // Update handleAddressChange to show loading state
+  const handleAddressChange = async () => {
+    const province = form.getValues('province');
+    const district = form.getValues('district');
+    const address = form.getValues('address');
+    
+    if (province && district && address) {
+      setIsCalculatingShipping(true);
+      const fullAddress = `${address}, ${district}, ${province}`;
+      await geocodeAddress(fullAddress);
+      setIsCalculatingShipping(false);
+    }
+  };
+
+  // Add function to fetch shipping information
+  const fetchShippingInfo = async (bakeryLat: number, bakeryLng: number, orderLat: number, orderLng: number) => {
+    try {
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) return null;
+
+      const response = await axios.get(
+        `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/shippings?bakeryLat=${bakeryLat}&bakeryLng=${bakeryLng}&orderLat=${orderLat}&orderLng=${orderLng}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'accept': '*/*'
+          }
+        }
+      );
+
+      if (response.data.status_code === 200) {
+        console.log('Shipping info:', response.data.payload);
+        return response.data.payload;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error fetching shipping info:', error);
+      return null;
+    }
+  };
+
+  // Update geocode function to also calculate shipping when address is selected
   const geocodeAddress = async (address: string) => {
     try {
       const API_KEY_GOONG = '2R2HQynx7ypczZZcxS1w7uuJaxXIGoeXymvGGx0u'
@@ -240,9 +291,25 @@ const CheckoutPage = () => {
 
       if (data.status === 'OK' && data.results.length > 0) {
         const result = data.results[0];
+        const location = result.geometry.location;
+        
+        // If we have bakery coordinates, calculate shipping
+        if (bakery && bakery.latitude && bakery.longitude) {
+          const shippingData = await fetchShippingInfo(
+            parseFloat(bakery.latitude),
+            parseFloat(bakery.longitude),
+            location.lat,
+            location.lng
+          );
+          
+          if (shippingData) {
+            setShippingInfo(shippingData);
+          }
+        }
+        
         return {
           formatted_address: result.formatted_address,
-          location: result.geometry.location
+          location: location
         };
       }
       return null;
@@ -272,6 +339,7 @@ const CheckoutPage = () => {
 
         if (response.payload.bakeryId) {
           console.log('Bakery ID from cart:', response.payload.bakeryId);
+          setBakeryId(response.payload.bakeryId);
           fetchVouchers(response.payload.bakeryId);
         }
 
@@ -286,6 +354,35 @@ const CheckoutPage = () => {
 
     fetchCart();
   }, []);
+
+  // Add useEffect to fetch bakery details when bakeryId is available
+  React.useEffect(() => {
+    const fetchBakery = async () => {
+      if (!bakeryId) return;
+      
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) return;
+
+      try {
+        console.log('Fetching bakery details:', bakeryId);
+        const response = await axios.get(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/bakeries/${bakeryId}`, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'accept': '*/*'
+          }
+        });
+        
+        if (response.data.status_code === 200) {
+          console.log('Bakery details:', response.data.payload);
+          setBakery(response.data.payload);
+        }
+      } catch (error) {
+        console.error('Error fetching bakery details:', error);
+      }
+    };
+    
+    fetchBakery();
+  }, [bakeryId]);
 
   // Add getImageUrl function
   const getImageUrl = (fileUrl: string | undefined) => {
@@ -586,7 +683,7 @@ const CheckoutPage = () => {
     </Card>
   );
 
-  // Update the order calculation section
+  // Update orderCalculation to show message when shipping calculation is not available yet
   const orderCalculation = (
     <div className="space-y-1">
       <div className="flex justify-between text-sm">
@@ -599,12 +696,29 @@ const CheckoutPage = () => {
           <span className="text-primary">-{formatVND(discount)}</span>
         </div>
       )}
-      {/* {deliveryType === 'DELIVERY' && (
-        <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Phí vận chuyển</span>
-          <span>{formatVND(deliveryFee)}</span>
+      {deliveryType === 'DELIVERY' && (
+        <div className="flex flex-col space-y-1">
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Phí vận chuyển</span>
+            {isCalculatingShipping ? (
+              <span className="flex items-center">
+                <div className="h-3 w-3 mr-2 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
+                Đang tính...
+              </span>
+            ) : !shippingInfo && deliveryType === 'DELIVERY' ? (
+              <span className="text-xs text-amber-500">Cần nhập địa chỉ đầy đủ</span>
+            ) : (
+              <span>{formatVND(deliveryFee)}</span>
+            )}
+          </div>
+          {shippingInfo && (
+            <div className="text-xs text-muted-foreground pl-2">
+              <p>Khoảng cách: {shippingInfo.shipping_distance.toFixed(1)} km</p>
+              <p>Thời gian dự kiến: {Math.ceil(shippingInfo.shipping_time)} phút</p>
+            </div>
+          )}
         </div>
-      )} */}
+      )}
       <Separator className="my-2" />
       <div className="flex justify-between text-base font-medium">
         <span>Tổng cộng</span>
@@ -644,7 +758,7 @@ const CheckoutPage = () => {
     }
   };
 
-  // Add onSubmit handler
+  // Update the onSubmit handler to include shipping fee
   const onSubmit = async (data: CheckoutFormValues) => {
     setIsProcessing(true);
 
@@ -680,6 +794,7 @@ const CheckoutPage = () => {
             pickup_time: data.deliveryType === 'PICKUP' ? new Date().toISOString() : null,
             shipping_type: data.deliveryType,
             payment_type: data.paymentType,
+            shipping_fee: deliveryFee,
             voucher_code: selectedVoucher?.code || "",
             order_detail_create_models: cartItems.map((item) => ({
               available_cake_id: item.available_cake_id || null,
@@ -715,7 +830,6 @@ const CheckoutPage = () => {
               orderInfo: {
                 items: cartItems,
                 subtotal,
-                deliveryMethod: data.deliveryMethod,
                 deliveryFee,
                 total: total_customer_paid,
                 orderCode: order_code,
@@ -859,8 +973,8 @@ const CheckoutPage = () => {
               <p className="text-2xl font-bold mb-2">
                 {/* {new Date(Date.now() + (deliveryMethod === 'express' ? 2 : 4) * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} */}
               </p>
-              <Badge variant={deliveryMethod === 'express' ? 'default' : 'outline'}>
-                {deliveryMethod === 'express' ? 'Express Delivery' : 'Standard Delivery'}
+              <Badge variant={deliveryType === 'DELIVERY' ? 'default' : 'outline'}>
+                {deliveryType === 'DELIVERY' ? 'Giao hàng tận nơi' : 'Nhận tại cửa hàng'}
               </Badge>
             </div>
 
@@ -1101,7 +1215,20 @@ const CheckoutPage = () => {
                       <FormItem>
                         <FormLabel>Địa chỉ</FormLabel>
                         <FormControl>
-                          <Input placeholder="Số nhà, tên đường" className="h-[3.5rem]" {...field} />
+                          <Input 
+                            placeholder="Số nhà, tên đường" 
+                            className="h-[3.5rem]" 
+                            {...field} 
+                            onChange={(e) => {
+                              field.onChange(e);
+                              // Wait for the field value to be updated before recalculating
+                              setTimeout(() => handleAddressChange(), 300);
+                            }}
+                            onBlur={(e) => {
+                              field.onBlur();
+                              handleAddressChange();
+                            }}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -1120,7 +1247,13 @@ const CheckoutPage = () => {
                       <FormControl>
                         <RadioGroup
                           value={field.value}
-                          onValueChange={field.onChange}
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            // Recalculate shipping fee when delivery type changes
+                            if (value === 'DELIVERY') {
+                              handleAddressChange();
+                            }
+                          }}
                           className="flex flex-col md:flex-row gap-4"
                         >
                           <motion.div
@@ -1151,6 +1284,7 @@ const CheckoutPage = () => {
                                   <p className="text-sm text-muted-foreground mt-1">
                                     Nhận bánh trực tiếp tại cửa hàng
                                   </p>
+                                  <Badge variant="outline" className="mt-2 bg-secondary/10">Miễn phí</Badge>
                                 </div>
                               </div>
                             </Label>
@@ -1184,6 +1318,21 @@ const CheckoutPage = () => {
                                   <p className="text-sm text-muted-foreground mt-1">
                                     Shipper sẽ giao tận nhà
                                   </p>
+                                  {field.value === 'DELIVERY' && (
+                                    isCalculatingShipping ? (
+                                      <Badge variant="outline" className="mt-2 bg-secondary/10 animate-pulse">
+                                        Đang tính phí vận chuyển...
+                                      </Badge>
+                                    ) : shippingInfo ? (
+                                      <Badge variant="outline" className="mt-2 bg-secondary/10">
+                                        {formatVND(standardDelivery)}
+                                      </Badge>
+                                    ) : (
+                                      <Badge variant="outline" className="mt-2 bg-secondary/10">
+                                        Cần địa chỉ để tính phí
+                                      </Badge>
+                                    )
+                                  )}
                                 </div>
                               </div>
                             </Label>
