@@ -14,6 +14,7 @@ const defaultConfig: CakeConfig = {
     sponge: 'vanilla',
     outerIcing: 'pink-vanilla',
     filling: 'white-vanilla',
+    icing: '',
     topping: null,
     message: '',
     candles: null,

@@ -4,6 +4,7 @@ export type CakeConfig = {
     sponge: string;
     outerIcing: string;
     filling: string;
+    icing: string;
     topping: string | null;
     message: string;
     candles: string | null;
