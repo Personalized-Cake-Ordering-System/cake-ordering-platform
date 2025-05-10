@@ -169,7 +169,7 @@ const CheckoutPage = () => {
   const { clearCart } = useCart();
 
   // Delivery fees
-  const standardDelivery = shippingInfo?.shipping_fee || 50000; // Default to 50,000 VND if shipping info not available
+  const standardDelivery = shippingInfo?.shipping_fee; // No default value anymore
 
   // Form setup
   const form = useForm<CheckoutFormValues>({
@@ -201,7 +201,7 @@ const CheckoutPage = () => {
 
   // Calculate totals based on actual cart items
   const subtotal = cartItems.reduce((sum, item) => sum + item.sub_total_price, 0);
-  const deliveryFee = deliveryType === 'DELIVERY' ? standardDelivery : 0;
+  const deliveryFee = deliveryType === 'DELIVERY' ? (standardDelivery || 0) : 0;
 
   const calculateDiscount = () => {
     if (!selectedVoucher) return 0;
@@ -1325,7 +1325,7 @@ const CheckoutPage = () => {
                                       </Badge>
                                     ) : shippingInfo ? (
                                       <Badge variant="outline" className="mt-2 bg-secondary/10">
-                                        {formatVND(standardDelivery)}
+                                        {formatVND(standardDelivery || 0)}
                                       </Badge>
                                     ) : (
                                       <Badge variant="outline" className="mt-2 bg-secondary/10">
