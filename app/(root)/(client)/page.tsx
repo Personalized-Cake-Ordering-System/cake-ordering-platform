@@ -1,26 +1,26 @@
-import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Store } from "lucide-react";
-import Link from "next/link";
+import { Button } from "@/components/ui/button" ;
+import { ChevronLeft, ChevronRight, Store } from "lucide-react" ;
+import Link from "next/link" ;
 
-import { CakeItem } from "@/components/shared/client/home/cake-item";
-import { CategoryItem } from "@/components/shared/client/home/category-item";
+import { CakeItem } from "@/components/shared/client/home/cake-item" ;
+import { CategoryItem } from "@/components/shared/client/home/category-item" ;
 import {
   categoryData,
   popularProducts,
-} from "@/components/shared/client/home/data";
-import MainBanner from "@/components/shared/client/home/main-banner";
-import { StoreHighlightCard } from "@/components/shared/client/home/store-highlight-card";
-import { StoreItem } from "@/components/shared/client/home/store-item";
-import { IBakery } from "@/features/barkeries/types/barkeries-type";
-import { getBakeries } from "@/features/barkeries/actions/barkeries-action";
-import { getCakes } from "@/features/barkeries/actions/cake-action";
+} from "@/components/shared/client/home/data" ;
+import MainBanner from "@/components/shared/client/home/main-banner" ;
+import { StoreHighlightCard } from "@/components/shared/client/home/store-highlight-card" ;
+import { StoreItem } from "@/components/shared/client/home/store-item" ;
+import { IBakery } from "@/features/barkeries/types/barkeries-type" ;
+import { getBakeries } from "@/features/barkeries/actions/barkeries-action" ;
+import { getCakes } from "@/features/barkeries/actions/cake-action" ;
 const HomePage = async () => {
-  const bakeries = await getBakeries();
-  const cakes = await getCakes({});
-  const featuredBakeries = bakeries.data?.data?.slice(0, 8);
+  const bakeries = await getBakeries() ;
+  const cakes = await getCakes({}) ;
+  const featuredBakeries = bakeries.data?.data?.slice(0, 8) ;
   
   // Filter bakeries to only show confirmed ones
-  const confirmedBakeries = featuredBakeries?.filter(bakery => bakery.status === "CONFIRMED") || [];
+  const confirmedBakeries = featuredBakeries?.filter(bakery => bakery.status === "CONFIRMED") || [] ;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 to-white dark:from-gray-950 dark:to-gray-900">
@@ -196,7 +196,7 @@ const HomePage = async () => {
         </div>
       </main>
     </div>
-  );
-};
+  ) ;
+} ;
 
-export default HomePage;
+export default HomePage ;

@@ -1,206 +1,206 @@
-'use client';
+'use client' ;
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Calendar, Clock, MapPin, Package, ArrowLeft, CreditCard, Truck, Star, RefreshCw, AlertTriangle, FileText, Upload, X, Flag, AlertCircle, Check } from 'lucide-react';
-import { format, parse } from 'date-fns';
-import { decodeJWT } from '@/lib/utils';
-import Image from 'next/image';
-import { toast } from 'sonner';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import axios from 'axios';
-import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
+import { useState , useEffect , useCallback } from 'react' ;
+import { useRouter } from 'next/navigation' ;
+import { motion } from 'framer-motion' ;
+import { Card , CardContent , CardHeader , CardTitle } from '@/components/ui/card' ;
+import { Button } from '@/components/ui/button' ;
+import { Badge } from '@/components/ui/badge' ;
+import { Separator } from '@/components/ui/separator' ;
+import { Calendar , Clock , MapPin , Package , ArrowLeft , CreditCard , Truck , Star , RefreshCw , AlertTriangle , FileText , Upload , X , Flag , AlertCircle , Check } from 'lucide-react' ;
+import { format , parse } from 'date-fns' ;
+import { decodeJWT } from '@/lib/utils' ;
+import Image from 'next/image' ;
+import { toast } from 'sonner' ;
+import { Input } from '@/components/ui/input' ;
+import { Textarea } from '@/components/ui/textarea' ;
+import { AlertDialog , AlertDialogAction , AlertDialogCancel , AlertDialogContent , AlertDialogDescription , AlertDialogFooter , AlertDialogHeader , AlertDialogTitle , AlertDialogTrigger } from '@/components/ui/alert-dialog' ;
+import { Dialog , DialogContent , DialogTitle , DialogDescription } from "@/components/ui/dialog" ;
+import axios from 'axios' ;
+import { Label } from '@/components/ui/label' ;
+import { cn } from '@/lib/utils' ;
 
 // Order status constants used for progress tracking
 const OrderStatus = {
-  WAITING_BAKERY_CONFIRM: 1,
-  PROCESSING: 2,
-  SHIPPING: 3,
-  SHIPPING_COMPLETED: 4,
-  COMPLETED: 5,
-  PICKUP: 3,
-  READY_FOR_PICKUP: 3,
-  REPORT_PENDING: -2,
-  FAULTY: -3,
-  CANCELED: -1,
-};
+  WAITING_BAKERY_CONFIRM: 1 ,
+  PROCESSING: 2 ,
+  SHIPPING: 3 ,
+  SHIPPING_COMPLETED: 4 ,
+  COMPLETED: 5 ,
+  PICKUP: 3 ,
+  READY_FOR_PICKUP: 3 ,
+  REPORT_PENDING: -2 ,
+  FAULTY: -3 ,
+  CANCELED: -1 ,
+} ;
 
 interface Order {
-    id: string;
-    order_code: string;
-    order_status: string;
-    total_customer_paid: number;
-    total_product_price: number;
-    shipping_fee: number;
-    shipping_distance: number;
-    shipping_time: number;
-    shipping_type: string;
-    commission_rate: number;
-    app_commission_fee: number;
-    shop_revenue: number;
-    order_note: string;
-    pickup_time: string;
-    payment_type: string;
-    phone_number: string;
-    shipping_address: string;
-    latitude: string;
-    longitude: string;
-    paid_at: string;
+    id: string ;
+    order_code: string ;
+    order_status: string ;
+    total_customer_paid: number ;
+    total_product_price: number ;
+    shipping_fee: number ;
+    shipping_distance: number ;
+    shipping_time: number ;
+    shipping_type: string ;
+    commission_rate: number ;
+    app_commission_fee: number ;
+    shop_revenue: number ;
+    order_note: string ;
+    pickup_time: string ;
+    payment_type: string ;
+    phone_number: string ;
+    shipping_address: string ;
+    latitude: string ;
+    longitude: string ;
+    paid_at: string ;
     order_details: {
-        id: string;
-        quantity: number;
-        sub_total_price: number;
-        cake_note: string;
-        available_cake_id: string;
-        cake_name?: string;
+        id: string ;
+        quantity: number ;
+        sub_total_price: number ;
+        cake_note: string ;
+        available_cake_id: string ;
+        cake_name?: string ;
         shop_image_files?: {
-            file_url: string;
-        };
-        custom_cake_id?: string;
+            file_url: string ;
+        } ;
+        custom_cake_id?: string ;
         review?: {
-            image_id: string;
-            rating: number;
-            content: string;
-            created_at: string;
-        };
-    }[];
+            image_id: string ;
+            rating: number ;
+            content: string ;
+            created_at: string ;
+        } ;
+    }[] ;
     customer: {
-        name: string;
-        email: string;
-        phone: string;
-        address: string;
-    };
+        name: string ;
+        email: string ;
+        phone: string ;
+        address: string ;
+    } ;
     bakery: {
-        bakery_name: string;
-        email: string;
-        phone: string;
-        address: string;
-        id: string;
-    };
+        bakery_name: string ;
+        email: string ;
+        phone: string ;
+        address: string ;
+        id: string ;
+    } ;
     transaction?: {
-        amount: number;
-        gate_way: string;
-        transaction_date: string;
-        account_number: string;
-    };
+        amount: number ;
+        gate_way: string ;
+        transaction_date: string ;
+        account_number: string ;
+    } ;
 }
 
 interface OrderDetailsProps {
-    orderId: string;
+    orderId: string ;
 }
 
 interface FeedbackFormProps {
-    orderId: string;
-    orderDetailId: string;
-    availableCakeId: string;
-    bakeryId: string;
+    orderId: string ;
+    orderDetailId: string ;
+    availableCakeId: string ;
+    bakeryId: string ;
 }
 
-const FeedbackForm = ({ orderId, orderDetailId, availableCakeId, bakeryId }: FeedbackFormProps) => {
-    const router = useRouter();
-    const [rating, setRating] = useState(0);
-    const [content, setContent] = useState('');
-    const [imageFile, setImageFile] = useState<File | null>(null);
+const FeedbackForm = ({ orderId , orderDetailId , availableCakeId , bakeryId }: FeedbackFormProps) => {
+    const router = useRouter() ;
+    const [rating , setRating] = useState(0) ;
+    const [content , setContent] = useState('') ;
+    const [imageFile , setImageFile] = useState<File | null>(null) ;
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
+        const file = e.target.files?.[0] ;
         if (file) {
-            setImageFile(file);
+            setImageFile(file) ;
         }
-    };
+    } ;
 
     const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+        e.preventDefault() ;
         try {
-            const accessToken = localStorage.getItem('accessToken');
+            const accessToken = localStorage.getItem('accessToken') ;
             if (!accessToken) {
-                toast.error('Vui lòng đăng nhập để gửi phản hồi');
-                return;
+                toast.error('Vui lòng đăng nhập để gửi phản hồi') ;
+                return ;
             }
 
-            const decodedToken = decodeJWT(accessToken);
-            const customerId = decodedToken?.id;
+            const decodedToken = decodeJWT(accessToken) ;
+            const customerId = decodedToken?.id ;
             if (!customerId) {
-                toast.error('Xác thực không hợp lệ');
-                return;
+                toast.error('Xác thực không hợp lệ') ;
+                return ;
             }
 
-            let imageId = null;
+            let imageId = null ;
             if (imageFile) {
-                const formData = new FormData();
-                formData.append('formFile', imageFile);
+                const formData = new FormData() ;
+                formData.append('formFile' , imageFile) ;
 
-                const uploadResponse = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/files', {
-                    method: 'POST',
+                const uploadResponse = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/files' , {
+                    method: 'POST' ,
                     headers: {
                         'Authorization': `Bearer ${accessToken}`
-                    },
+                    } ,
                     body: formData
-                });
+                }) ;
 
                 if (!uploadResponse.ok) {
-                    throw new Error('Không thể tải lên hình ảnh');
+                    throw new Error('Không thể tải lên hình ảnh') ;
                 }
 
-                const uploadData = await uploadResponse.json();
-                imageId = uploadData.payload.id;
+                const uploadData = await uploadResponse.json() ;
+                imageId = uploadData.payload.id ;
             }
 
-            console.log('Feedback Submission Body:', {
-                content,
-                rating,
-                image_id: imageId,
-                order_detail_id: orderDetailId,
-                available_cake_id: availableCakeId,
-                bakery_id: bakeryId,
-                customer_id: customerId,
+            console.log('Feedback Submission Body:' , {
+                content ,
+                rating ,
+                image_id: imageId ,
+                order_detail_id: orderDetailId ,
+                available_cake_id: availableCakeId ,
+                bakery_id: bakeryId ,
+                customer_id: customerId ,
                 review_type: "AVAILABLE_CAKE_REVIEW"
-            });
+            }) ;
 
-            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/reviews`, {
-                method: 'POST',
+            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/reviews` , {
+                method: 'POST' ,
                 headers: {
-                    'Authorization': `Bearer ${accessToken}`,
+                    'Authorization': `Bearer ${accessToken}` ,
                     'Content-Type': 'application/json'
-                },
+                } ,
                 body: JSON.stringify({
-                    content,
-                    rating,
-                    image_id: imageId,
-                    order_detail_id: orderDetailId,
-                    available_cake_id: availableCakeId,
-                    bakery_id: bakeryId,
-                    customer_id: customerId,
+                    content ,
+                    rating ,
+                    image_id: imageId ,
+                    order_detail_id: orderDetailId ,
+                    available_cake_id: availableCakeId ,
+                    bakery_id: bakeryId ,
+                    customer_id: customerId ,
                     review_type: "AVAILABLE_CAKE_REVIEW"
                 })
-            });
+            }) ;
 
             if (response.status === 200) {
-                toast.success('Phản hồi đã được gửi thành công!');
-                router.push('/orderHistory');
+                toast.success('Phản hồi đã được gửi thành công!') ;
+                router.push('/orderHistory') ;
             } else {
-                throw new Error('Không thể gửi phản hồi');
+                throw new Error('Không thể gửi phản hồi') ;
             }
         } catch (err) {
-            toast.error('Không thể gửi phản hồi');
+            toast.error('Không thể gửi phản hồi') ;
         }
-    };
+    } ;
 
     return (
         <form onSubmit={handleSubmit} className="space-y-5">
             <div>
                 <label className="block text-gray-800 dark:text-gray-200 font-medium mb-2">Đánh Giá</label>
                 <div className="flex gap-2">
-                    {[1, 2, 3, 4, 5].map((star) => (
+                    {[1 , 2 , 3 , 4 , 5].map((star) => (
                         <button
                             key={star}
                             type="button"
@@ -274,23 +274,23 @@ const FeedbackForm = ({ orderId, orderDetailId, availableCakeId, bakeryId }: Fee
                 </Button>
             </div>
         </form>
-    );
-};
+    ) ;
+} ;
 
 interface ModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    children: React.ReactNode;
+    isOpen: boolean ;
+    onClose: () => void ;
+    children: React.ReactNode ;
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
-    if (!isOpen) return null;
+const Modal: React.FC<ModalProps> = ({ isOpen , onClose , children }) => {
+    if (!isOpen) return null ;
 
     return (
         <div className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm flex justify-center items-center z-50">
             <motion.div
-                initial={{ opacity: 0, y: -50 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0 , y: -50 }}
+                animate={{ opacity: 1 , y: 0 }}
                 transition={{ duration: 0.3 }}
                 className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-black/30 p-6 w-full max-w-md relative border border-gray-200 dark:border-gray-700"
             >
@@ -310,103 +310,103 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
                 </div>
             </motion.div>
         </div>
-    );
-};
+    ) ;
+} ;
 
 interface ProgressStep {
-    status: string;
-    label: string;
-    description: string;
+    status: string ;
+    label: string ;
+    description: string ;
 }
 
-const OrderProgressBar = ({ currentStatus, shippingType }: { currentStatus: string, shippingType: string }) => {
-    console.log('Current Status:', currentStatus);
-    console.log('Shipping Type:', shippingType);
+const OrderProgressBar = ({ currentStatus , shippingType }: { currentStatus: string , shippingType: string }) => {
+    console.log('Current Status:' , currentStatus) ;
+    console.log('Shipping Type:' , shippingType) ;
 
-    const isPickupOrder = shippingType?.toUpperCase() === "PICKUP";
+    const isPickupOrder = shippingType?.toUpperCase() === "PICKUP" ;
 
     // Map various statuses to our simplified flow
-    let mappedStatus = currentStatus;
+    let mappedStatus = currentStatus ;
 
-    // For pickup orders, map READY_FOR_PICKUP, SHIPPING to PICKUP
+    // For pickup orders , map READY_FOR_PICKUP , SHIPPING to PICKUP
     if (isPickupOrder) {
         if (currentStatus === "READY_FOR_PICKUP" || currentStatus === "SHIPPING") {
-            mappedStatus = "PICKUP";
+            mappedStatus = "PICKUP" ;
         } else if (currentStatus === "SHIPPING_COMPLETED") {
-            mappedStatus = "COMPLETED";
+            mappedStatus = "COMPLETED" ;
         }
     } else {
-        // For regular orders, keep original mapping
+        // For regular orders , keep original mapping
         if (currentStatus === "READY_FOR_PICKUP") {
-            mappedStatus = "PROCESSING";
+            mappedStatus = "PROCESSING" ;
         }
     }
 
-    const currentStep = OrderStatus[mappedStatus as keyof typeof OrderStatus] || 0;
+    const currentStep = OrderStatus[mappedStatus as keyof typeof OrderStatus] || 0 ;
 
     // Check if order is in report flow
     const isReportFlow = 
         currentStatus === "REPORT_PENDING" || 
-        currentStatus === "FAULTY";
+        currentStatus === "FAULTY" ;
     
-    const isCanceled = currentStatus === "CANCELED";
+    const isCanceled = currentStatus === "CANCELED" ;
 
     // Determine step labels based on shipping_type
     const getStepLabel = (stepId: string) => {
         if (stepId === "SHIPPING" || stepId === "PICKUP" || stepId === "READY_FOR_PICKUP") {
             // Check shipping type to differentiate between pickup and delivery
             if (isPickupOrder) {
-                return "Lấy tại chỗ";
+                return "Lấy tại chỗ" ;
             } else {
-                return "Giao hàng";
+                return "Giao hàng" ;
             }
         } else if (stepId === "WAITING_BAKERY_CONFIRM") {
-            return "Chờ xác nhận";
+            return "Chờ xác nhận" ;
         } else if (stepId === "PROCESSING") {
-            return "Đang xử lý";
+            return "Đang xử lý" ;
         } else if (stepId === "SHIPPING_COMPLETED") {
             if (isPickupOrder) {
-                return "Hoàn thành";
+                return "Hoàn thành" ;
             }
-            return "Giao hàng hoàn tất";
+            return "Giao hàng hoàn tất" ;
         } else if (stepId === "COMPLETED") {
-            return "Hoàn thành";
+            return "Hoàn thành" ;
         } else if (stepId === "REPORT_PENDING") {
-            return "Đang xử lý khiếu nại";
+            return "Đang xử lý khiếu nại" ;
         } else if (stepId === "FAULTY") {
-            return "Đơn hàng lỗi";
+            return "Đơn hàng lỗi" ;
         }
-        return stepId;
-    };
+        return stepId ;
+    } ;
 
     // Define normal flow steps based on shipping type
     const normalSteps = isPickupOrder
         ? [
-            { id: "WAITING_BAKERY_CONFIRM", label: getStepLabel("WAITING_BAKERY_CONFIRM") },
-            { id: "PROCESSING", label: getStepLabel("PROCESSING") },
-            { id: "PICKUP", label: getStepLabel("PICKUP") },
-            { id: "COMPLETED", label: getStepLabel("COMPLETED") },
+            { id: "WAITING_BAKERY_CONFIRM" , label: getStepLabel("WAITING_BAKERY_CONFIRM") } ,
+            { id: "PROCESSING" , label: getStepLabel("PROCESSING") } ,
+            { id: "PICKUP" , label: getStepLabel("PICKUP") } ,
+            { id: "COMPLETED" , label: getStepLabel("COMPLETED") } ,
         ]
         : [
-            { id: "WAITING_BAKERY_CONFIRM", label: getStepLabel("WAITING_BAKERY_CONFIRM") },
-            { id: "PROCESSING", label: getStepLabel("PROCESSING") },
-            { id: "SHIPPING", label: getStepLabel("SHIPPING") },
-            { id: "SHIPPING_COMPLETED", label: getStepLabel("SHIPPING_COMPLETED") },
-            { id: "COMPLETED", label: getStepLabel("COMPLETED") },
-        ];
+            { id: "WAITING_BAKERY_CONFIRM" , label: getStepLabel("WAITING_BAKERY_CONFIRM") } ,
+            { id: "PROCESSING" , label: getStepLabel("PROCESSING") } ,
+            { id: "SHIPPING" , label: getStepLabel("SHIPPING") } ,
+            { id: "SHIPPING_COMPLETED" , label: getStepLabel("SHIPPING_COMPLETED") } ,
+            { id: "COMPLETED" , label: getStepLabel("COMPLETED") } ,
+        ] ;
 
     // Define report flow steps
     const reportSteps = [
-        { id: "WAITING_BAKERY_CONFIRM", label: getStepLabel("WAITING_BAKERY_CONFIRM") },
-        { id: "PROCESSING", label: getStepLabel("PROCESSING") },
-        { id: "SHIPPING", label: getStepLabel("SHIPPING") },
-        { id: "SHIPPING_COMPLETED", label: getStepLabel("SHIPPING_COMPLETED") },
-        { id: "REPORT_PENDING", label: getStepLabel("REPORT_PENDING") },
-        { id: "FAULTY", label: getStepLabel("FAULTY") },
-    ];
+        { id: "WAITING_BAKERY_CONFIRM" , label: getStepLabel("WAITING_BAKERY_CONFIRM") } ,
+        { id: "PROCESSING" , label: getStepLabel("PROCESSING") } ,
+        { id: "SHIPPING" , label: getStepLabel("SHIPPING") } ,
+        { id: "SHIPPING_COMPLETED" , label: getStepLabel("SHIPPING_COMPLETED") } ,
+        { id: "REPORT_PENDING" , label: getStepLabel("REPORT_PENDING") } ,
+        { id: "FAULTY" , label: getStepLabel("FAULTY") } ,
+    ] ;
 
     // Choose which steps to display based on flow
-    const steps = isReportFlow ? reportSteps : normalSteps;
+    const steps = isReportFlow ? reportSteps : normalSteps ;
 
     if (isCanceled) {
         return (
@@ -423,7 +423,7 @@ const OrderProgressBar = ({ currentStatus, shippingType }: { currentStatus: stri
                     </p>
                 </div>
             </div>
-        );
+        ) ;
     }
     
     if (isReportFlow) {
@@ -457,16 +457,16 @@ const OrderProgressBar = ({ currentStatus, shippingType }: { currentStatus: stri
                         {/* Progress line */}
                         <div
                             className={cn(
-                                "absolute top-6 left-0 h-[4px] rounded-full transition-all duration-500",
+                                "absolute top-6 left-0 h-[4px] rounded-full transition-all duration-500" ,
                                 currentStatus === "REPORT_PENDING"
                                     ? "bg-yellow-500 dark:bg-yellow-500/70"
                                     : "bg-red-500 dark:bg-red-500/70"
                             )}
                             style={{
                                 width: `calc(${Math.max(
-                                    0,
+                                    0 ,
                                     Math.min(
-                                        100,
+                                        100 ,
                                         (steps.indexOf(
                                             steps.find((s) => s.id === mappedStatus) || steps[0]
                                         ) /
@@ -479,51 +479,51 @@ const OrderProgressBar = ({ currentStatus, shippingType }: { currentStatus: stri
                                     ) > 0
                                         ? "10px"
                                         : "0px"
-                                })`,
-                                zIndex: 1,
+                                })` ,
+                                zIndex: 1 ,
                             }}
                         ></div>
 
-                        {steps.map((step, index) => {
+                        {steps.map((step , index) => {
                             const isCompleted =
                                 index <
                                 steps.indexOf(
                                     steps.find((s) => s.id === mappedStatus) || steps[0]
-                                );
-                            const isActive = step.id === mappedStatus;
+                                ) ;
+                            const isActive = step.id === mappedStatus ;
                             const isPending =
                                 index >
                                 steps.indexOf(
                                     steps.find((s) => s.id === mappedStatus) || steps[0]
-                                );
+                                ) ;
                             
                             // Special styling for report flow
-                            const isReportStep = step.id === "REPORT_PENDING" || step.id === "FAULTY";
+                            const isReportStep = step.id === "REPORT_PENDING" || step.id === "FAULTY" ;
                             
                             // Determine circle colors
-                            let circleClasses = "";
-                            let iconColor = "";
+                            let circleClasses = "" ;
+                            let iconColor = "" ;
                             
                             if (isActive && isReportStep && step.id === "REPORT_PENDING") {
                                 circleClasses =
-                                    "bg-yellow-500 border-yellow-200 text-white dark:bg-yellow-600 dark:border-yellow-400";
-                                iconColor = "text-white";
+                                    "bg-yellow-500 border-yellow-200 text-white dark:bg-yellow-600 dark:border-yellow-400" ;
+                                iconColor = "text-white" ;
                             } else if (isActive && isReportStep && step.id === "FAULTY") {
                                 circleClasses =
-                                    "bg-red-500 border-red-200 text-white dark:bg-red-600 dark:border-red-400";
-                                iconColor = "text-white";
+                                    "bg-red-500 border-red-200 text-white dark:bg-red-600 dark:border-red-400" ;
+                                iconColor = "text-white" ;
                             } else if (isActive) {
                                 circleClasses =
-                                    "bg-custom-teal border-custom-teal text-white dark:bg-custom-teal dark:border-custom-teal";
-                                iconColor = "text-white";
+                                    "bg-custom-teal border-custom-teal text-white dark:bg-custom-teal dark:border-custom-teal" ;
+                                iconColor = "text-white" ;
                             } else if (isCompleted) {
                                 circleClasses =
-                                    "bg-custom-teal border-custom-teal text-white dark:bg-custom-teal dark:border-custom-teal";
-                                iconColor = "text-white";
+                                    "bg-custom-teal border-custom-teal text-white dark:bg-custom-teal dark:border-custom-teal" ;
+                                iconColor = "text-white" ;
                             } else {
                                 circleClasses =
-                                    "bg-white border-gray-300 text-gray-400 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-400";
-                                iconColor = "text-gray-400 dark:text-slate-400";
+                                    "bg-white border-gray-300 text-gray-400 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-400" ;
+                                iconColor = "text-gray-400 dark:text-slate-400" ;
                             }
                             
                             return (
@@ -535,7 +535,7 @@ const OrderProgressBar = ({ currentStatus, shippingType }: { currentStatus: stri
                                     {/* Step number indicator */}
                                     <div
                                         className={cn(
-                                            "w-12 h-12 rounded-full border-2 flex items-center justify-center text-base font-semibold mb-2 shadow-sm transition-all",
+                                            "w-12 h-12 rounded-full border-2 flex items-center justify-center text-base font-semibold mb-2 shadow-sm transition-all" ,
                                             circleClasses
                                         )}
                                     >
@@ -550,7 +550,7 @@ const OrderProgressBar = ({ currentStatus, shippingType }: { currentStatus: stri
                                     <div className="text-center max-w-[120px]">
                                         <span
                                             className={cn(
-                                                "text-sm font-medium",
+                                                "text-sm font-medium" ,
                                                 isActive
                                                     ? "text-gray-800 dark:text-gray-100"
                                                     : isCompleted
@@ -562,12 +562,12 @@ const OrderProgressBar = ({ currentStatus, shippingType }: { currentStatus: stri
                                         </span>
                                     </div>
                                 </div>
-                            );
+                            ) ;
                         })}
                     </div>
                 </div>
             </div>
-        );
+        ) ;
     }
 
     return (
@@ -581,21 +581,21 @@ const OrderProgressBar = ({ currentStatus, shippingType }: { currentStatus: stri
                     className="absolute top-6 left-0 h-[4px] bg-custom-teal dark:bg-custom-teal/70 rounded-full transition-all duration-500"
                     style={{
                         width: `calc(${Math.max(
-                            0,
-                            Math.min(100, ((currentStep - 1) / (steps.length - 1)) * 100)
-                        )}% + ${currentStep > 1 ? "10px" : "0px"})`,
-                        zIndex: 1,
+                            0 ,
+                            Math.min(100 , ((currentStep - 1) / (steps.length - 1)) * 100)
+                        )}% + ${currentStep > 1 ? "10px" : "0px"})` ,
+                        zIndex: 1 ,
                     }}
                 ></div>
 
-                {steps.map((step, index) => {
-                    const stepValue = OrderStatus[step.id as keyof typeof OrderStatus];
-                    const isCompleted = stepValue < currentStep;
-                    const isActive = stepValue === currentStep;
-                    const isPending = stepValue > currentStep;
+                {steps.map((step , index) => {
+                    const stepValue = OrderStatus[step.id as keyof typeof OrderStatus] ;
+                    const isCompleted = stepValue < currentStep ;
+                    const isActive = stepValue === currentStep ;
+                    const isPending = stepValue > currentStep ;
 
                     // Special icon for shipping completed (waiting period)
-                    const isWaitingPeriod = step.id === "SHIPPING_COMPLETED" && isActive;
+                    const isWaitingPeriod = step.id === "SHIPPING_COMPLETED" && isActive ;
 
                     return (
                         <div
@@ -606,7 +606,7 @@ const OrderProgressBar = ({ currentStatus, shippingType }: { currentStatus: stri
                             {/* Step number indicator */}
                             <div
                                 className={cn(
-                                    "w-12 h-12 rounded-full border-2 flex items-center justify-center text-base font-semibold mb-2 shadow-sm transition-all",
+                                    "w-12 h-12 rounded-full border-2 flex items-center justify-center text-base font-semibold mb-2 shadow-sm transition-all" ,
                                     isActive
                                         ? "bg-custom-teal border-custom-teal text-white dark:bg-custom-teal dark:border-custom-teal"
                                         : isCompleted
@@ -627,7 +627,7 @@ const OrderProgressBar = ({ currentStatus, shippingType }: { currentStatus: stri
                             <div className="text-center max-w-[120px]">
                                 <span
                                     className={cn(
-                                        "text-sm font-medium",
+                                        "text-sm font-medium" ,
                                         isActive
                                             ? "text-gray-800 dark:text-gray-100"
                                             : isCompleted
@@ -639,515 +639,515 @@ const OrderProgressBar = ({ currentStatus, shippingType }: { currentStatus: stri
                                 </span>
                             </div>
                         </div>
-                    );
+                    ) ;
                 })}
             </div>
         </div>
-    );
+    ) ;
 
     function getCurrentStepDescription(stepId: string): string {
         switch (stepId) {
             case "WAITING_BAKERY_CONFIRM":
-                return "Đơn hàng đang chờ cửa hàng xác nhận";
+                return "Đơn hàng đang chờ cửa hàng xác nhận" ;
             case "PROCESSING":
-                return "Tiệm bánh đang chuẩn bị đơn hàng";
+                return "Tiệm bánh đang chuẩn bị đơn hàng" ;
             case "SHIPPING":
-                return "Đơn hàng đang được giao đến bạn";
+                return "Đơn hàng đang được giao đến bạn" ;
             case "SHIPPING_COMPLETED":
-                return "Đơn hàng đã giao thành công";
+                return "Đơn hàng đã giao thành công" ;
             case "PICKUP":
-                return "Đơn hàng đã sẵn sàng để nhận tại cửa hàng";
+                return "Đơn hàng đã sẵn sàng để nhận tại cửa hàng" ;
             case "COMPLETED":
-                return "Đơn hàng đã được hoàn thành";
+                return "Đơn hàng đã được hoàn thành" ;
             default:
-                return "";
+                return "" ;
         }
     }
-};
+} ;
 
 export default function OrderDetails({ orderId }: OrderDetailsProps) {
-    const router = useRouter();
-    const [order, setOrder] = useState<Order | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [cakeImages, setCakeImages] = useState<{ [key: string]: string }>({});
-    const [cakeNames, setCakeNames] = useState<{ [key: string]: string }>({});
-    const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
-    const [isCancelling, setIsCancelling] = useState(false);
-    const [isMovingNext, setIsMovingNext] = useState(false);
-    const [isReordering, setIsReordering] = useState(false);
-    const [storeReportDialogOpen, setStoreReportDialogOpen] = useState(false);
-    const [storeReportContent, setStoreReportContent] = useState('');
-    const [isSubmittingStoreReport, setIsSubmittingStoreReport] = useState(false);
-    const [uploadedFiles, setUploadedFiles] = useState<Array<{ id: string, name: string }>>([]);
-    const [isUploading, setIsUploading] = useState(false);
-    const [reviewImage, setReviewImage] = useState<string | null>(null);
+    const router = useRouter() ;
+    const [order , setOrder] = useState<Order | null>(null) ;
+    const [loading , setLoading] = useState(true) ;
+    const [error , setError] = useState<string | null>(null) ;
+    const [cakeImages , setCakeImages] = useState<{ [key: string]: string }>({}) ;
+    const [cakeNames , setCakeNames] = useState<{ [key: string]: string }>({}) ;
+    const [isFeedbackModalOpen , setIsFeedbackModalOpen] = useState(false) ;
+    const [isCancelling , setIsCancelling] = useState(false) ;
+    const [isMovingNext , setIsMovingNext] = useState(false) ;
+    const [isReordering , setIsReordering] = useState(false) ;
+    const [storeReportDialogOpen , setStoreReportDialogOpen] = useState(false) ;
+    const [storeReportContent , setStoreReportContent] = useState('') ;
+    const [isSubmittingStoreReport , setIsSubmittingStoreReport] = useState(false) ;
+    const [uploadedFiles , setUploadedFiles] = useState<Array<{ id: string , name: string }>>([]) ;
+    const [isUploading , setIsUploading] = useState(false) ;
+    const [reviewImage , setReviewImage] = useState<string | null>(null) ;
 
     const fetchOrder = useCallback(async () => {
         try {
-            const accessToken = localStorage.getItem('accessToken');
+            const accessToken = localStorage.getItem('accessToken') ;
             if (!accessToken) {
-                setError('Vui lòng đăng nhập để xem chi tiết đơn hàng');
-                setLoading(false);
-                return;
+                setError('Vui lòng đăng nhập để xem chi tiết đơn hàng') ;
+                setLoading(false) ;
+                return ;
             }
 
-            const decodedToken = decodeJWT(accessToken);
+            const decodedToken = decodeJWT(accessToken) ;
             if (!decodedToken?.id) {
-                setError('Xác thực không hợp lệ');
-                setLoading(false);
-                return;
+                setError('Xác thực không hợp lệ') ;
+                setLoading(false) ;
+                return ;
             }
 
-            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/orders/${orderId}`, {
+            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/orders/${orderId}` , {
                 headers: {
                     'Authorization': `Bearer ${accessToken}`
                 }
-            });
+            }) ;
 
             if (!response.ok) {
-                throw new Error('Failed to fetch order details');
+                throw new Error('Failed to fetch order details') ;
             }
 
-            const data = await response.json();
+            const data = await response.json() ;
 
             if (data.status_code !== 200) {
-                throw new Error(data.errors?.[0] || 'Failed to fetch order details');
+                throw new Error(data.errors?.[0] || 'Failed to fetch order details') ;
             }
 
-            const orderData = data.payload;
+            const orderData = data.payload ;
 
-            console.log('Order Data:', orderData);
-            console.log('Shipping Type:', orderData.shipping_type);
-            console.log('Order Status:', orderData.order_status);
+            console.log('Order Data:' , orderData) ;
+            console.log('Shipping Type:' , orderData.shipping_type) ;
+            console.log('Order Status:' , orderData.order_status) ;
 
             setOrder({
-                id: orderData.id,
-                order_code: orderData.order_code,
-                order_status: orderData.order_status,
-                total_customer_paid: orderData.total_customer_paid,
-                total_product_price: orderData.total_product_price,
-                shipping_fee: orderData.shipping_fee,
-                shipping_distance: orderData.shipping_distance,
-                shipping_time: orderData.shipping_time,
-                shipping_type: orderData.shipping_type,
-                commission_rate: orderData.commission_rate,
-                app_commission_fee: orderData.app_commission_fee,
-                shop_revenue: orderData.shop_revenue,
-                order_note: orderData.order_note,
-                pickup_time: orderData.pickup_time,
-                payment_type: orderData.payment_type,
-                phone_number: orderData.phone_number,
-                shipping_address: orderData.shipping_address,
-                latitude: orderData.latitude,
-                longitude: orderData.longitude,
-                paid_at: orderData.paid_at,
+                id: orderData.id ,
+                order_code: orderData.order_code ,
+                order_status: orderData.order_status ,
+                total_customer_paid: orderData.total_customer_paid ,
+                total_product_price: orderData.total_product_price ,
+                shipping_fee: orderData.shipping_fee ,
+                shipping_distance: orderData.shipping_distance ,
+                shipping_time: orderData.shipping_time ,
+                shipping_type: orderData.shipping_type ,
+                commission_rate: orderData.commission_rate ,
+                app_commission_fee: orderData.app_commission_fee ,
+                shop_revenue: orderData.shop_revenue ,
+                order_note: orderData.order_note ,
+                pickup_time: orderData.pickup_time ,
+                payment_type: orderData.payment_type ,
+                phone_number: orderData.phone_number ,
+                shipping_address: orderData.shipping_address ,
+                latitude: orderData.latitude ,
+                longitude: orderData.longitude ,
+                paid_at: orderData.paid_at ,
                 order_details: orderData.order_details.map((detail: any) => ({
-                    id: detail.id,
-                    quantity: detail.quantity,
-                    sub_total_price: detail.sub_total_price,
-                    cake_note: detail.cake_note,
-                    available_cake_id: detail.available_cake_id,
-                    cake_name: detail.available_cake?.cake_name,
-                    shop_image_files: detail.available_cake?.shop_image_files?.[0],
-                    custom_cake_id: detail.custom_cake_id,
+                    id: detail.id ,
+                    quantity: detail.quantity ,
+                    sub_total_price: detail.sub_total_price ,
+                    cake_note: detail.cake_note ,
+                    available_cake_id: detail.available_cake_id ,
+                    cake_name: detail.available_cake?.cake_name ,
+                    shop_image_files: detail.available_cake?.shop_image_files?.[0] ,
+                    custom_cake_id: detail.custom_cake_id ,
                     review: detail.review
-                })),
+                })) ,
                 customer: {
-                    name: orderData.customer.name,
-                    email: orderData.customer.email,
-                    phone: orderData.customer.phone,
+                    name: orderData.customer.name ,
+                    email: orderData.customer.email ,
+                    phone: orderData.customer.phone ,
                     address: orderData.customer.address
-                },
+                } ,
                 bakery: {
-                    bakery_name: orderData.bakery.bakery_name,
-                    email: orderData.bakery.email,
-                    phone: orderData.bakery.phone,
-                    address: orderData.bakery.address,
+                    bakery_name: orderData.bakery.bakery_name ,
+                    email: orderData.bakery.email ,
+                    phone: orderData.bakery.phone ,
+                    address: orderData.bakery.address ,
                     id: orderData.bakery.id
-                },
+                } ,
                 transaction: orderData.transaction ? {
-                    amount: orderData.transaction.amount,
-                    gate_way: orderData.transaction.gate_way,
-                    transaction_date: orderData.transaction.transaction_date,
+                    amount: orderData.transaction.amount ,
+                    gate_way: orderData.transaction.gate_way ,
+                    transaction_date: orderData.transaction.transaction_date ,
                     account_number: orderData.transaction.account_number
                 } : undefined
-            });
-            setLoading(false);
+            }) ;
+            setLoading(false) ;
         } catch (err) {
-            setError('Failed to fetch order details');
-            setLoading(false);
+            setError('Failed to fetch order details') ;
+            setLoading(false) ;
         }
-    }, [orderId]);
+    } , [orderId]) ;
 
     useEffect(() => {
-        fetchOrder();
-    }, [fetchOrder]);
+        fetchOrder() ;
+    } , [fetchOrder]) ;
 
     const formatVND = (amount: number) => {
-        return new Intl.NumberFormat('vi-VN', {
-            style: 'currency',
+        return new Intl.NumberFormat('vi-VN' , {
+            style: 'currency' ,
             currency: 'VND'
-        }).format(amount);
-    };
+        }).format(amount) ;
+    } ;
 
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'COMPLETED':
-                return 'bg-green-500/10 dark:bg-green-500/20 text-green-500 dark:text-green-400';
+                return 'bg-green-500/10 dark:bg-green-500/20 text-green-500 dark:text-green-400' ;
             case 'PROCESSING':
-                return 'bg-custom-teal/10 dark:bg-custom-teal/20 text-custom-teal dark:text-custom-teal/90';
+                return 'bg-custom-teal/10 dark:bg-custom-teal/20 text-custom-teal dark:text-custom-teal/90' ;
             case 'WAITING_BAKERY_CONFIRM':
-                return 'bg-yellow-500/10 dark:bg-yellow-500/20 text-yellow-500 dark:text-yellow-400';
+                return 'bg-yellow-500/10 dark:bg-yellow-500/20 text-yellow-500 dark:text-yellow-400' ;
             case 'CANCELLED':
-                return 'bg-red-500/10 dark:bg-red-500/20 text-red-500 dark:text-red-400';
+                return 'bg-red-500/10 dark:bg-red-500/20 text-red-500 dark:text-red-400' ;
             default:
-                return 'bg-gray-500/10 dark:bg-gray-500/20 text-gray-500 dark:text-gray-400';
+                return 'bg-gray-500/10 dark:bg-gray-500/20 text-gray-500 dark:text-gray-400' ;
         }
-    };
+    } ;
 
     // fetch cake details by api call available_cakes/{cakeId}
     const fetchCakeDetails = async (cakeId: string) => {
         try {
-            const accessToken = localStorage.getItem('accessToken');
+            const accessToken = localStorage.getItem('accessToken') ;
             if (!accessToken) {
-                throw new Error('Access token not found');
+                throw new Error('Access token not found') ;
             }
 
-            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/available_cakes/${cakeId}`, {
+            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/available_cakes/${cakeId}` , {
                 headers: {
-                    'Authorization': `Bearer ${accessToken}`,
+                    'Authorization': `Bearer ${accessToken}` ,
                     'accept': '*/*'
                 }
-            });
+            }) ;
 
             if (!response.ok) {
-                throw new Error('Failed to fetch cake details');
+                throw new Error('Failed to fetch cake details') ;
             }
 
-            const data = await response.json();
+            const data = await response.json() ;
 
             if (data.status_code !== 200) {
-                throw new Error(data.errors?.[0] || 'Failed to fetch cake details');
+                throw new Error(data.errors?.[0] || 'Failed to fetch cake details') ;
             }
 
-            const imageUrl = data.payload.available_cake_image_files?.[0]?.file_url;
-            const cakeName = data.payload.available_cake_name;
+            const imageUrl = data.payload.available_cake_image_files?.[0]?.file_url ;
+            const cakeName = data.payload.available_cake_name ;
 
             if (imageUrl) {
-                setCakeImages(prev => ({ ...prev, [cakeId]: imageUrl }));
+                setCakeImages(prev => ({ ...prev , [cakeId]: imageUrl })) ;
             }
             if (cakeName) {
-                setCakeNames(prev => ({ ...prev, [cakeId]: cakeName }));
+                setCakeNames(prev => ({ ...prev , [cakeId]: cakeName })) ;
             }
         } catch (err: any) {
-            console.error(err.message);
+            console.error(err.message) ;
         }
-    };
+    } ;
 
     useEffect(() => {
         if (order) {
             order.order_details.forEach(detail => {
-                fetchCakeDetails(detail.available_cake_id);
-            });
+                fetchCakeDetails(detail.available_cake_id) ;
+            }) ;
         }
-    }, [order]);
+    } , [order]) ;
 
     useEffect(() => {
         if (order) {
             order.order_details.forEach(detail => {
-                console.log('Cake ID:', detail.available_cake_id);
-            });
+                console.log('Cake ID:' , detail.available_cake_id) ;
+            }) ;
         }
-    }, [order]);
+    } , [order]) ;
 
     const handleCancelOrder = async () => {
         try {
-            setIsCancelling(true);
-            const accessToken = localStorage.getItem('accessToken');
+            setIsCancelling(true) ;
+            const accessToken = localStorage.getItem('accessToken') ;
             if (!accessToken) {
-                toast.error('Vui lòng đăng nhập để hủy đơn hàng');
-                return;
+                toast.error('Vui lòng đăng nhập để hủy đơn hàng') ;
+                return ;
             }
 
-            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/orders/${orderId}/cancel`, {
-                method: 'DELETE',
+            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/orders/${orderId}/cancel` , {
+                method: 'DELETE' ,
                 headers: {
-                    'Authorization': `Bearer ${accessToken}`,
+                    'Authorization': `Bearer ${accessToken}` ,
                     'accept': '*/*'
                 }
-            });
+            }) ;
 
             if (response.ok) {
-                toast.success('Đơn hàng đã được hủy thành công');
+                toast.success('Đơn hàng đã được hủy thành công') ;
                 // Wait a moment for the toast to be visible before redirecting
                 setTimeout(() => {
-                    router.push('/orderHistory');
-                }, 1000);
+                    router.push('/orderHistory') ;
+                } , 1000) ;
             } else {
-                const data = await response.json();
-                throw new Error(data.errors?.[0] || 'Không thể hủy đơn hàng');
+                const data = await response.json() ;
+                throw new Error(data.errors?.[0] || 'Không thể hủy đơn hàng') ;
             }
         } catch (err: any) {
-            toast.error(err.message || 'Không thể hủy đơn hàng');
+            toast.error(err.message || 'Không thể hủy đơn hàng') ;
         } finally {
-            setIsCancelling(false);
+            setIsCancelling(false) ;
         }
-    };
+    } ;
 
     const handleMoveToNext = async () => {
         try {
-            setIsMovingNext(true);
-            const accessToken = localStorage.getItem('accessToken');
+            setIsMovingNext(true) ;
+            const accessToken = localStorage.getItem('accessToken') ;
             if (!accessToken) {
-                toast.error('Vui lòng đăng nhập để cập nhật trạng thái');
-                return;
+                toast.error('Vui lòng đăng nhập để cập nhật trạng thái') ;
+                return ;
             }
 
-            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/orders/${orderId}/move-to-next`, {
-                method: 'PUT',
+            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/orders/${orderId}/move-to-next` , {
+                method: 'PUT' ,
                 headers: {
-                    'Authorization': `Bearer ${accessToken}`,
+                    'Authorization': `Bearer ${accessToken}` ,
                     'accept': '*/*'
                 }
-            });
+            }) ;
 
             if (response.status === 200) {
-                toast.success('Cập nhật trạng thái đơn hàng thành công');
-                router.refresh();
+                toast.success('Cập nhật trạng thái đơn hàng thành công') ;
+                router.refresh() ;
                 // Refresh the order data
-                fetchOrder();
+                fetchOrder() ;
             } else {
-                const data = await response.json();
-                throw new Error(data.errors?.[0] || 'Không thể cập nhật trạng thái đơn hàng');
+                const data = await response.json() ;
+                throw new Error(data.errors?.[0] || 'Không thể cập nhật trạng thái đơn hàng') ;
             }
         } catch (err: any) {
-            toast.error(err.message || 'Không thể cập nhật trạng thái đơn hàng');
+            toast.error(err.message || 'Không thể cập nhật trạng thái đơn hàng') ;
         } finally {
-            setIsMovingNext(false);
+            setIsMovingNext(false) ;
         }
-    };
+    } ;
 
     const handleReorder = async () => {
         try {
-            setIsReordering(true);
-            const accessToken = localStorage.getItem('accessToken');
+            setIsReordering(true) ;
+            const accessToken = localStorage.getItem('accessToken') ;
             if (!accessToken) {
-                toast.error('Vui lòng đăng nhập để đặt lại đơn hàng');
-                return;
+                toast.error('Vui lòng đăng nhập để đặt lại đơn hàng') ;
+                return ;
             }
 
             if (!order) {
-                toast.error('Không tìm thấy thông tin đơn hàng');
-                return;
+                toast.error('Không tìm thấy thông tin đơn hàng') ;
+                return ;
             }
 
             // Create the reorder request body
             const reorderBody = {
-                bakery_id: order.bakery.id,
-                order_note: order.order_note || "",
-                phone_number: order.phone_number || order.customer.phone,
-                shipping_address: order.shipping_address || order.customer.address,
-                latitude: order.latitude || "0",
-                longitude: order.longitude || "0",
-                pickup_time: order.pickup_time,
-                shipping_type: order.shipping_type,
-                payment_type: order.payment_type,
-                voucher_code: "",
+                bakery_id: order.bakery.id ,
+                order_note: order.order_note || "" ,
+                phone_number: order.phone_number || order.customer.phone ,
+                shipping_address: order.shipping_address || order.customer.address ,
+                latitude: order.latitude || "0" ,
+                longitude: order.longitude || "0" ,
+                pickup_time: order.pickup_time ,
+                shipping_type: order.shipping_type ,
+                payment_type: order.payment_type ,
+                voucher_code: "" ,
                 order_detail_create_models: order.order_details.map(detail => ({
-                    available_cake_id: detail.available_cake_id,
-                    custom_cake_id: null,
-                    cake_note: detail.cake_note || "",
-                    quantity: detail.quantity,
+                    available_cake_id: detail.available_cake_id ,
+                    custom_cake_id: null ,
+                    cake_note: detail.cake_note || "" ,
+                    quantity: detail.quantity ,
                     price: detail.sub_total_price
                 }))
-            };
+            } ;
 
-            const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/orders', {
-                method: 'POST',
+            const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/orders' , {
+                method: 'POST' ,
                 headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}` ,
+                    'Content-Type': 'application/json' ,
                     'accept': '*/*'
-                },
+                } ,
                 body: JSON.stringify(reorderBody)
-            });
+            }) ;
 
-            const data = await response.json();
+            const data = await response.json() ;
 
             if (response.ok && data.status_code === 200) {
-                toast.success('Đặt lại đơn hàng thành công!');
+                toast.success('Đặt lại đơn hàng thành công!') ;
 
                 // Create the order details for QR payment page
                 const orderDetails = {
                     customerInfo: {
-                        fullName: order.customer.name,
-                        email: order.customer.email,
-                        phone: order.phone_number || order.customer.phone,
-                        address: order.shipping_address || order.customer.address,
-                    },
+                        fullName: order.customer.name ,
+                        email: order.customer.email ,
+                        phone: order.phone_number || order.customer.phone ,
+                        address: order.shipping_address || order.customer.address ,
+                    } ,
                     orderInfo: {
                         items: order.order_details.map(detail => ({
-                            cake_name: detail.custom_cake_id ? "Custom Cake" : (cakeNames[detail.available_cake_id] || "Cake"),
-                            quantity: detail.quantity,
-                            sub_total_price: detail.sub_total_price,
+                            cake_name: detail.custom_cake_id ? "Custom Cake" : (cakeNames[detail.available_cake_id] || "Cake") ,
+                            quantity: detail.quantity ,
+                            sub_total_price: detail.sub_total_price ,
                             main_image: {
                                 file_url: detail.custom_cake_id ? null : (cakeImages[detail.available_cake_id] || null)
-                            },
-                            custom_cake_id: detail.custom_cake_id || null,
+                            } ,
+                            custom_cake_id: detail.custom_cake_id || null ,
                             available_cake_id: detail.custom_cake_id ? null : detail.available_cake_id
-                        })),
-                        total: data.payload.total_customer_paid,
-                        orderCode: data.payload.order_code,
-                        totalProductPrice: data.payload.total_product_price,
-                        shippingDistance: data.payload.shipping_distance || 0,
-                        shippingFee: data.payload.shipping_fee || 0,
+                        })) ,
+                        total: data.payload.total_customer_paid ,
+                        orderCode: data.payload.order_code ,
+                        totalProductPrice: data.payload.total_product_price ,
+                        shippingDistance: data.payload.shipping_distance || 0 ,
+                        shippingFee: data.payload.shipping_fee || 0 ,
                         discountAmount: data.payload.discount_amount || 0
-                    },
+                    } ,
                     qrLink: `https://img.vietqr.io/image/TPBank-00005992966-qr_only.jpg?amount=${data.payload.total_customer_paid}&addInfo=${data.payload.order_code}`
-                };
+                } ;
 
                 // Reset payment countdown timer
-                localStorage.removeItem('paymentCountdown');
-                localStorage.removeItem('paymentTimestamp');
+                localStorage.removeItem('paymentCountdown') ;
+                localStorage.removeItem('paymentTimestamp') ;
 
                 // Save to localStorage for QR payment page to use
-                localStorage.setItem('currentOrder', JSON.stringify(orderDetails));
+                localStorage.setItem('currentOrder' , JSON.stringify(orderDetails)) ;
 
                 // Navigate to payment page
-                router.push('/qr-payment');
+                router.push('/qr-payment') ;
             } else {
-                throw new Error(data.errors?.[0] || 'Không thể đặt lại đơn hàng');
+                throw new Error(data.errors?.[0] || 'Không thể đặt lại đơn hàng') ;
             }
         } catch (err: any) {
-            console.error('Reorder error:', err);
-            toast.error(err.message || 'Không thể đặt lại đơn hàng');
+            console.error('Reorder error:' , err) ;
+            toast.error(err.message || 'Không thể đặt lại đơn hàng') ;
         } finally {
-            setIsReordering(false);
+            setIsReordering(false) ;
         }
-    };
+    } ;
 
     const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const files = event.target.files;
-        if (!files || files.length === 0) return;
+        const files = event.target.files ;
+        if (!files || files.length === 0) return ;
 
-        setIsUploading(true);
-        const formData = new FormData();
+        setIsUploading(true) ;
+        const formData = new FormData() ;
 
         try {
-            for (let i = 0; i < files.length; i++) {
-                formData.set('formFile', files[i]);
+            for (let i = 0 ; i < files.length ; i++) {
+                formData.set('formFile' , files[i]) ;
 
                 const response = await axios.post(
-                    'https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/files',
-                    formData,
+                    'https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/files' ,
+                    formData ,
                     {
                         headers: {
-                            'Content-Type': 'multipart/form-data',
-                        },
+                            'Content-Type': 'multipart/form-data' ,
+                        } ,
                     }
-                );
+                ) ;
 
                 if (response.data.status_code === 200) {
-                    setUploadedFiles(prev => [...prev, {
-                        id: response.data.payload.id,
+                    setUploadedFiles(prev => [...prev , {
+                        id: response.data.payload.id ,
                         name: response.data.payload.file_name
-                    }]);
+                    }]) ;
                 }
             }
         } catch (error) {
-            console.error('Error uploading file:', error);
-            toast.error("Có lỗi xảy ra khi tải lên tệp");
+            console.error('Error uploading file:' , error) ;
+            toast.error("Có lỗi xảy ra khi tải lên tệp") ;
         } finally {
-            setIsUploading(false);
+            setIsUploading(false) ;
         }
-    };
+    } ;
 
     const handleRemoveFile = (fileId: string) => {
-        setUploadedFiles(prev => prev.filter(file => file.id !== fileId));
-    };
+        setUploadedFiles(prev => prev.filter(file => file.id !== fileId)) ;
+    } ;
 
     const handleStoreReport = async () => {
         if (!storeReportContent.trim()) {
-            toast.error("Vui lòng nhập nội dung báo cáo");
-            return;
+            toast.error("Vui lòng nhập nội dung báo cáo") ;
+            return ;
         }
 
-        setIsSubmittingStoreReport(true);
+        setIsSubmittingStoreReport(true) ;
         try {
-            const accessToken = localStorage.getItem('accessToken');
+            const accessToken = localStorage.getItem('accessToken') ;
 
             if (!accessToken) {
-                toast.error("Vui lòng đăng nhập để báo cáo đơn hàng");
-                return;
+                toast.error("Vui lòng đăng nhập để báo cáo đơn hàng") ;
+                return ;
             }
 
             const reportData = {
-                content: storeReportContent,
-                report_files: uploadedFiles.map(file => file.id),
-                order_id: orderId,
+                content: storeReportContent ,
+                report_files: uploadedFiles.map(file => file.id) ,
+                order_id: orderId ,
                 bakery_id: order?.bakery.id
-            };
+            } ;
 
             const response = await axios.post(
-                'https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/reports',
-                reportData,
+                'https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/reports' ,
+                reportData ,
                 {
                     headers: {
-                        'Authorization': `Bearer ${accessToken}`,
+                        'Authorization': `Bearer ${accessToken}` ,
                         'Content-Type': 'application/json'
                     }
                 }
-            );
+            ) ;
 
             if (response.status === 201) {
-                toast.success("Báo cáo thành công! Chúng tôi đã nhận được báo cáo của bạn và sẽ xem xét trong thời gian sớm nhất");
-                setStoreReportDialogOpen(false);
-                setStoreReportContent('');
-                setUploadedFiles([]);
+                toast.success("Báo cáo thành công! Chúng tôi đã nhận được báo cáo của bạn và sẽ xem xét trong thời gian sớm nhất") ;
+                setStoreReportDialogOpen(false) ;
+                setStoreReportContent('') ;
+                setUploadedFiles([]) ;
             }
         } catch (error: any) {
-            console.error("Error reporting order:", error);
-            toast.error(error.response?.data?.message || "Có lỗi xảy ra khi gửi báo cáo");
+            console.error("Error reporting order:" , error) ;
+            toast.error(error.response?.data?.message || "Có lỗi xảy ra khi gửi báo cáo") ;
         } finally {
-            setIsSubmittingStoreReport(false);
+            setIsSubmittingStoreReport(false) ;
         }
-    };
+    } ;
 
     // Add this function to fetch review image
     const fetchReviewImage = async (imageId: string) => {
         try {
-            const accessToken = localStorage.getItem('accessToken');
+            const accessToken = localStorage.getItem('accessToken') ;
             if (!accessToken) {
-                throw new Error('Access token not found');
+                throw new Error('Access token not found') ;
             }
 
-            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/files/${imageId}`, {
+            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/files/${imageId}` , {
                 headers: {
-                    'Authorization': `Bearer ${accessToken}`,
+                    'Authorization': `Bearer ${accessToken}` ,
                     'accept': '*/*'
                 }
-            });
+            }) ;
 
             if (!response.ok) {
-                throw new Error('Failed to fetch review image');
+                throw new Error('Failed to fetch review image') ;
             }
 
-            const data = await response.json();
+            const data = await response.json() ;
             if (data.status_code === 200 && data.payload.file_url) {
-                setReviewImage(data.payload.file_url);
+                setReviewImage(data.payload.file_url) ;
             }
         } catch (err: any) {
-            console.error('Error fetching review image:', err);
+            console.error('Error fetching review image:' , err) ;
         }
-    };
+    } ;
 
     // Add this useEffect to fetch review image when order has a review
     useEffect(() => {
         if (order?.order_details[0]?.review?.image_id) {
-            fetchReviewImage(order.order_details[0].review.image_id);
+            fetchReviewImage(order.order_details[0].review.image_id) ;
         }
-    }, [order]);
+    } , [order]) ;
 
     if (loading) {
         return (
@@ -1156,7 +1156,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
                 </div>
             </div>
-        );
+        ) ;
     }
 
     if (error) {
@@ -1175,7 +1175,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                     </CardContent>
                 </Card>
             </div>
-        );
+        ) ;
     }
 
     if (!order) {
@@ -1194,14 +1194,14 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                     </CardContent>
                 </Card>
             </div>
-        );
+        ) ;
     }
 
     return (
         <div className="container mx-auto px-4 py-8">
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0 , y: 20 }}
+                animate={{ opacity: 1 , y: 0 }}
                 transition={{ duration: 0.5 }}
                 className="bg-gradient-to-r from-pink-100 to-teal-100 dark:from-gray-900 dark:to-gray-800 p-8 rounded-lg shadow-xl"
             >
@@ -1277,42 +1277,42 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                                     // Prepare order details for QR payment page
                                     const orderDetails = {
                                         customerInfo: {
-                                            fullName: order.customer.name,
-                                            email: order.customer.email,
-                                            phone: order.phone_number || order.customer.phone,
-                                            address: order.shipping_address || order.customer.address,
-                                        },
+                                            fullName: order.customer.name ,
+                                            email: order.customer.email ,
+                                            phone: order.phone_number || order.customer.phone ,
+                                            address: order.shipping_address || order.customer.address ,
+                                        } ,
                                         orderInfo: {
                                             items: order.order_details.map(detail => ({
-                                                cake_name: detail.custom_cake_id ? "Custom Cake" : (cakeNames[detail.available_cake_id] || "Cake"),
-                                                quantity: detail.quantity,
-                                                sub_total_price: detail.sub_total_price,
+                                                cake_name: detail.custom_cake_id ? "Custom Cake" : (cakeNames[detail.available_cake_id] || "Cake") ,
+                                                quantity: detail.quantity ,
+                                                sub_total_price: detail.sub_total_price ,
                                                 main_image: {
                                                     file_url: detail.custom_cake_id ? null : (cakeImages[detail.available_cake_id] || null)
-                                                },
-                                                custom_cake_id: detail.custom_cake_id || null,
+                                                } ,
+                                                custom_cake_id: detail.custom_cake_id || null ,
                                                 available_cake_id: detail.custom_cake_id ? null : detail.available_cake_id
-                                            })),
-                                            total: order.total_customer_paid,
-                                            orderCode: order.order_code,
-                                            totalProductPrice: order.total_product_price,
-                                            shippingDistance: order.shipping_distance || 0,
-                                            shippingFee: order.shipping_fee || 0,
+                                            })) ,
+                                            total: order.total_customer_paid ,
+                                            orderCode: order.order_code ,
+                                            totalProductPrice: order.total_product_price ,
+                                            shippingDistance: order.shipping_distance || 0 ,
+                                            shippingFee: order.shipping_fee || 0 ,
                                             discountAmount: 0
-                                        },
+                                        } ,
                                         qrLink: `https://img.vietqr.io/image/TPBank-00005992966-qr_only.jpg?amount=${order.total_customer_paid}&addInfo=${order.order_code}`
-                                    };
+                                    } ;
 
                                     // // Reset payment countdown timer
-                                    // localStorage.removeItem('paymentCountdown');
-                                    // localStorage.removeItem('paymentTimestamp');
+                                    // localStorage.removeItem('paymentCountdown') ;
+                                    // localStorage.removeItem('paymentTimestamp') ;
 
                                     // // Save to localStorage
-                                    // localStorage.setItem('currentOrder', JSON.stringify(orderDetails));
+                                    // localStorage.setItem('currentOrder' , JSON.stringify(orderDetails)) ;
 
                                     // Navigate to QR payment page
-                                    const paymentUrl = `/qr-payment`;
-                                    router.push(paymentUrl);
+                                    const paymentUrl = `/qr-payment` ;
+                                    router.push(paymentUrl) ;
                                 }}
                             >
                                 <CreditCard className="h-4 w-4 mr-2" />
@@ -1373,8 +1373,8 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                                             <p>Bạn có chắc chắn muốn hủy đơn hàng này? Hành động này không thể hoàn tác.</p>
                                             <ul className="list-disc pl-4 space-y-1 mt-2">
                                                 <li>Đơn hàng sẽ được hủy ngay lập tức</li>
-                                                <li>Nếu bạn đã thanh toán, số tiền sẽ được hoàn trả trong vòng 3-5 ngày làm việc</li>
-                                                <li>Sau khi hủy, bạn sẽ được chuyển về trang lịch sử đơn hàng</li>
+                                                <li>Nếu bạn đã thanh toán , số tiền sẽ được hoàn trả trong vòng 3-5 ngày làm việc</li>
+                                                <li>Sau khi hủy , bạn sẽ được chuyển về trang lịch sử đơn hàng</li>
                                                 <li>Bạn có thể đặt lại đơn hàng mới bất cứ lúc nào</li>
                                             </ul>
                                             <p className="text-sm text-red-500 mt-2">Lưu ý: Không được hủy quá nhiều đơn hàng nếu quá số lượng hủy được phép thì tài khoản sẽ bị khóa</p>
@@ -1513,8 +1513,8 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                         {/* Add this section after the order details card */}
                         {order?.order_details[0]?.review && (
                             <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
+                                initial={{ opacity: 0 , y: 20 }}
+                                animate={{ opacity: 1 , y: 0 }}
                                 transition={{ duration: 0.5 }}
                             >
                                 <Card className="border-none shadow-lg hover:shadow-2xl transition-all duration-300 mt-6 bg-gradient-to-br from-white to-custom-pink/10 dark:from-gray-800 dark:to-custom-pink/30">
@@ -1533,7 +1533,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                                         <div className="space-y-6">
                                             <div className="flex items-center gap-2">
                                                 <div className="flex">
-                                                    {[...Array(5)].map((_, index) => (
+                                                    {[...Array(5)].map((_ , index) => (
                                                         <Star
                                                             key={index}
                                                             className={`h-6 w-6 transition-all duration-200 ${index < (order.order_details[0].review?.rating || 0)
@@ -1553,8 +1553,8 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
 
                                             {reviewImage && (
                                                 <motion.div
-                                                    initial={{ opacity: 0, scale: 0.95 }}
-                                                    animate={{ opacity: 1, scale: 1 }}
+                                                    initial={{ opacity: 0 , scale: 0.95 }}
+                                                    animate={{ opacity: 1 , scale: 1 }}
                                                     transition={{ duration: 0.3 }}
                                                     className="relative h-64 w-full rounded-xl overflow-hidden shadow-lg"
                                                 >
@@ -1571,7 +1571,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                                             <div className="flex items-center gap-2 text-sm text-gray-500">
                                                 <Calendar className="h-4 w-4" />
                                                 <span>
-                                                    Đánh giá vào: {format(new Date(order.order_details[0].review?.created_at || ''), 'dd/MM/yyyy HH:mm')}
+                                                    Đánh giá vào: {format(new Date(order.order_details[0].review?.created_at || '') , 'dd/MM/yyyy HH:mm')}
                                                 </span>
                                             </div>
                                         </div>
@@ -1748,7 +1748,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                                         </div>
                                         <div>
                                             <h4 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-red-500 dark:group-hover:text-red-400">Vấn đề về sản phẩm</h4>
-                                            <p className="text-sm text-gray-700 dark:text-gray-400 mt-1">Chất lượng, mô tả không chính xác, giá cả</p>
+                                            <p className="text-sm text-gray-700 dark:text-gray-400 mt-1">Chất lượng , mô tả không chính xác , giá cả</p>
                                         </div>
                                     </button>
 
@@ -1762,7 +1762,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                                         </div>
                                         <div>
                                             <h4 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-red-500 dark:group-hover:text-red-400">Vấn đề về dịch vụ</h4>
-                                            <p className="text-sm text-gray-700 dark:text-gray-400 mt-1">Thái độ phục vụ, thời gian phản hồi</p>
+                                            <p className="text-sm text-gray-700 dark:text-gray-400 mt-1">Thái độ phục vụ , thời gian phản hồi</p>
                                         </div>
                                     </button>
                                 </div>
@@ -1789,7 +1789,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                                         <FileText className="w-4 h-4 text-gray-700" />
                                         Tệp đính kèm
                                     </Label>
-                                    <span className="text-sm text-gray-700">Hỗ trợ: JPG, PNG, PDF, DOC (tối đa 5MB)</span>
+                                    <span className="text-sm text-gray-700">Hỗ trợ: JPG , PNG , PDF , DOC (tối đa 5MB)</span>
                                 </div>
 
                                 <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-8 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200">
@@ -1800,7 +1800,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                                             className="hidden"
                                             onChange={handleFileUpload}
                                             multiple
-                                            accept="image/*,.pdf,.doc,.docx"
+                                            accept="image/* ,.pdf ,.doc ,.docx"
                                         />
                                         <div className="p-3 bg-red-50 dark:bg-red-900/30 rounded-full">
                                             <Upload className="w-6 h-6 text-red-500 dark:text-red-400" />
@@ -1859,9 +1859,9 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                                 <Button
                                     variant="outline"
                                     onClick={() => {
-                                        setStoreReportDialogOpen(false);
-                                        setStoreReportContent('');
-                                        setUploadedFiles([]);
+                                        setStoreReportDialogOpen(false) ;
+                                        setStoreReportContent('') ;
+                                        setUploadedFiles([]) ;
                                     }}
                                     className="bg-white dark:bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-900 dark:text-gray-300 border-2 border-gray-300 dark:border-gray-700 font-semibold"
                                 >
@@ -1887,5 +1887,5 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                 </Dialog>
             </motion.div>
         </div>
-    );
+    ) ;
 } 

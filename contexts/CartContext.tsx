@@ -82,7 +82,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     const addToCart = (config: CakeConfig) => {
         const price = calculatePrice(config);
-        const newId = generateId();
+        const newId = generateId() ;
         setItems(prev => [...prev, {
             id: newId,
             config,

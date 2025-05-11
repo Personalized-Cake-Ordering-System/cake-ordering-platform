@@ -1,53 +1,53 @@
-"use client";
+"use client" ;
 
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { ChevronDown, Filter, Search } from "lucide-react";
+import { Input } from "@/components/ui/input" 
+import { Button } from "@/components/ui/button" 
+import { ChevronDown , Filter , Search } from "lucide-react" 
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Select ,
+  SelectContent ,
+  SelectItem ,
+  SelectTrigger ,
+  SelectValue ,
+} from "@/components/ui/select" 
 
-import { stores } from "@/components/shared/client/home/data";
-import { StoreCard } from "@/components/shared/client/stores/store-card";
-import { StoreFilters } from "@/components/shared/client/stores/store-filter";
-import { StoreFilterTags } from "@/components/shared/client/stores/store-filter-tag";
-import { useStoreFilters } from "@/hooks/use-store-filter";
-import React from "react";
-import { ApiListResponse } from "@/lib/api/api-handler/generic";
-import { IBakery } from "@/features/barkeries/types/barkeries-type";
+import { stores } from "@/components/shared/client/home/data" 
+import { StoreCard } from "@/components/shared/client/stores/store-card" 
+import { StoreFilters } from "@/components/shared/client/stores/store-filter" 
+import { StoreFilterTags } from "@/components/shared/client/stores/store-filter-tag" 
+import { useStoreFilters } from "@/hooks/use-store-filter" 
+import React from "react" 
+import { ApiListResponse } from "@/lib/api/api-handler/generic" 
+import { IBakery } from "@/features/barkeries/types/barkeries-type" 
 // Danh sách các loại bánh cho filter
 const cakeCategories = [
-  "Bánh mì",
-  "Bánh kem",
-  "Bánh ngọt",
-  "Bánh mặn",
-  "Bánh trung thu",
-  "Bánh chay",
-  "Bánh sinh nhật",
-  "Bánh theo mùa",
-];
+  "Bánh mì" ,
+  "Bánh kem" ,
+  "Bánh ngọt" ,
+  "Bánh mặn" ,
+  "Bánh trung thu" ,
+  "Bánh chay" ,
+  "Bánh sinh nhật" ,
+  "Bánh theo mùa" ,
+] 
 
 interface StoreSectionProps {
-    barkeriesPromise: ApiListResponse<IBakery>;
+    barkeriesPromise: ApiListResponse<IBakery> 
 }
 
 const StoreSection = ({ barkeriesPromise }: StoreSectionProps) => {
   const {
-    filters,
-    isFilterOpen,
-    activeFiltersCount,
-    setIsFilterOpen,
-    setSortBy,
-    setSearchQuery,
-  } = useStoreFilters();
+    filters ,
+    isFilterOpen ,
+    activeFiltersCount ,
+    setIsFilterOpen ,
+    setSortBy ,
+    setSearchQuery ,
+  } = useStoreFilters() 
 
-    // const store = barkeriesPromise.data;
+    // const store = barkeriesPromise.data 
     
-    // console.log(store);
+    // console.log(store) 
 
   return (
     <div>
@@ -168,7 +168,7 @@ const StoreSection = ({ barkeriesPromise }: StoreSectionProps) => {
         </div>
       </div>
     </div>
-  );
-};
+  ) 
+} 
 
-export default StoreSection;
+export default StoreSection 

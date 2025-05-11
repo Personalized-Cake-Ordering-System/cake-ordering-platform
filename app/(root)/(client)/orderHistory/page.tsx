@@ -1,37 +1,37 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState , useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card , CardContent , CardHeader , CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Calendar, Clock, MapPin, Package, ArrowRight, ChevronLeft, ChevronRight, ArrowUpDown, Truck, AlertTriangle } from 'lucide-react';
+import { Calendar , Clock , MapPin , Package , ArrowRight , ChevronLeft , ChevronRight , ArrowUpDown , Truck , AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
-import { decodeJWT, cn } from '@/lib/utils';
+import { decodeJWT , cn } from '@/lib/utils';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+    Select ,
+    SelectContent ,
+    SelectItem ,
+    SelectTrigger ,
+    SelectValue ,
 } from "@/components/ui/select";
 
 // Order status constants
 const OrderStatus = {
-  WAITING_BAKERY_CONFIRM: 1,
-  PROCESSING: 2,
-  SHIPPING: 3,
-  SHIPPING_COMPLETED: 4,
-  COMPLETED: 5,
-  PICKUP: 3,
-  READY_FOR_PICKUP: 3,
-  REPORT_PENDING: -2,
-  FAULTY: -3,
-  CANCELED: -1,
-  PENDING: 0,
+  WAITING_BAKERY_CONFIRM: 1 ,
+  PROCESSING: 2 ,
+  SHIPPING: 3 ,
+  SHIPPING_COMPLETED: 4 ,
+  COMPLETED: 5 ,
+  PICKUP: 3 ,
+  READY_FOR_PICKUP: 3 ,
+  REPORT_PENDING: -2 ,
+  FAULTY: -3 ,
+  CANCELED: -1 ,
+  PENDING: 0 ,
 };
 
 interface Order {
@@ -59,12 +59,12 @@ type StatusFilter = 'all' | 'PENDING' | 'WAITING_BAKERY_CONFIRM' | 'PROCESSING' 
 
 const OrderHistoryPage = () => {
     const router = useRouter();
-    const [orders, setOrders] = useState<Order[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [sortBy, setSortBy] = useState<SortOption>('newest');
-    const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+    const [orders , setOrders] = useState<Order[]>([]);
+    const [loading , setLoading] = useState(true);
+    const [error , setError] = useState<string | null>(null);
+    const [currentPage , setCurrentPage] = useState(1);
+    const [sortBy , setSortBy] = useState<SortOption>('newest');
+    const [statusFilter , setStatusFilter] = useState<StatusFilter>('all');
     const itemsPerPage = 1000;
 
     useEffect(() => {
@@ -84,9 +84,9 @@ const OrderHistoryPage = () => {
                     return;
                 }
 
-                const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/customers/${decodedToken.id}/orders?pageIndex=${currentPage - 1}&pageSize=${itemsPerPage}`, {
+                const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/customers/${decodedToken.id}/orders?pageIndex=${currentPage - 1}&pageSize=${itemsPerPage}` , {
                     headers: {
-                        'Authorization': `Bearer ${accessToken}`,
+                        'Authorization': `Bearer ${accessToken}` ,
                         'accept': '*/*'
                     }
                 });
@@ -105,11 +105,11 @@ const OrderHistoryPage = () => {
         };
 
         fetchOrders();
-    }, [currentPage]);
+    } , [currentPage]);
 
     const formatVND = (amount: number) => {
-        return new Intl.NumberFormat('vi-VN', {
-            style: 'currency',
+        return new Intl.NumberFormat('vi-VN' , {
+            style: 'currency' ,
             currency: 'VND'
         }).format(amount);
     };
@@ -140,7 +140,7 @@ const OrderHistoryPage = () => {
         }
     };
 
-    const getStatusText = (status: string, shippingType?: string) => {
+    const getStatusText = (status: string , shippingType?: string) => {
         const isPickup = shippingType?.toUpperCase() === 'PICKUP';
         
         switch (status) {
@@ -187,8 +187,8 @@ const OrderHistoryPage = () => {
         router.push(`/orderHistory/${orderId}`);
     };
 
-    const sortOrders = (orders: Order[], sortBy: SortOption) => {
-        return [...orders].sort((a, b) => {
+    const sortOrders = (orders: Order[] , sortBy: SortOption) => {
+        return [...orders].sort((a , b) => {
             switch (sortBy) {
                 case 'newest':
                     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
@@ -209,22 +209,22 @@ const OrderHistoryPage = () => {
         });
     };
 
-    const filterOrders = (orders: Order[], status: StatusFilter) => {
+    const filterOrders = (orders: Order[] , status: StatusFilter) => {
         if (status === 'all') return orders;
         return orders.filter(order => order.order_status === status);
     };
 
-    const filteredOrders = filterOrders(orders, statusFilter);
-    const sortedOrders = sortOrders(filteredOrders, sortBy);
+    const filteredOrders = filterOrders(orders , statusFilter);
+    const sortedOrders = sortOrders(filteredOrders , sortBy);
     const totalPages = Math.ceil(sortedOrders.length / itemsPerPage);
     const paginatedOrders = sortedOrders.slice(
-        (currentPage - 1) * itemsPerPage,
+        (currentPage - 1) * itemsPerPage ,
         currentPage * itemsPerPage
     );
 
     const handlePageChange = (newPage: number) => {
         setCurrentPage(newPage);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.scrollTo({ top: 0 , behavior: 'smooth' });
     };
 
     if (loading) {
@@ -259,8 +259,8 @@ const OrderHistoryPage = () => {
     return (
         <div className="container mx-auto px-4 py-8">
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0 , y: 20 }}
+                animate={{ opacity: 1 , y: 0 }}
                 transition={{ duration: 0.5 }}
             >
                 <div className="flex items-center justify-between mb-8">
@@ -336,8 +336,8 @@ const OrderHistoryPage = () => {
 
                 {orders.length === 0 ? (
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
+                        initial={{ opacity: 0 , scale: 0.95 }}
+                        animate={{ opacity: 1 , scale: 1 }}
                         transition={{ duration: 0.5 }}
                     >
                         <Card className="max-w-2xl mx-auto border-2 border-dashed border-primary/20">
@@ -363,12 +363,12 @@ const OrderHistoryPage = () => {
                 ) : (
                     <>
                         <div className="space-y-6">
-                            {paginatedOrders.map((order, index) => (
+                            {paginatedOrders.map((order , index) => (
                                 <motion.div
                                     key={order.id}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.5, delay: index * 0.1 }}
+                                    initial={{ opacity: 0 , y: 20 }}
+                                    animate={{ opacity: 1 , y: 0 }}
+                                    transition={{ duration: 0.5 , delay: index * 0.1 }}
                                     whileHover={{ scale: 1.01 }}
                                     className="cursor-pointer"
                                     onClick={() => handleViewOrder(order.id)}
@@ -384,25 +384,25 @@ const OrderHistoryPage = () => {
                                                         <div className="flex items-center gap-1 text-muted-foreground">
                                                             <Calendar className="h-4 w-4" />
                                                             <span className="text-sm">
-                                                                {format(new Date(order.created_at), 'dd/MM/yyyy')}
+                                                                {format(new Date(order.created_at) , 'dd/MM/yyyy')}
                                                             </span>
                                                         </div>
                                                         <div className="flex items-center gap-1 text-muted-foreground">
                                                             <Clock className="h-4 w-4" />
                                                             <span className="text-sm">
-                                                                {format(new Date(order.created_at), 'HH:mm')}
+                                                                {format(new Date(order.created_at) , 'HH:mm')}
                                                             </span>
                                                         </div>
                                                     </div>
                                                 </div>
                                                 <Badge
                                                     className={cn(
-                                                        "px-3 py-1.5 rounded-full font-medium flex items-center",
+                                                        "px-3 py-1.5 rounded-full font-medium flex items-center" ,
                                                         getStatusColor(order.order_status)
                                                     )}
                                                 >
                                                     {getStatusIcon(order.order_status)}
-                                                    {getStatusText(order.order_status, order.shipping_type)}
+                                                    {getStatusText(order.order_status , order.shipping_type)}
                                                 </Badge>
                                             </div>
                                         </CardHeader>
@@ -462,7 +462,7 @@ const OrderHistoryPage = () => {
                                                                 <Calendar className="h-4 w-4 text-primary" />
                                                             </div>
                                                             <p className="text-sm">
-                                                                Thời gian nhận: {format(new Date(order.pickup_time), 'dd/MM/yyyy')}
+                                                                Thời gian nhận: {format(new Date(order.pickup_time) , 'dd/MM/yyyy')}
                                                             </p>
                                                         </div>
                                                     </div>
@@ -489,8 +489,8 @@ const OrderHistoryPage = () => {
 
                         {totalPages > 1 && (
                             <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
+                                initial={{ opacity: 0 , y: 20 }}
+                                animate={{ opacity: 1 , y: 0 }}
                                 transition={{ duration: 0.5 }}
                                 className="flex justify-center items-center gap-2 mt-8"
                             >
@@ -504,7 +504,7 @@ const OrderHistoryPage = () => {
                                     <ChevronLeft className="h-4 w-4" />
                                 </Button>
 
-                                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                                {Array.from({ length: totalPages } , (_ , i) => i + 1).map((page) => (
                                     <Button
                                         key={page}
                                         variant={currentPage === page ? "default" : "outline"}

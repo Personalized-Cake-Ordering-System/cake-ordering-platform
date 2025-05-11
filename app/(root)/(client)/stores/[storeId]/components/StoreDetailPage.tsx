@@ -1,240 +1,240 @@
-"use client";
+"use client" ;
 
-import { useState, useEffect, useMemo } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MapPin, Phone, Mail, Calendar, Store, Image as ImageIcon, Heart, ShoppingCart, Minus, Plus, ChevronLeft, ChevronRight, Star, AlertTriangle, Flag, X, Upload, FileText, AlertCircle } from 'lucide-react';
-import StoreHeader from './StoreHeader';
-import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import Image from 'next/image';
-import axios from 'axios';
-import CakeCustomizer from '@/components/3d-custom/cake-customize';
-import { useWishlist } from '@/app/store/useWishlist';
-import { useCart } from '@/app/store/useCart';
-import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import { useState, useEffect, useMemo } from 'react' ;
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs' ;
+import { MapPin, Phone, Mail, Calendar, Store, Image as ImageIcon, Heart, ShoppingCart, Minus, Plus, ChevronLeft, ChevronRight, Star, AlertTriangle, Flag, X, Upload, FileText, AlertCircle } from 'lucide-react' ;
+import StoreHeader from './StoreHeader' ;
+import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from "@/components/ui/dialog" ;
+import Image from 'next/image' ;
+import axios from 'axios' ;
+import CakeCustomizer from '@/components/3d-custom/cake-customize' ;
+import { useWishlist } from '@/app/store/useWishlist' ;
+import { useCart } from '@/app/store/useCart' ;
+import { Button } from '@/components/ui/button' ;
+import { toast } from 'sonner' ;
+import { useRouter } from 'next/navigation' ;
+import { Textarea } from "@/components/ui/textarea" ;
+import { Label } from "@/components/ui/label" ;
 
 // API response interfaces
 interface FileData {
-  file_name: string;
-  file_url: string;
-  id: string;
-  created_at: string;
-  created_by: string;
-  updated_at: string | null;
-  updated_by: string | null;
-  is_deleted: boolean;
+  file_name: string ;
+  file_url: string ;
+  id: string ;
+  created_at: string ;
+  created_by: string ;
+  updated_at: string | null ;
+  updated_by: string | null ;
+  is_deleted: boolean ;
 }
 
 interface BakeryData {
-  bakery_name: string;
-  email: string;
-  phone: string;
-  address: string;
-  latitude?: string;
-  longitude?: string;
-  bank_account?: string | null;
-  owner_name: string;
+  bakery_name: string ;
+  email: string ;
+  phone: string ;
+  address: string ;
+  latitude?: string ;
+  longitude?: string ;
+  bank_account?: string | null ;
+  owner_name: string ;
   avatar_file?: {
-    file_url: string;
-  };
-  identity_card_number?: string;
-  front_card_file_id?: string;
-  front_card_file?: FileData;
-  back_card_file_id?: string;
-  back_card_file?: FileData;
-  tax_code?: string;
-  status: string;
-  confirmed_at?: string;
+    file_url: string ;
+  } ;
+  identity_card_number?: string ;
+  front_card_file_id?: string ;
+  front_card_file?: FileData ;
+  back_card_file_id?: string ;
+  back_card_file?: FileData ;
+  tax_code?: string ;
+  status: string ;
+  confirmed_at?: string ;
   shop_image_files?: Array<{
-    file_url: string;
-  }>;
-  id: string;
-  created_at: string;
-  created_by?: string;
-  updated_at?: string | null;
-  updated_by?: string | null;
-  is_deleted?: boolean;
+    file_url: string ;
+  }> ;
+  id: string ;
+  created_at: string ;
+  created_by?: string ;
+  updated_at?: string | null ;
+  updated_by?: string | null ;
+  is_deleted?: boolean ;
 }
 
 interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  image_url: string;
-  category_name: string;
+  id: string ;
+  name: string ;
+  description: string ;
+  price: number ;
+  image_url: string ;
+  category_name: string ;
 }
 
 // Store information interface
 interface StoreInfo {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  address: string;
-  ownerName: string;
-  avatar: string;
-  bannerImages: string[];
-  status: string;
-  createdAt: string;
-  taxCode?: string;
-  cake_description: string;
-  price_description: string;
-  bakery_description: string;
+  id: string ;
+  name: string ;
+  email: string ;
+  phone: string ;
+  address: string ;
+  ownerName: string ;
+  avatar: string ;
+  bannerImages: string[] ;
+  status: string ;
+  createdAt: string ;
+  taxCode?: string ;
+  cake_description: string ;
+  price_description: string ;
+  bakery_description: string ;
 }
 
 interface AvailableCake {
-  available_cake_price: number;
-  available_cake_name: string;
-  available_cake_description: string;
-  available_cake_type: string;
-  available_cake_quantity: number;
-  available_main_image_id: string;
-  available_cake_main_image: null;
-  available_cake_image_files: FileData[];
-  bakery_id: string;
-  id: string;
-  created_at: string;
-  created_by: string;
-  updated_at: string | null;
-  updated_by: string | null;
-  is_deleted: boolean;
+  available_cake_price: number ;
+  available_cake_name: string ;
+  available_cake_description: string ;
+  available_cake_type: string ;
+  available_cake_quantity: number ;
+  available_main_image_id: string ;
+  available_cake_main_image: null ;
+  available_cake_image_files: FileData[] ;
+  bakery_id: string ;
+  id: string ;
+  created_at: string ;
+  created_by: string ;
+  updated_at: string | null ;
+  updated_by: string | null ;
+  is_deleted: boolean ;
 }
 
 interface ApiResponse {
-  status_code: number;
-  errors: any[];
+  status_code: number ;
+  errors: any[] ;
   meta_data: {
-    total_items_count: number;
-    page_size: number;
-    total_pages_count: number;
-    page_index: number;
-    has_next: boolean;
-    has_previous: boolean;
-  };
-  payload: AvailableCake[];
+    total_items_count: number ;
+    page_size: number ;
+    total_pages_count: number ;
+    page_index: number ;
+    has_next: boolean ;
+    has_previous: boolean ;
+  } ;
+  payload: AvailableCake[] ;
 }
 
 interface Review {
-  id: string;
-  rating: number;
-  content: string | null;
-  image_id: string | null;
-  customer_id: string;
-  created_at: string;
+  id: string ;
+  rating: number ;
+  content: string | null ;
+  image_id: string | null ;
+  customer_id: string ;
+  created_at: string ;
   image?: {
-    file_url: string;
-  };
+    file_url: string ;
+  } ;
   customer?: {
-    name: string;
-  };
+    name: string ;
+  } ;
 }
 
 interface ReviewApiResponse {
-  status_code: number;
-  errors: any[];
+  status_code: number ;
+  errors: any[] ;
   meta_data: {
-    total_items_count: number;
-    page_size: number;
-    total_pages_count: number;
-    page_index: number;
-    has_next: boolean;
-    has_previous: boolean;
-  };
+    total_items_count: number ;
+    page_size: number ;
+    total_pages_count: number ;
+    page_index: number ;
+    has_next: boolean ;
+    has_previous: boolean ;
+  } ;
   payload: {
-    reviews: Review[];
-  };
+    reviews: Review[] ;
+  } ;
 }
 
 // Add new interfaces for filters
 interface ReviewFilters {
-  rating: number | null;
-  sortBy: 'newest' | 'oldest' | 'highest' | 'lowest';
+  rating: number | null ;
+  sortBy: 'newest' | 'oldest' | 'highest' | 'lowest' ;
 }
 
 export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
-  const router = useRouter();
-  const [activeTab, setActiveTab] = useState('info');
-  const [storeInfo, setStoreInfo] = useState<StoreInfo | null>(null);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [cakes, setCakes] = useState<AvailableCake[]>([]);
-  const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
-  const { addToWishlist, removeFromWishlist, items } = useWishlist();
+  const router = useRouter() ;
+  const [activeTab, setActiveTab] = useState('info') ;
+  const [storeInfo, setStoreInfo] = useState<StoreInfo | null>(null) ;
+  const [selectedImage, setSelectedImage] = useState<string | null>(null) ;
+  const [isLoading, setIsLoading] = useState(true) ;
+  const [cakes, setCakes] = useState<AvailableCake[]>([]) ;
+  const [quantities, setQuantities] = useState<{ [key: string]: number }>({}) ;
+  const { addToWishlist, removeFromWishlist, items } = useWishlist() ;
 
-  const token = localStorage.getItem('accessToken');
+  const token = localStorage.getItem('accessToken') ;
 
-  console.log(token);
+  console.log(token) ;
 
   // Add new state for filters
-  const [sortBy, setSortBy] = useState('newest');
-  const [filterBy, setFilterBy] = useState('all');
+  const [sortBy, setSortBy] = useState('newest') ;
+  const [filterBy, setFilterBy] = useState('all') ;
 
   const [pagination, setPagination] = useState({
     currentPage: 0,
     pageSize: 9,
     totalPages: 1,
     totalItems: 0
-  });
+  }) ;
 
-  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]) ;
   const [reviewPagination, setReviewPagination] = useState({
     currentPage: 0,
     pageSize: 5,
     totalPages: 1,
     totalItems: 0
-  });
+  }) ;
 
-  const [userRating, setUserRating] = useState(5);
-  const [userReview, setUserReview] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [reportDialogOpen, setReportDialogOpen] = useState(false);
-  const [selectedReviewId, setSelectedReviewId] = useState<string | null>(null);
-  const [reportReason, setReportReason] = useState('');
-  const [storeReportDialogOpen, setStoreReportDialogOpen] = useState(false);
-  const [storeReportContent, setStoreReportContent] = useState('');
-  const [isSubmittingStoreReport, setIsSubmittingStoreReport] = useState(false);
-  const [uploadedFiles, setUploadedFiles] = useState<Array<{ id: string, name: string }>>([]);
-  const [isUploading, setIsUploading] = useState(false);
+  const [userRating, setUserRating] = useState(5) ;
+  const [userReview, setUserReview] = useState('') ;
+  const [isSubmitting, setIsSubmitting] = useState(false) ;
+  const [reportDialogOpen, setReportDialogOpen] = useState(false) ;
+  const [selectedReviewId, setSelectedReviewId] = useState<string | null>(null) ;
+  const [reportReason, setReportReason] = useState('') ;
+  const [storeReportDialogOpen, setStoreReportDialogOpen] = useState(false) ;
+  const [storeReportContent, setStoreReportContent] = useState('') ;
+  const [isSubmittingStoreReport, setIsSubmittingStoreReport] = useState(false) ;
+  const [uploadedFiles, setUploadedFiles] = useState<Array<{ id: string, name: string }>>([]) ;
+  const [isUploading, setIsUploading] = useState(false) ;
 
   // Add filtered and sorted reviews
   const [reviewFilters, setReviewFilters] = useState<ReviewFilters>({
     rating: null,
     sortBy: 'newest'
-  });
+  }) ;
 
   const filteredAndSortedReviews = useMemo(() => {
-    let result = [...reviews];
+    let result = [...reviews] ;
 
     // Apply rating filter
     if (reviewFilters.rating !== null) {
-      result = result.filter(review => review.rating === reviewFilters.rating);
+      result = result.filter(review => review.rating === reviewFilters.rating) ;
     }
 
     // Apply sorting
     switch (reviewFilters.sortBy) {
       case 'newest':
-        result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        break;
+        result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) ;
+        break ;
       case 'oldest':
-        result.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-        break;
+        result.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()) ;
+        break ;
       case 'highest':
-        result.sort((a, b) => b.rating - a.rating);
-        break;
+        result.sort((a, b) => b.rating - a.rating) ;
+        break ;
       case 'lowest':
-        result.sort((a, b) => a.rating - b.rating);
-        break;
+        result.sort((a, b) => a.rating - b.rating) ;
+        break ;
     }
 
-    return result;
-  }, [reviews, reviewFilters]);
+    return result ;
+  }, [reviews, reviewFilters]) ;
 
   useEffect(() => {
-    if (!bakery) return;
+    if (!bakery) return ;
 
     try {
       const storeData: StoreInfo = {
@@ -255,15 +255,15 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
         cake_description: "Chuyên cung cấp các loại bánh kem tươi, bánh sinh nhật và bánh theo yêu cầu với nguyên liệu chất lượng cao.",
         price_description: "Giá cả hợp lý từ 150.000đ, tùy theo kích thước và thiết kế bánh.",
         bakery_description: "BreadTalk là tiệm bánh gia đình với hơn 5 năm kinh nghiệm trong việc làm bánh và phục vụ khách hàng khu vực trung tâm Sài Gòn."
-      };
+      } ;
 
-      setStoreInfo(storeData);
-      setIsLoading(false);
+      setStoreInfo(storeData) ;
+      setIsLoading(false) ;
     } catch (error) {
-      console.error("Error processing bakery data:", error);
-      toast.error("Có lỗi xảy ra khi chuẩn bị thông tin cửa hàng");
+      console.error("Error processing bakery data:", error) ;
+      toast.error("Có lỗi xảy ra khi chuẩn bị thông tin cửa hàng") ;
     }
-  }, [bakery]);
+  }, [bakery]) ;
 
   useEffect(() => {
     const fetchCakes = async () => {
@@ -275,25 +275,25 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
             'sort-by': sortBy,
             'filter-by': filterBy
           }
-        });
+        }) ;
         if (response.data.status_code === 200) {
-          setCakes(response.data.payload);
+          setCakes(response.data.payload) ;
           setPagination(prev => ({
             ...prev,
             totalPages: response.data.meta_data.total_pages_count,
             totalItems: response.data.meta_data.total_items_count
-          }));
+          })) ;
         }
       } catch (error) {
-        console.error("Error fetching cakes:", error);
-        toast.error("Có lỗi xảy ra khi tải các bánh có sẵn");
+        console.error("Error fetching cakes:", error) ;
+        toast.error("Có lỗi xảy ra khi tải các bánh có sẵn") ;
       }
-    };
+    } ;
 
     if (bakery?.id) {
-      fetchCakes();
+      fetchCakes() ;
     }
-  }, [bakery?.id, pagination.currentPage, pagination.pageSize, sortBy, filterBy]);
+  }, [bakery?.id, pagination.currentPage, pagination.pageSize, sortBy, filterBy]) ;
 
   useEffect(() => {
     const fetchReviews = async () => {
@@ -306,35 +306,35 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
               'page-size': reviewPagination.pageSize,
             }
           }
-        );
+        ) ;
         if (response.data.status_code === 200) {
           // Fetch additional data for each review
           const reviewsWithDetails = await Promise.all(
             response.data.payload.reviews.map(async (review) => {
-              let imageUrl = null;
-              let customerName = 'Anonymous';
+              let imageUrl = null ;
+              let customerName = 'Anonymous' ;
 
               // Fetch image if image_id exists
               if (review.image_id) {
                 try {
                   const imageResponse = await axios.get(
                     `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/files/${review.image_id}`
-                  );
+                  ) ;
                   if (imageResponse.data.status_code === 200) {
-                    imageUrl = imageResponse.data.payload.file_url;
+                    imageUrl = imageResponse.data.payload.file_url ;
                   }
                 } catch (error) {
-                  console.error("Error fetching review image:", error);
+                  console.error("Error fetching review image:", error) ;
                 }
               }
 
               // Fetch customer details
               try {
-                console.log('Fetching customer details for ID:', review.customer_id);
-                const accessToken = localStorage.getItem('accessToken');
+                console.log('Fetching customer details for ID:', review.customer_id) ;
+                const accessToken = localStorage.getItem('accessToken') ;
                 if (!accessToken) {
-                  console.log('No access token found');
-                  return;
+                  console.log('No access token found') ;
+                  return ;
                 }
 
                 const customerResponse = await axios.get(
@@ -345,93 +345,93 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
                       'accept': '*/*'
                     }
                   }
-                );
-                console.log('Customer response:', customerResponse.data);
+                ) ;
+                console.log('Customer response:', customerResponse.data) ;
                 if (customerResponse.data.status_code === 200 && customerResponse.data.payload) {
-                  customerName = customerResponse.data.payload.name;
-                  console.log('Found customer name:', customerName);
+                  customerName = customerResponse.data.payload.name ;
+                  console.log('Found customer name:', customerName) ;
                 } else {
-                  console.log('No customer data found in response');
+                  console.log('No customer data found in response') ;
                 }
               } catch (error) {
-                console.error("Error fetching customer details:", error);
-                console.error("Customer ID that failed:", review.customer_id);
+                console.error("Error fetching customer details:", error) ;
+                console.error("Customer ID that failed:", review.customer_id) ;
               }
 
               return {
                 ...review,
                 image: imageUrl ? { file_url: imageUrl } : undefined,
                 customer: { name: customerName }
-              };
+              } ;
             })
-          );
+          ) ;
 
-          setReviews(reviewsWithDetails as Review[]);
+          setReviews(reviewsWithDetails as Review[]) ;
           setReviewPagination(prev => ({
             ...prev,
             totalPages: Math.ceil(response.data.payload.reviews.length / reviewPagination.pageSize),
             totalItems: response.data.payload.reviews.length
-          }));
+          })) ;
         }
       } catch (error) {
-        console.error("Error fetching reviews:", error);
-        toast.error("Có lỗi xảy ra khi tải đánh giá của cửa hàng");
+        console.error("Error fetching reviews:", error) ;
+        toast.error("Có lỗi xảy ra khi tải đánh giá của cửa hàng") ;
       }
-    };
+    } ;
 
     if (bakery?.id) {
-      fetchReviews();
+      fetchReviews() ;
     }
-  }, [bakery?.id, reviewPagination.currentPage, reviewPagination.pageSize]);
+  }, [bakery?.id, reviewPagination.currentPage, reviewPagination.pageSize]) ;
 
   const handleWishlistToggle = (cake: AvailableCake) => {
-    const isInWishlist = items.some(item => item.id === cake.id);
+    const isInWishlist = items.some(item => item.id === cake.id) ;
 
     if (isInWishlist) {
-      removeFromWishlist(cake.id);
-      toast.success("Đã xóa khỏi danh sách yêu thích");
+      removeFromWishlist(cake.id) ;
+      toast.success("Đã xóa khỏi danh sách yêu thích") ;
     } else {
       addToWishlist({
         id: cake.id,
         name: cake.available_cake_name,
         price: cake.available_cake_price,
         image: cake.available_cake_image_files?.[0]?.file_url || '/placeholder-cake.jpg',
-      });
-      toast.success("Đã thêm vào danh sách yêu thích");
+      }) ;
+      toast.success("Đã thêm vào danh sách yêu thích") ;
     }
-  };
+  } ;
 
   const handlePageChange = (newPage: number) => {
     setPagination(prev => ({
       ...prev,
       currentPage: newPage
-    }));
-  };
+    })) ;
+  } ;
 
   const handleReviewPageChange = (newPage: number) => {
     setReviewPagination(prev => ({
       ...prev,
       currentPage: newPage
-    }));
-  };
+    })) ;
+  } ;
 
   const handleCreateReview = async () => {
     if (!userReview.trim()) {
-      toast.error("Vui lòng nhập nội dung đánh giá");
-      return;
+      toast.error("Vui lòng nhập nội dung đánh giá") ;
+      return ;
     }
 
-    setIsSubmitting(true);
+    setIsSubmitting(true) ;
     try {
-      const accessToken = localStorage.getItem('accessToken');
+      const accessToken = localStorage.getItem('accessToken') ;
       if (!accessToken) {
-        toast.error("Vui lòng đăng nhập để đánh giá cửa hàng");
-        return;
+        toast.error("Vui lòng đăng nhập để đánh giá cửa hàng") ;
+        return ;
       }
 
       // Decode JWT to get customer_id
-      const tokenPayload = JSON.parse(atob(accessToken.split('.')[1]));
-      const customerId = tokenPayload.sub;
+      const tokenPayload = JSON.parse(atob(accessToken.split('.')[1])) ;
+      const customerId = tokenPayload.sub ;
 
       const response = await axios.post(
         `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/reviews`,
@@ -449,30 +449,30 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
             'Content-Type': 'application/json'
           }
         }
-      );
+      ) ;
 
       if (response.data.status_code === 200) {
-        toast.success("Đánh giá của bạn đã được gửi thành công");
-        setUserReview('');
-        setUserRating(5);
-        setUploadedFiles([]); // Clear uploaded files after successful submission
+        toast.success("Đánh giá của bạn đã được gửi thành công") ;
+        setUserReview('') ;
+        setUserRating(5) ;
+        setUploadedFiles([]) ; // Clear uploaded files after successful submission
         // Refresh reviews
-        const currentPage = reviewPagination.currentPage;
-        setReviewPagination(prev => ({ ...prev, currentPage: 0 }));
-        setTimeout(() => setReviewPagination(prev => ({ ...prev, currentPage })), 100);
+        const currentPage = reviewPagination.currentPage ;
+        setReviewPagination(prev => ({ ...prev, currentPage: 0 })) ;
+        setTimeout(() => setReviewPagination(prev => ({ ...prev, currentPage })), 100) ;
       }
     } catch (error: any) {
-      console.error("Error creating review:", error);
-      toast.error(error.response?.data?.message || "Có lỗi xảy ra khi gửi đánh giá");
+      console.error("Error creating review:", error) ;
+      toast.error(error.response?.data?.message || "Có lỗi xảy ra khi gửi đánh giá") ;
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false) ;
     }
-  };
+  } ;
 
   const handleReportReview = async () => {
     if (!selectedReviewId || !reportReason.trim()) {
-      toast.error("Vui lòng nhập lý do báo cáo");
-      return;
+      toast.error("Vui lòng nhập lý do báo cáo") ;
+      return ;
     }
 
     try {
@@ -481,30 +481,30 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
         {
           reason: reportReason
         }
-      );
+      ) ;
 
       if (response.data.status_code === 200) {
-        toast.success("Báo cáo của bạn đã được gửi thành công");
-        setReportDialogOpen(false);
-        setReportReason('');
-        setSelectedReviewId(null);
+        toast.success("Báo cáo của bạn đã được gửi thành công") ;
+        setReportDialogOpen(false) ;
+        setReportReason('') ;
+        setSelectedReviewId(null) ;
       }
     } catch (error) {
-      console.error("Error reporting review:", error);
-      toast.error("Có lỗi xảy ra khi gửi báo cáo");
+      console.error("Error reporting review:", error) ;
+      toast.error("Có lỗi xảy ra khi gửi báo cáo") ;
     }
-  };
+  } ;
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
+    const files = event.target.files ;
+    if (!files || files.length === 0) return ;
 
-    setIsUploading(true);
-    const formData = new FormData();
+    setIsUploading(true) ;
+    const formData = new FormData() ;
 
     try {
-      for (let i = 0; i < files.length; i++) {
-        formData.set('formFile', files[i]);
+      for (let i = 0 ; i < files.length ; i++) {
+        formData.set('formFile', files[i]) ;
 
         const response = await axios.post(
           'https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/files',
@@ -514,48 +514,48 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
               'Content-Type': 'multipart/form-data',
             },
           }
-        );
+        ) ;
 
         if (response.data.status_code === 200) {
           setUploadedFiles(prev => [...prev, {
             id: response.data.payload.id,
             name: response.data.payload.file_name
-          }]);
-          console.log('File uploaded successfully:', response.data.payload);
+          }]) ;
+          console.log('File uploaded successfully:', response.data.payload) ;
         }
       }
     } catch (error) {
-      console.error('Error uploading file:', error);
-      toast.error("Có lỗi xảy ra khi tải lên tệp");
+      console.error('Error uploading file:', error) ;
+      toast.error("Có lỗi xảy ra khi tải lên tệp") ;
     } finally {
-      setIsUploading(false);
+      setIsUploading(false) ;
     }
-  };
+  } ;
 
   const handleRemoveFile = (fileId: string) => {
-    setUploadedFiles(prev => prev.filter(file => file.id !== fileId));
-  };
+    setUploadedFiles(prev => prev.filter(file => file.id !== fileId)) ;
+  } ;
 
   const handleStoreReport = async () => {
     if (!storeReportContent.trim()) {
-      toast.error("Vui lòng nhập nội dung báo cáo");
-      return;
+      toast.error("Vui lòng nhập nội dung báo cáo") ;
+      return ;
     }
 
-    setIsSubmittingStoreReport(true);
+    setIsSubmittingStoreReport(true) ;
     try {
-      const accessToken = localStorage.getItem('accessToken');
+      const accessToken = localStorage.getItem('accessToken') ;
 
       if (!accessToken) {
-        toast.error("Vui lòng đăng nhập để báo cáo cửa hàng");
-        return;
+        toast.error("Vui lòng đăng nhập để báo cáo cửa hàng") ;
+        return ;
       }
 
       const reportData = {
         content: storeReportContent,
         report_files: uploadedFiles.map(file => file.id),
         bakery_id: bakery.id
-      };
+      } ;
 
       const response = await axios.post(
         'https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/reports',
@@ -566,28 +566,28 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
             'Content-Type': 'application/json'
           }
         }
-      );
+      ) ;
 
       if (response.status === 201) {
-        toast.success("Báo cáo thành công! Chúng tôi đã nhận được báo cáo của bạn và sẽ xem xét trong thời gian sớm nhất");
-        setStoreReportDialogOpen(false);
-        setStoreReportContent('');
-        setUploadedFiles([]);
+        toast.success("Báo cáo thành công! Chúng tôi đã nhận được báo cáo của bạn và sẽ xem xét trong thời gian sớm nhất") ;
+        setStoreReportDialogOpen(false) ;
+        setStoreReportContent('') ;
+        setUploadedFiles([]) ;
       }
     } catch (error: any) {
-      console.error("Error reporting store:", error);
-      toast.error(error.response?.data?.message || "Có lỗi xảy ra khi gửi báo cáo");
+      console.error("Error reporting store:", error) ;
+      toast.error(error.response?.data?.message || "Có lỗi xảy ra khi gửi báo cáo") ;
     } finally {
-      setIsSubmittingStoreReport(false);
+      setIsSubmittingStoreReport(false) ;
     }
-  };
+  } ;
 
   if (isLoading || !storeInfo) {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-custom-teal"></div>
       </div>
-    );
+    ) ;
   }
 
   return (
@@ -730,9 +730,9 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
               <Button
                 variant="outline"
                 onClick={() => {
-                  setStoreReportDialogOpen(false);
-                  setStoreReportContent('');
-                  setUploadedFiles([]);
+                  setStoreReportDialogOpen(false) ;
+                  setStoreReportContent('') ;
+                  setUploadedFiles([]) ;
                 }}
                 className="bg-white hover:bg-gray-100 text-gray-900 border-2 border-gray-300 font-semibold"
               >
@@ -964,9 +964,9 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    const currentIndex = storeInfo.bannerImages.findIndex(img => img === selectedImage);
-                    const prevIndex = currentIndex > 0 ? currentIndex - 1 : storeInfo.bannerImages.length - 1;
-                    setSelectedImage(storeInfo.bannerImages[prevIndex]);
+                    const currentIndex = storeInfo.bannerImages.findIndex(img => img === selectedImage) ;
+                    const prevIndex = currentIndex > 0 ? currentIndex - 1 : storeInfo.bannerImages.length - 1 ;
+                    setSelectedImage(storeInfo.bannerImages[prevIndex]) ;
                   }}
                   className="border-custom-teal text-custom-teal hover:bg-custom-teal hover:text-white"
                 >
@@ -978,9 +978,9 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    const currentIndex = storeInfo.bannerImages.findIndex(img => img === selectedImage);
-                    const nextIndex = currentIndex < storeInfo.bannerImages.length - 1 ? currentIndex + 1 : 0;
-                    setSelectedImage(storeInfo.bannerImages[nextIndex]);
+                    const currentIndex = storeInfo.bannerImages.findIndex(img => img === selectedImage) ;
+                    const nextIndex = currentIndex < storeInfo.bannerImages.length - 1 ? currentIndex + 1 : 0 ;
+                    setSelectedImage(storeInfo.bannerImages[nextIndex]) ;
                   }}
                   className="border-custom-teal text-custom-teal hover:bg-custom-teal hover:text-white"
                 >
@@ -1005,8 +1005,8 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
                   className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-custom-teal"
                   value={sortBy}
                   onChange={(e) => {
-                    setSortBy(e.target.value);
-                    setPagination(prev => ({ ...prev, currentPage: 0 }));
+                    setSortBy(e.target.value) ;
+                    setPagination(prev => ({ ...prev, currentPage: 0 })) ;
                   }}
                 >
                   <option value="newest">Mới nhất</option>
@@ -1021,8 +1021,8 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
                   className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-custom-teal"
                   value={filterBy}
                   onChange={(e) => {
-                    setFilterBy(e.target.value);
-                    setPagination(prev => ({ ...prev, currentPage: 0 }));
+                    setFilterBy(e.target.value) ;
+                    setPagination(prev => ({ ...prev, currentPage: 0 })) ;
                   }}
                 >
                   <option value="all">Tất cả</option>
@@ -1058,8 +1058,8 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
                         variant="outline"
                         size="icon"
                         onClick={(e) => {
-                          e.stopPropagation();
-                          handleWishlistToggle(cake);
+                          e.stopPropagation() ;
+                          handleWishlistToggle(cake) ;
                         }}
                         className={`h-10 w-10 rounded-full transition-all duration-200 backdrop-blur-sm ${items.some(item => item.id === cake.id)
                           ? 'bg-pink-50 border-pink-500 hover:bg-pink-100'
@@ -1324,8 +1324,8 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
                             size="sm"
                             className="text-gray-400 hover:text-red-500 hover:bg-red-50"
                             onClick={() => {
-                              setSelectedReviewId(review.id);
-                              setReportDialogOpen(true);
+                              setSelectedReviewId(review.id) ;
+                              setReportDialogOpen(true) ;
                             }}
                           >
                             <AlertTriangle className="w-4 h-4" />
@@ -1405,7 +1405,7 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
                           >
                             {i + 1}
                           </Button>
-                        );
+                        ) ;
                       }
                       // Show ellipsis
                       if (i === 1 || i === reviewPagination.totalPages - 2) {
@@ -1413,9 +1413,9 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
                           <span key={i} className="text-gray-400">
                             ...
                           </span>
-                        );
+                        ) ;
                       }
-                      return null;
+                      return null ;
                     })}
 
                     <Button
@@ -1596,5 +1596,5 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
         </TabsContent>
       </Tabs>
     </div>
-  );
+  ) ;
 } 

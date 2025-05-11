@@ -1,104 +1,104 @@
-"use client";
+"use client" ;
 
-import React, { useState, useCallback } from "react";
-import Image from "next/image";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import React , { useState , useCallback } from "react" ;
+import Image from "next/image" ;
+import Link from "next/link" ;
+import { Button } from "@/components/ui/button" ;
 import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-import { ChevronLeft, ChevronRight, Store } from "lucide-react";
-import { useEffect } from "react";
-import { type CarouselApi } from "@/components/ui/carousel";
+  Carousel ,
+  CarouselContent ,
+  CarouselItem ,
+  CarouselNext ,
+  CarouselPrevious ,
+} from "@/components/ui/carousel" ;
+import { ChevronLeft , ChevronRight , Store } from "lucide-react" ;
+import { useEffect } from "react" ;
+import { type CarouselApi } from "@/components/ui/carousel" ;
 
 interface BannerSlide {
-  id: number;
-  imageUrl: string;
-  label: string;
-  title: string;
-  subtitle: string;
-  price: string;
-  priceLabel: string;
-  buttonText: string;
-  buttonUrl: string;
+  id: number ;
+  imageUrl: string ;
+  label: string ;
+  title: string ;
+  subtitle: string ;
+  price: string ;
+  priceLabel: string ;
+  buttonText: string ;
+  buttonUrl: string ;
 }
 
 interface MainBannerProps {
-  slides?: BannerSlide[];
+  slides?: BannerSlide[] ;
 }
 
 const defaultSlides: BannerSlide[] = [
   {
-    id: 1,
+    id: 1 ,
     imageUrl:
-      "https://images.unsplash.com/photo-1630144252987-8733b6ac2ab8?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NDZ8fGNha2UlMjBzdG9yZXxlbnwwfHwwfHx8MA%3D%3D",
-    label: "Cửa hàng nổi bật tháng 2",
-    title: "Tiệm Bánh Hạnh Phúc",
-    subtitle: "Chuyên bánh kem sinh nhật và bánh cưới",
-    price: "320.000đ",
-    priceLabel: "Giá chỉ từ",
-    buttonText: "XEM CỬA HÀNG",
-    buttonUrl: "/stores/tiem-banh-hanh-phuc",
-  },
+      "https://images.unsplash.com/photo-1630144252987-8733b6ac2ab8?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NDZ8fGNha2UlMjBzdG9yZXxlbnwwfHwwfHx8MA%3D%3D" ,
+    label: "Cửa hàng nổi bật tháng 2" ,
+    title: "Tiệm Bánh Hạnh Phúc" ,
+    subtitle: "Chuyên bánh kem sinh nhật và bánh cưới" ,
+    price: "320.000đ" ,
+    priceLabel: "Giá chỉ từ" ,
+    buttonText: "XEM CỬA HÀNG" ,
+    buttonUrl: "/stores/tiem-banh-hanh-phuc" ,
+  } ,
   {
-    id: 2,
+    id: 2 ,
     imageUrl:
-      "https://images.unsplash.com/photo-1562440499-64c9a111f713?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8N3x8Y2FrZXxlbnwwfHwwfHx8MA%3D%3D",
-    label: "Cửa hàng yêu thích",
-    title: "Paris Bakery",
-    subtitle: "Bánh ngọt Pháp chính hiệu",
-    price: "280.000đ",
-    priceLabel: "Giá chỉ từ",
-    buttonText: "XEM CỬA HÀNG",
-    buttonUrl: "/stores/paris-bakery",
-  },
+      "https://images.unsplash.com/photo-1562440499-64c9a111f713?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8N3x8Y2FrZXxlbnwwfHwwfHx8MA%3D%3D" ,
+    label: "Cửa hàng yêu thích" ,
+    title: "Paris Bakery" ,
+    subtitle: "Bánh ngọt Pháp chính hiệu" ,
+    price: "280.000đ" ,
+    priceLabel: "Giá chỉ từ" ,
+    buttonText: "XEM CỬA HÀNG" ,
+    buttonUrl: "/stores/paris-bakery" ,
+  } ,
   {
-    id: 3,
+    id: 3 ,
     imageUrl:
-      "https://images.unsplash.com/photo-1489790925940-daac6dcc7c7d?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mzl8fGNha2UlMjBzdG9yZXxlbnwwfHwwfHx8MA%3D%3D",
-    label: "Khuyến mãi tháng này",
-    title: "Cheesecake Factory",
-    subtitle: "Bánh phô mai thơm ngon",
-    price: "350.000đ",
-    priceLabel: "Giá chỉ từ",
-    buttonText: "XEM CỬA HÀNG",
-    buttonUrl: "/stores/cheesecake-factory",
-  },
-];
+      "https://images.unsplash.com/photo-1489790925940-daac6dcc7c7d?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mzl8fGNha2UlMjBzdG9yZXxlbnwwfHwwfHx8MA%3D%3D" ,
+    label: "Khuyến mãi tháng này" ,
+    title: "Cheesecake Factory" ,
+    subtitle: "Bánh phô mai thơm ngon" ,
+    price: "350.000đ" ,
+    priceLabel: "Giá chỉ từ" ,
+    buttonText: "XEM CỬA HÀNG" ,
+    buttonUrl: "/stores/cheesecake-factory" ,
+  } ,
+] ;
 
 const MainBanner = ({ slides = defaultSlides }: MainBannerProps) => {
-  const [api, setApi] = useState<CarouselApi>();
-  const [current, setCurrent] = useState(0);
+  const [api , setApi] = useState<CarouselApi>() ;
+  const [current , setCurrent] = useState(0) ;
 
   useEffect(() => {
     if (!api) {
-      return;
+      return ;
     }
 
     const handleSelect = () => {
-      setCurrent(api.selectedScrollSnap());
-    };
+      setCurrent(api.selectedScrollSnap()) ;
+    } ;
 
-    api.on("select", handleSelect);
+    api.on("select" , handleSelect) ;
 
     // Cleanup
     return () => {
-      api.off("select", handleSelect);
-    };
-  }, [api]);
+      api.off("select" , handleSelect) ;
+    } ;
+  } , [api]) ;
 
   const goToSlide = useCallback(
     (index: number) => {
       if (api) {
-        api.scrollTo(index);
+        api.scrollTo(index) ;
       }
-    },
+    } ,
     [api]
-  );
+  ) ;
 
   return (
     <div className="h-full relative rounded-lg overflow-hidden shadow-md bg-gradient-to-br from-pink-50 to-teal-50 dark:from-pink-900/30 dark:to-teal-900/30">
@@ -106,12 +106,12 @@ const MainBanner = ({ slides = defaultSlides }: MainBannerProps) => {
         className="h-full w-full"
         setApi={setApi}
         opts={{
-          loop: true,
-          align: "start",
+          loop: true ,
+          align: "start" ,
         }}
       >
         <CarouselContent className="h-full">
-          {slides.map((slide, index) => (
+          {slides.map((slide , index) => (
             <CarouselItem key={slide.id} className="h-full">
               <div className="flex h-full w-full flex-col md:flex-row">
                 <div className="w-full md:w-1/2 h-52 l md:h-[480px] relative flex justify-center items-center overflow-hidden">
@@ -121,7 +121,7 @@ const MainBanner = ({ slides = defaultSlides }: MainBannerProps) => {
                     alt={slide.title}
                     fill
                     className="object-cover"
-                    sizes="(max-width: 768px) 100vw, 50vw"
+                    sizes="(max-width: 768px) 100vw , 50vw"
                   />
                 </div>
                 <div className="w-full md:w-1/2 h-full p-6 md:p-10 flex flex-col justify-center">
@@ -184,7 +184,7 @@ const MainBanner = ({ slides = defaultSlides }: MainBannerProps) => {
         </div>
 
         <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-10">
-          {slides.map((_, index) => (
+          {slides.map((_ , index) => (
             <Button
               key={index}
               variant="ghost"
@@ -200,7 +200,7 @@ const MainBanner = ({ slides = defaultSlides }: MainBannerProps) => {
         </div>
       </Carousel>
     </div>
-  );
-};
+  ) ;
+} ;
 
-export default MainBanner;
+export default MainBanner ;

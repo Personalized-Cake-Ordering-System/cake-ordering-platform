@@ -1,26 +1,26 @@
-import { Button } from "@/components/ui/button";
-import { getBakeryById } from "@/features/barkeries/actions/barkeries-action";
-import Image from "next/image";
-import Link from "next/link";
+import { Button } from "@/components/ui/button" ;
+import { getBakeryById } from "@/features/barkeries/actions/barkeries-action" ;
+import Image from "next/image" ;
+import Link from "next/link" ;
 
 export interface CakeItemProps {
-  discount?: any;
-  imageUrl: string | null;
-  title: string;
-  store: string;
-  price: any;
-  id: string;
+  discount?: any ;
+  imageUrl: string | null ;
+  title: string ;
+  store: string ;
+  price: any ;
+  id: string ;
 }
 
 export const CakeItem: React.FC<CakeItemProps> = async ({
-  discount,
-  imageUrl,
-  title,
-  store,
-  price,
-  id,
+  discount ,
+  imageUrl ,
+  title ,
+  store ,
+  price ,
+  id ,
 }) => {
-  const bakery = await getBakeryById(store);
+  const bakery = await getBakeryById(store) ;
 
   return (
     <div className="relative bg-white dark:bg-gray-900 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 group">
@@ -75,5 +75,5 @@ export const CakeItem: React.FC<CakeItemProps> = async ({
         </div>
       </div>
     </div>
-  );
-};
+  ) ;
+} ;

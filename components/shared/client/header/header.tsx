@@ -1,110 +1,110 @@
-"use client";
+"use client" ;
 
-import React, { useEffect, useState } from "react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import React , { useEffect , useState } from "react" ;
+import Link from "next/link" ;
+import { usePathname , useRouter } from "next/navigation" ;
 import {
-  Heart,
-  Menu,
-  MessageSquare,
-  Search,
-  ShoppingCart,
-  Zap,
-  User,
-  Settings,
-  ShoppingBag,
-  Store,
-  LogOut,
+  Heart ,
+  Menu ,
+  MessageSquare ,
+  Search ,
+  ShoppingCart ,
+  Zap ,
+  User ,
+  Settings ,
+  ShoppingBag ,
+  Store ,
+  LogOut ,
   Bell
-} from "lucide-react";
-import { useSession } from "next-auth/react";
+} from "lucide-react" ;
+import { useSession } from "next-auth/react" ;
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  DropdownMenu ,
+  DropdownMenuContent ,
+  DropdownMenuItem ,
+  DropdownMenuSeparator ,
+  DropdownMenuTrigger ,
+} from "@/components/ui/dropdown-menu" ;
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ModeToggleAnimate } from "@/components/shared/custom-ui/mode-toggle-animate";
-import { cn } from "@/lib/utils";
-import { NotificationDropdown } from "@/components/shared/notification/notification-dropdown";
-import { useCart } from "@/app/store/useCart";
+import { Button } from "@/components/ui/button" ;
+import { Input } from "@/components/ui/input" ;
+import { ModeToggleAnimate } from "@/components/shared/custom-ui/mode-toggle-animate" ;
+import { cn } from "@/lib/utils" ;
+import { NotificationDropdown } from "@/components/shared/notification/notification-dropdown" ;
+import { useCart } from "@/app/store/useCart" ;
 
 interface BadgeProps {
-  count: number;
+  count: number ;
 }
 
 const NotificationBadge = ({ count }: BadgeProps) => {
-  if (count <= 0) return null;
+  if (count <= 0) return null ;
 
   return (
     <span className="absolute -top-1 -right-1 bg-custom-teal dark:bg-custom-teal text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
       {count}
     </span>
-  );
-};
+  ) ;
+} ;
 
 interface NavLinkProps {
-  href: string;
-  children: React.ReactNode;
-  isActive?: boolean;
+  href: string ;
+  children: React.ReactNode ;
+  isActive?: boolean ;
 }
 
-const NavLink = ({ href, children, isActive }: NavLinkProps) => (
+const NavLink = ({ href , children , isActive }: NavLinkProps) => (
   <Link
     href={href}
     className={cn(
-      "py-4 px-4 font-medium text-gray-900 dark:text-gray-200 hover:text-custom-teal dark:hover:text-custom-teal transition-colors duration-200",
+      "py-4 px-4 font-medium text-gray-900 dark:text-gray-200 hover:text-custom-teal dark:hover:text-custom-teal transition-colors duration-200" ,
       isActive && "border-b-2 border-custom-teal text-custom-teal"
     )}
   >
     {children}
   </Link>
-);
+) ;
 
 interface NavItemType {
-  href: string;
-  label: string;
+  href: string ;
+  label: string ;
 }
 
 const Header = () => {
-  const pathname = usePathname();
-  const router = useRouter();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const { items } = useCart();
-  const cartCount = items.length;
+  const pathname = usePathname() ;
+  const router = useRouter() ;
+  const [isLoggedIn , setIsLoggedIn] = useState(false) ;
+  const { items } = useCart() ;
+  const cartCount = items.length ;
 
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
-    setIsLoggedIn(!!token);
-  }, []);
+    const token = localStorage.getItem('accessToken') ;
+    setIsLoggedIn(!!token) ;
+  } , []) ;
 
   const handleLogout = () => {
-    localStorage.clear();
-    setIsLoggedIn(false);
-    router.push('/');
-  };
+    localStorage.clear() ;
+    setIsLoggedIn(false) ;
+    router.push('/') ;
+  } ;
 
-  const messageCount = 1;
-  const wishlistCount = 1;
+  const messageCount = 1 ;
+  const wishlistCount = 1 ;
 
   const navLinks: NavItemType[] = [
-    { href: "/", label: "Trang chủ" },
-    { href: "/stores", label: "Cửa hàng" },
-    { href: "/cakes", label: "Bánh kem" },
-    // { href: "/discover", label: "Khám phá" },
-    { href: "/promotions", label: "Khuyến mãi" },
-    // { href: "/wallet", label: "Ví" },
-    // { href: "/customizeCake", label: "Tùy chỉnh bánh" },
-  ];
+    { href: "/" , label: "Trang chủ" } ,
+    { href: "/stores" , label: "Cửa hàng" } ,
+    { href: "/cakes" , label: "Bánh kem" } ,
+    // { href: "/discover" , label: "Khám phá" } ,
+    { href: "/promotions" , label: "Khuyến mãi" } ,
+    // { href: "/wallet" , label: "Ví" } ,
+    // { href: "/customizeCake" , label: "Tùy chỉnh bánh" } ,
+  ] ;
 
   const authenticatedNavLinks: NavItemType[] = [
-    ...navLinks,
-    { href: "/wallet", label: "Ví" },
-  ];
+    ...navLinks ,
+    { href: "/wallet" , label: "Ví" } ,
+  ] ;
 
   return (
     <>
@@ -114,7 +114,7 @@ const Header = () => {
           <span className="inline-block animate-pulse bg-custom-teal text-white text-xs px-2 py-0.5 rounded-full font-bold">
             Mới
           </span>
-          Giảm giá đến 50% cho các loại bánh mới, chỉ trong thời gian có hạn
+          Giảm giá đến 50% cho các loại bánh mới , chỉ trong thời gian có hạn
         </p>
       </div>
 
@@ -192,7 +192,7 @@ const Header = () => {
                       </DropdownMenuContent>
                     </DropdownMenu>
 
-                    {/* Only show notifications, wishlist and cart when logged in */}
+                    {/* Only show notifications , wishlist and cart when logged in */}
                     <NotificationDropdown />
                     <Link href="/wishlist" className="relative group">
                       <Heart className="h-6 w-6 text-gray-800 dark:text-gray-300 group-hover:text-custom-teal dark:group-hover:text-custom-teal transition-colors duration-200" />
@@ -276,7 +276,7 @@ const Header = () => {
         </div>
       </nav>
     </>
-  );
-};
+  ) ;
+} ;
 
-export default Header;
+export default Header ;

@@ -1,22 +1,22 @@
-"use client";
+"use client" ;
 
-import Image from 'next/image';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Award, Clock, Heart, MessageCircle, ShoppingCart, Star, Users, Calendar } from 'lucide-react';
+import Image from 'next/image' ;
+import { Badge } from '@/components/ui/badge' ;
+import { Button } from '@/components/ui/button' ;
+import { Award, Clock, Heart, MessageCircle, ShoppingCart, Star, Users, Calendar } from 'lucide-react' ;
 
 interface StoreInfo {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  address: string;
-  ownerName: string;
-  avatar: string;
-  bannerImages: string[];
-  status: string;
-  createdAt: string;
-  taxCode?: string;
+  id: string ;
+  name: string ;
+  email: string ;
+  phone: string ;
+  address: string ;
+  ownerName: string ;
+  avatar: string ;
+  bannerImages: string[] ;
+  status: string ;
+  createdAt: string ;
+  taxCode?: string ;
 }
 
 export default function StoreHeader({ storeInfo }: { storeInfo: StoreInfo }) {
@@ -64,11 +64,11 @@ export default function StoreHeader({ storeInfo }: { storeInfo: StoreInfo }) {
         </div>
       </div>
     </div>
-  );
+  ) ;
 }
 
 // Helper component for store metrics
-function StoreMetric({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function StoreMetric({ icon, label, value }: { icon: React.ReactNode ; label: string ; value: string }) {
   return (
     <div className="flex items-center gap-2 bg-gray-100 dark:bg-white/10 p-3 rounded-lg backdrop-blur-sm">
       <div className="text-gray-700 dark:text-white/90">
@@ -79,5 +79,5 @@ function StoreMetric({ icon, label, value }: { icon: React.ReactNode; label: str
         <div className="font-semibold text-gray-900 dark:text-white">{value}</div>
       </div>
     </div>
-  );
+  ) ;
 } 

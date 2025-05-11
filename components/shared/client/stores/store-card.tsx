@@ -1,45 +1,45 @@
-"use client";
+"use client" ;
 
-import React from "react";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { MapPin, Star, Clock, Award, TrendingUp, Phone } from "lucide-react";
-import { IBakery } from "@/features/barkeries/types/barkeries-type";
+import React from "react" ;
+import Image from "next/image" ;
+import { useRouter } from "next/navigation" ;
+import { Card, CardContent } from "@/components/ui/card" ;
+import { Button } from "@/components/ui/button" ;
+import { MapPin, Star, Clock, Award, TrendingUp, Phone } from "lucide-react" ;
+import { IBakery } from "@/features/barkeries/types/barkeries-type" ;
 
 interface StoreCardProps {
-  bakery: IBakery;
-  isFeatured?: boolean;
+  bakery: IBakery ;
+  isFeatured?: boolean ;
 }
 
 export const StoreCard = ({ bakery, isFeatured = false }: StoreCardProps) => {
-  const router = useRouter();
-  const [isClient, setIsClient] = React.useState(false);
-  const [isNewBakery, setIsNewBakery] = React.useState(false);
-  const [formattedDate, setFormattedDate] = React.useState("");
+  const router = useRouter() ;
+  const [isClient, setIsClient] = React.useState(false) ;
+  const [isNewBakery, setIsNewBakery] = React.useState(false) ;
+  const [formattedDate, setFormattedDate] = React.useState("") ;
 
   // Ensure component only runs client-side
   React.useEffect(() => {
-    setIsClient(true);
+    setIsClient(true) ;
 
     // Check if bakery is new (created within last 7 days)
     if (bakery?.created_at) {
-      const createdDate = new Date(bakery.created_at);
-      const now = new Date();
-      const diffInDays = Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
-      setIsNewBakery(diffInDays <= 7);
+      const createdDate = new Date(bakery.created_at) ;
+      const now = new Date() ;
+      const diffInDays = Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)) ;
+      setIsNewBakery(diffInDays <= 7) ;
 
       // Format date properly
-      setFormattedDate(createdDate.toLocaleDateString("vi-VN", { year: "numeric", month: "short", day: "numeric" }));
+      setFormattedDate(createdDate.toLocaleDateString("vi-VN", { year: "numeric", month: "short", day: "numeric" })) ;
     }
-  }, [bakery]);
+  }, [bakery]) ;
 
   // Only show confirmed stores
-  if (bakery.status !== "CONFIRMED") return null;
+  if (bakery.status !== "CONFIRMED") return null ;
 
   // Don't render anything until client-side is ready
-  if (!isClient) return null;
+  if (!isClient) return null ;
 
   const getStatusBadge = () => {
     switch (bakery.status) {
@@ -49,25 +49,25 @@ export const StoreCard = ({ bakery, isFeatured = false }: StoreCardProps) => {
             <Award className="h-3 w-3" />
             <span>Đã xác nhận</span>
           </div>
-        );
+        ) ;
       case "PENDING":
         return (
           <div className="absolute top-2 right-2 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white text-xs rounded-full px-3 py-1 font-medium flex items-center gap-1 shadow-md">
             <Clock className="h-3 w-3" />
             <span>Đang chờ</span>
           </div>
-        );
+        ) ;
       default:
-        return null;
+        return null ;
     }
-  };
+  } ;
 
   const handleViewStore = () => {
-    router.push(`/stores/${bakery.id}`);
-  };
-  console.log('====================================');
-  console.log(bakery.avatar_file.file_url, "image oe đay");
-  console.log('====================================');
+    router.push(`/stores/${bakery.id}`) ;
+  } ;
+  console.log('====================================') ;
+  console.log(bakery.avatar_file.file_url, "image oe đay") ;
+  console.log('====================================') ;
   return (
     <Card className="overflow-hidden border border-gray-200 dark:border-gray-800 shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl">
       <CardContent className="p-0">
@@ -172,5 +172,5 @@ export const StoreCard = ({ bakery, isFeatured = false }: StoreCardProps) => {
         </div>
       </CardContent>
     </Card>
-  );
-};
+  ) ;
+} ;

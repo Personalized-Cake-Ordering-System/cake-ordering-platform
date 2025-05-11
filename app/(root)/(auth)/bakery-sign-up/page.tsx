@@ -1,23 +1,23 @@
-"use client";
-import React, { useState, useRef } from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+"use client" ;
+import React, { useState, useRef } from "react" ;
+import { Input } from "@/components/ui/input" ;
+import { Label } from "@/components/ui/label" ;
+import { Button } from "@/components/ui/button" ;
 import {
   Card,
   CardHeader,
   CardTitle,
   CardDescription,
   CardContent,
-} from "@/components/ui/card";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { Store, Upload, X, ImagePlus, Loader } from "lucide-react";
-import Image from "next/image";
-import { toast, ToastContainer } from "react-toastify";
-import 'react-toastify/dist/ReactToastify.css';
-import { useRouter } from "next/navigation";
+} from "@/components/ui/card" ;
+import { z } from "zod" ;
+import { zodResolver } from "@hookform/resolvers/zod" ;
+import { useForm } from "react-hook-form" ;
+import { Store, Upload, X, ImagePlus, Loader } from "lucide-react" ;
+import Image from "next/image" ;
+import { toast, ToastContainer } from "react-toastify" ;
+import 'react-toastify/dist/ReactToastify.css' ;
+import { useRouter } from "next/navigation" ;
 import {
   Dialog,
   DialogContent,
@@ -25,8 +25,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { CheckCircle } from "lucide-react";
+} from "@/components/ui/dialog" ;
+import { CheckCircle } from "lucide-react" ;
 
 // Define the bakery registration schema
 const bakerySchema = z.object({
@@ -54,9 +54,9 @@ const bakerySchema = z.object({
   cake_description: z.string().min(1, "Vui lòng nhập mô tả bánh"),
   price_description: z.string().min(1, "Vui lòng nhập mô tả giá"),
   bakery_description: z.string().min(1, "Vui lòng nhập mô tả cửa hàng"),
-});
+}) ;
 
-type BakeryFormData = z.infer<typeof bakerySchema>;
+type BakeryFormData = z.infer<typeof bakerySchema> ;
 
 /**
  * Uploads a file and returns the file ID and URL
@@ -67,25 +67,25 @@ async function uploadFile(
 ): Promise<{ success: boolean, data?: { id: string, file_url: string }, error?: string }> {
   try {
     // Convert base64 to blob
-    const base64Response = await fetch(base64);
-    const blob = await base64Response.blob();
+    const base64Response = await fetch(base64) ;
+    const blob = await base64Response.blob() ;
     
     // Create form data
-    const formData = new FormData();
-    formData.append("formFile", blob, fileName);
+    const formData = new FormData() ;
+    formData.append("formFile", blob, fileName) ;
     
     // Make the API request to upload the image
     const response = await fetch("https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/files", {
       method: "POST",
       body: formData,
-    });
+    }) ;
     
-    console.log(response);
-    const data = await response.json();
+    console.log(response) ;
+    const data = await response.json() ;
     
     if (data.status_code === 201 || data.status_code === 200) {
       // Extract data from payload structure
-      const payload = data.payload || data;
+      const payload = data.payload || data ;
       
       // Return the file data
       return { 
@@ -94,38 +94,38 @@ async function uploadFile(
           id: payload.id,
           file_url: payload.file_url,
         } 
-      };
+      } ;
     } else {
       return { 
         success: false, 
         error: data.errors?.join(', ') || "Failed to upload file" 
-      };
+      } ;
     }
   } catch (error: any) {
-    console.error("Failed to upload file:", error);
+    console.error("Failed to upload file:", error) ;
     return { 
       success: false, 
       error: error.message || "Failed to upload file" 
-    };
+    } ;
   }
 }
 
 // Helper function to convert file to base64
 const convertFileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = (error) => reject(error);
-  });
-};
+    const reader = new FileReader() ;
+    reader.readAsDataURL(file) ;
+    reader.onload = () => resolve(reader.result as string) ;
+    reader.onerror = (error) => reject(error) ;
+  }) ;
+} ;
 
 interface ImageUploaderProps {
-  label: string;
-  imageUrl: string | null;
-  isLoading: boolean;
-  onUpload: (file: File) => Promise<void>;
-  icon?: React.ReactNode;
+  label: string ;
+  imageUrl: string | null ;
+  isLoading: boolean ;
+  onUpload: (file: File) => Promise<void> ;
+  icon?: React.ReactNode ;
 }
 
 const ImageUploader = ({ label, imageUrl, isLoading, onUpload, icon }: ImageUploaderProps) => {
@@ -170,41 +170,41 @@ const ImageUploader = ({ label, imageUrl, isLoading, onUpload, icon }: ImageUplo
           id={`${label.replace(/\s+/g, '-').toLowerCase()}-upload`}
           className="hidden"
           onChange={(e) => {
-            const file = e.target.files?.[0];
+            const file = e.target.files?.[0] ;
             if (file) {
-              onUpload(file);
-              e.target.value = ''; // Reset input
+              onUpload(file) ;
+              e.target.value = '' ; // Reset input
             }
           }}
           disabled={isLoading}
         />
       </div>
     </div>
-  );
-};
+  ) ;
+} ;
 
 const BakerySignUpPage = () => {
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const router = useRouter() ;
+  const [isLoading, setIsLoading] = useState(false) ;
+  const [showSuccessModal, setShowSuccessModal] = useState(false) ;
   
   // Image loading states
-  const [shopImageLoading, setShopImageLoading] = useState(false);
-  const [avatarImageLoading, setAvatarImageLoading] = useState(false);
-  const [frontCardImageLoading, setFrontCardImageLoading] = useState(false);
-  const [backCardImageLoading, setBackCardImageLoading] = useState(false);
+  const [shopImageLoading, setShopImageLoading] = useState(false) ;
+  const [avatarImageLoading, setAvatarImageLoading] = useState(false) ;
+  const [frontCardImageLoading, setFrontCardImageLoading] = useState(false) ;
+  const [backCardImageLoading, setBackCardImageLoading] = useState(false) ;
   
   // Image URLs for preview
-  const [shopImageUrl, setShopImageUrl] = useState<string | null>(null);
-  const [avatarImageUrl, setAvatarImageUrl] = useState<string | null>(null);
-  const [frontCardImageUrl, setFrontCardImageUrl] = useState<string | null>(null);
-  const [backCardImageUrl, setBackCardImageUrl] = useState<string | null>(null);
+  const [shopImageUrl, setShopImageUrl] = useState<string | null>(null) ;
+  const [avatarImageUrl, setAvatarImageUrl] = useState<string | null>(null) ;
+  const [frontCardImageUrl, setFrontCardImageUrl] = useState<string | null>(null) ;
+  const [backCardImageUrl, setBackCardImageUrl] = useState<string | null>(null) ;
   
   // New states for business license and food safety certificate
-  const [businessLicenseImageUrl, setBusinessLicenseImageUrl] = useState<string | null>(null);
-  const [businessLicenseImageLoading, setBusinessLicenseImageLoading] = useState(false);
-  const [foodSafetyCertificateImageUrl, setFoodSafetyCertificateImageUrl] = useState<string | null>(null);
-  const [foodSafetyCertificateImageLoading, setFoodSafetyCertificateImageLoading] = useState(false);
+  const [businessLicenseImageUrl, setBusinessLicenseImageUrl] = useState<string | null>(null) ;
+  const [businessLicenseImageLoading, setBusinessLicenseImageLoading] = useState(false) ;
+  const [foodSafetyCertificateImageUrl, setFoodSafetyCertificateImageUrl] = useState<string | null>(null) ;
+  const [foodSafetyCertificateImageLoading, setFoodSafetyCertificateImageLoading] = useState(false) ;
   
   const { 
     register, 
@@ -237,253 +237,253 @@ const BakerySignUpPage = () => {
       price_description: "",
       bakery_description: ""
     }
-  });
+  }) ;
 
   // Generate time options for dropdowns
   const generateTimeOptions = () => {
-    const options = [];
-    for (let hour = 0; hour < 24; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
-        const formattedHour = hour.toString().padStart(2, '0');
-        const formattedMinute = minute.toString().padStart(2, '0');
-        const time = `${formattedHour}:${formattedMinute}`;
-        options.push(time);
+    const options = [] ;
+    for (let hour = 0 ; hour < 24 ; hour++) {
+      for (let minute = 0 ; minute < 60 ; minute += 30) {
+        const formattedHour = hour.toString().padStart(2, '0') ;
+        const formattedMinute = minute.toString().padStart(2, '0') ;
+        const time = `${formattedHour}:${formattedMinute}` ;
+        options.push(time) ;
       }
     }
-    return options;
-  };
+    return options ;
+  } ;
 
-  const timeOptions = generateTimeOptions();
+  const timeOptions = generateTimeOptions() ;
 
   // Handle shop image upload
   const handleShopImageUpload = async (file: File) => {
     try {
-      setShopImageLoading(true);
+      setShopImageLoading(true) ;
       
       // Show preview immediately
-      const previewUrl = URL.createObjectURL(file);
-      setShopImageUrl(previewUrl);
+      const previewUrl = URL.createObjectURL(file) ;
+      setShopImageUrl(previewUrl) ;
       
       // Convert to base64 and upload
-      const base64 = await convertFileToBase64(file);
-      const result = await uploadFile(base64, `shop_${Date.now()}.jpg`);
+      const base64 = await convertFileToBase64(file) ;
+      const result = await uploadFile(base64, `shop_${Date.now()}.jpg`) ;
       
       if (!result.success) {
-        toast.error(result.error || "Failed to upload shop image");
-        setShopImageUrl(null);
-        return;
+        toast.error(result.error || "Failed to upload shop image") ;
+        setShopImageUrl(null) ;
+        return ;
       }
       
       // Update form value with file ID
-      setValue('shop_image_file_ids', [result.data!.id]);
-      setShopImageUrl(result.data!.file_url);
+      setValue('shop_image_file_ids', [result.data!.id]) ;
+      setShopImageUrl(result.data!.file_url) ;
       
-      toast.success("Tải lên hình ảnh cửa hàng thành công!");
+      toast.success("Tải lên hình ảnh cửa hàng thành công!") ;
     } catch (error) {
-      toast.error("Lỗi khi tải hình ảnh cửa hàng");
-      setShopImageUrl(null);
+      toast.error("Lỗi khi tải hình ảnh cửa hàng") ;
+      setShopImageUrl(null) ;
     } finally {
-      setShopImageLoading(false);
+      setShopImageLoading(false) ;
     }
-  };
+  } ;
   
   // Handle avatar image upload
   const handleAvatarImageUpload = async (file: File) => {
     try {
-      setAvatarImageLoading(true);
+      setAvatarImageLoading(true) ;
       
       // Show preview immediately
-      const previewUrl = URL.createObjectURL(file);
-      setAvatarImageUrl(previewUrl);
+      const previewUrl = URL.createObjectURL(file) ;
+      setAvatarImageUrl(previewUrl) ;
       
       // Convert to base64 and upload
-      const base64 = await convertFileToBase64(file);
-      const result = await uploadFile(base64, `avatar_${Date.now()}.jpg`);
+      const base64 = await convertFileToBase64(file) ;
+      const result = await uploadFile(base64, `avatar_${Date.now()}.jpg`) ;
       
       if (!result.success) {
-        toast.error(result.error || "Failed to upload avatar image");
-        setAvatarImageUrl(null);
-        return;
+        toast.error(result.error || "Failed to upload avatar image") ;
+        setAvatarImageUrl(null) ;
+        return ;
       }
       
       // Update form value with file ID
-      setValue('avatar_file_id', result.data!.id);
-      setAvatarImageUrl(result.data!.file_url);
+      setValue('avatar_file_id', result.data!.id) ;
+      setAvatarImageUrl(result.data!.file_url) ;
       
-      toast.success("Tải lên logo cửa hàng thành công!");
+      toast.success("Tải lên logo cửa hàng thành công!") ;
     } catch (error) {
-      toast.error("Lỗi khi tải logo cửa hàng");
-      setAvatarImageUrl(null);
+      toast.error("Lỗi khi tải logo cửa hàng") ;
+      setAvatarImageUrl(null) ;
     } finally {
-      setAvatarImageLoading(false);
+      setAvatarImageLoading(false) ;
     }
-  };
+  } ;
   
   // Handle front card image upload
   const handleFrontCardImageUpload = async (file: File) => {
     try {
-      setFrontCardImageLoading(true);
+      setFrontCardImageLoading(true) ;
       
       // Show preview immediately
-      const previewUrl = URL.createObjectURL(file);
-      setFrontCardImageUrl(previewUrl);
+      const previewUrl = URL.createObjectURL(file) ;
+      setFrontCardImageUrl(previewUrl) ;
       
       // Convert to base64 and upload
-      const base64 = await convertFileToBase64(file);
-      const result = await uploadFile(base64, `front_card_${Date.now()}.jpg`);
+      const base64 = await convertFileToBase64(file) ;
+      const result = await uploadFile(base64, `front_card_${Date.now()}.jpg`) ;
       
       if (!result.success) {
-        toast.error(result.error || "Failed to upload front card image");
-        setFrontCardImageUrl(null);
-        return;
+        toast.error(result.error || "Failed to upload front card image") ;
+        setFrontCardImageUrl(null) ;
+        return ;
       }
       
       // Update form value with file ID
-      setValue('front_card_file_id', result.data!.id);
-      setFrontCardImageUrl(result.data!.file_url);
+      setValue('front_card_file_id', result.data!.id) ;
+      setFrontCardImageUrl(result.data!.file_url) ;
       
-      toast.success("Tải lên mặt trước CMND/CCCD thành công!");
+      toast.success("Tải lên mặt trước CMND/CCCD thành công!") ;
     } catch (error) {
-      toast.error("Lỗi khi tải mặt trước CMND/CCCD");
-      setFrontCardImageUrl(null);
+      toast.error("Lỗi khi tải mặt trước CMND/CCCD") ;
+      setFrontCardImageUrl(null) ;
     } finally {
-      setFrontCardImageLoading(false);
+      setFrontCardImageLoading(false) ;
     }
-  };
+  } ;
   
   // Handle back card image upload
   const handleBackCardImageUpload = async (file: File) => {
     try {
-      setBackCardImageLoading(true);
+      setBackCardImageLoading(true) ;
       
       // Show preview immediately
-      const previewUrl = URL.createObjectURL(file);
-      setBackCardImageUrl(previewUrl);
+      const previewUrl = URL.createObjectURL(file) ;
+      setBackCardImageUrl(previewUrl) ;
       
       // Convert to base64 and upload
-      const base64 = await convertFileToBase64(file);
-      const result = await uploadFile(base64, `back_card_${Date.now()}.jpg`);
+      const base64 = await convertFileToBase64(file) ;
+      const result = await uploadFile(base64, `back_card_${Date.now()}.jpg`) ;
       
       if (!result.success) {
-        toast.error(result.error || "Failed to upload back card image");
-        setBackCardImageUrl(null);
-        return;
+        toast.error(result.error || "Failed to upload back card image") ;
+        setBackCardImageUrl(null) ;
+        return ;
       }
       
       // Update form value with file ID
-      setValue('back_card_file_id', result.data!.id);
-      setBackCardImageUrl(result.data!.file_url);
+      setValue('back_card_file_id', result.data!.id) ;
+      setBackCardImageUrl(result.data!.file_url) ;
       
-      toast.success("Tải lên mặt sau CMND/CCCD thành công!");
+      toast.success("Tải lên mặt sau CMND/CCCD thành công!") ;
     } catch (error) {
-      toast.error("Lỗi khi tải mặt sau CMND/CCCD");
-      setBackCardImageUrl(null);
+      toast.error("Lỗi khi tải mặt sau CMND/CCCD") ;
+      setBackCardImageUrl(null) ;
     } finally {
-      setBackCardImageLoading(false);
+      setBackCardImageLoading(false) ;
     }
-  };
+  } ;
 
   // Handle business license upload
   const handleBusinessLicenseUpload = async (file: File) => {
     try {
-      setBusinessLicenseImageLoading(true);
-      const previewUrl = URL.createObjectURL(file);
-      setBusinessLicenseImageUrl(previewUrl);
-      const base64 = await convertFileToBase64(file);
-      const result = await uploadFile(base64, `business_license_${Date.now()}.jpg`);
+      setBusinessLicenseImageLoading(true) ;
+      const previewUrl = URL.createObjectURL(file) ;
+      setBusinessLicenseImageUrl(previewUrl) ;
+      const base64 = await convertFileToBase64(file) ;
+      const result = await uploadFile(base64, `business_license_${Date.now()}.jpg`) ;
       if (!result.success) {
-        toast.error(result.error || "Failed to upload business license");
-        setBusinessLicenseImageUrl(null);
-        return;
+        toast.error(result.error || "Failed to upload business license") ;
+        setBusinessLicenseImageUrl(null) ;
+        return ;
       }
-      setValue('business_license_file_id', result.data!.id);
-      setBusinessLicenseImageUrl(result.data!.file_url);
-      toast.success("Tải lên giấy phép kinh doanh thành công!");
+      setValue('business_license_file_id', result.data!.id) ;
+      setBusinessLicenseImageUrl(result.data!.file_url) ;
+      toast.success("Tải lên giấy phép kinh doanh thành công!") ;
     } catch (error) {
-      toast.error("Lỗi khi tải giấy phép kinh doanh");
-      setBusinessLicenseImageUrl(null);
+      toast.error("Lỗi khi tải giấy phép kinh doanh") ;
+      setBusinessLicenseImageUrl(null) ;
     } finally {
-      setBusinessLicenseImageLoading(false);
+      setBusinessLicenseImageLoading(false) ;
     }
-  };
+  } ;
 
   // Handle food safety certificate upload
   const handleFoodSafetyCertificateUpload = async (file: File) => {
     try {
-      setFoodSafetyCertificateImageLoading(true);
-      const previewUrl = URL.createObjectURL(file);
-      setFoodSafetyCertificateImageUrl(previewUrl);
-      const base64 = await convertFileToBase64(file);
-      const result = await uploadFile(base64, `food_safety_certificate_${Date.now()}.jpg`);
+      setFoodSafetyCertificateImageLoading(true) ;
+      const previewUrl = URL.createObjectURL(file) ;
+      setFoodSafetyCertificateImageUrl(previewUrl) ;
+      const base64 = await convertFileToBase64(file) ;
+      const result = await uploadFile(base64, `food_safety_certificate_${Date.now()}.jpg`) ;
       if (!result.success) {
-        toast.error(result.error || "Failed to upload food safety certificate");
-        setFoodSafetyCertificateImageUrl(null);
-        return;
+        toast.error(result.error || "Failed to upload food safety certificate") ;
+        setFoodSafetyCertificateImageUrl(null) ;
+        return ;
       }
-      setValue('food_safety_certificate_file_id', result.data!.id);
-      setFoodSafetyCertificateImageUrl(result.data!.file_url);
-      toast.success("Tải lên giấy chứng nhận ATTP thành công!");
+      setValue('food_safety_certificate_file_id', result.data!.id) ;
+      setFoodSafetyCertificateImageUrl(result.data!.file_url) ;
+      toast.success("Tải lên giấy chứng nhận ATTP thành công!") ;
     } catch (error) {
-      toast.error("Lỗi khi tải giấy chứng nhận ATTP");
-      setFoodSafetyCertificateImageUrl(null);
+      toast.error("Lỗi khi tải giấy chứng nhận ATTP") ;
+      setFoodSafetyCertificateImageUrl(null) ;
     } finally {
-      setFoodSafetyCertificateImageLoading(false);
+      setFoodSafetyCertificateImageLoading(false) ;
     }
-  };
+  } ;
 
   const onSubmit = async (data: BakeryFormData) => {
-    console.log(data);
-    setIsLoading(true);
+    console.log(data) ;
+    setIsLoading(true) ;
     
     try {
       // Validate that all required images are uploaded
       if (!data.shop_image_file_ids || data.shop_image_file_ids.length === 0) {
-        toast.error("Vui lòng tải lên hình ảnh cửa hàng");
-        setIsLoading(false);
-        return;
+        toast.error("Vui lòng tải lên hình ảnh cửa hàng") ;
+        setIsLoading(false) ;
+        return ;
       }
       
       if (!data.avatar_file_id) {
-        toast.error("Vui lòng tải lên logo cửa hàng");
-        setIsLoading(false);
-        return;
+        toast.error("Vui lòng tải lên logo cửa hàng") ;
+        setIsLoading(false) ;
+        return ;
       }
       
       if (!data.front_card_file_id) {
-        toast.error("Vui lòng tải lên mặt trước CMND/CCCD");
-        setIsLoading(false);
-        return;
+        toast.error("Vui lòng tải lên mặt trước CMND/CCCD") ;
+        setIsLoading(false) ;
+        return ;
       }
       
       if (!data.back_card_file_id) {
-        toast.error("Vui lòng tải lên mặt sau CMND/CCCD");
-        setIsLoading(false);
-        return;
+        toast.error("Vui lòng tải lên mặt sau CMND/CCCD") ;
+        setIsLoading(false) ;
+        return ;
       }
 
       if (!data.business_license_file_id) {
-        toast.error("Vui lòng tải lên giấy phép kinh doanh");
-        setIsLoading(false);
-        return;
+        toast.error("Vui lòng tải lên giấy phép kinh doanh") ;
+        setIsLoading(false) ;
+        return ;
       }
 
       if (!data.food_safety_certificate_file_id) {
-        toast.error("Vui lòng tải lên giấy chứng nhận ATTP");
-        setIsLoading(false);
-        return;
+        toast.error("Vui lòng tải lên giấy chứng nhận ATTP") ;
+        setIsLoading(false) ;
+        return ;
       }
 
       // Generate random latitude and longitude (for demonstration)
-      const randomLatitude = (Math.random() * (23 - 8) + 8).toFixed(6);
-      const randomLongitude = (Math.random() * (109 - 102) + 102).toFixed(6);
+      const randomLatitude = (Math.random() * (23 - 8) + 8).toFixed(6) ;
+      const randomLongitude = (Math.random() * (109 - 102) + 102).toFixed(6) ;
 
       // Set generated coordinates to form data
-      setValue('latitude', randomLatitude);
-      setValue('longitude', randomLongitude);
+      setValue('latitude', randomLatitude) ;
+      setValue('longitude', randomLongitude) ;
 
       // Format time values by adding seconds for API compatibility
-      const formattedOpenTime = data.open_time ;
-      const formattedCloseTime = data.close_time ;
+      const formattedOpenTime = data.open_time  ;
+      const formattedCloseTime = data.close_time  ;
 
       // Now use the updated data object for submission
       const dataWithCoords = { 
@@ -492,10 +492,10 @@ const BakerySignUpPage = () => {
         longitude: randomLongitude,
         open_time: formattedOpenTime,
         close_time: formattedCloseTime
-      };
+      } ;
 
       // Submit bakery registration
-      const toastId = toast.loading("Đang đăng ký cửa hàng...");
+      const toastId = toast.loading("Đang đăng ký cửa hàng...") ;
       
       const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/bakeries', {
         method: 'POST',
@@ -503,9 +503,9 @@ const BakerySignUpPage = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(dataWithCoords),
-      });
+      }) ;
 
-      const responseData = await response.json();
+      const responseData = await response.json() ;
 
       if (responseData.status_code === 201 || responseData.status_code === 200) {
         toast.update(toastId, {
@@ -513,24 +513,24 @@ const BakerySignUpPage = () => {
           type: "success",
           isLoading: false,
           autoClose: 3000,
-        });
+        }) ;
         
         // Show success modal instead of redirecting immediately
-        setShowSuccessModal(true);
+        setShowSuccessModal(true) ;
       } else {
         toast.update(toastId, {
           render: 'Đăng ký thất bại: ' + (responseData.errors?.join(', ') || 'Đã xảy ra lỗi'),
           type: "error",
           isLoading: false,
           autoClose: 3000,
-        });
+        }) ;
       }
     } catch (error) {
-      toast.error(`Đăng ký thất bại: ${(error as Error).message}`);
+      toast.error(`Đăng ký thất bại: ${(error as Error).message}`) ;
     } finally {
-      setIsLoading(false);
+      setIsLoading(false) ;
     }
-  };
+  } ;
 
   return (
     <>
@@ -854,7 +854,7 @@ const BakerySignUpPage = () => {
         </DialogContent>
       </Dialog>
     </>
-  );
-};
+  ) ;
+} ;
 
-export default BakerySignUpPage; 
+export default BakerySignUpPage ; 

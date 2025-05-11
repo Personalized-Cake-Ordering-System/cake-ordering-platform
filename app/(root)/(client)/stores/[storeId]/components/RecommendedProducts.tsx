@@ -1,26 +1,26 @@
-"use client";
+"use client" ;
 
-import Link from 'next/link';
-import Image from 'next/image';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Heart, ShoppingCart, Star, Store } from 'lucide-react';
+import Link from 'next/link' ;
+import Image from 'next/image' ;
+import { Card } from '@/components/ui/card' ;
+import { Badge } from '@/components/ui/badge' ;
+import { Button } from '@/components/ui/button' ;
+import { Heart, ShoppingCart, Star, Store } from 'lucide-react' ;
 
 interface Product {
-  id: number | string;
-  name: string;
-  image: string;
-  price: number;
-  discountedPrice: number;
-  sold: string;
-  category?: string;
+  id: number | string ;
+  name: string ;
+  image: string ;
+  price: number ;
+  discountedPrice: number ;
+  sold: string ;
+  category?: string ;
 }
 
 interface RecommendedProductsProps {
-  products: Product[];
-  storeId: string;
-  rating: number;
+  products: Product[] ;
+  storeId: string ;
+  rating: number ;
 }
 
 export default function RecommendedProducts({ products, storeId, rating }: RecommendedProductsProps) {
@@ -81,5 +81,5 @@ export default function RecommendedProducts({ products, storeId, rating }: Recom
         ))}
       </div>
     </div>
-  );
+  ) ;
 } 

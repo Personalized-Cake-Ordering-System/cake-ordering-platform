@@ -1,7 +1,7 @@
-'use client'
+'use client' 
 
-import Link from "next/link";
-import { FooterLinkSectionProps } from "./footer-data";
+import Link from "next/link" ;
+import { FooterLinkSectionProps } from "./footer-data" ;
 
 export const FooterLinkSection = ({ title, links }: FooterLinkSectionProps) => {
   return (
@@ -22,5 +22,5 @@ export const FooterLinkSection = ({ title, links }: FooterLinkSectionProps) => {
         ))}
       </ul>
     </div>
-  );
-};
+  ) ;
+} ;

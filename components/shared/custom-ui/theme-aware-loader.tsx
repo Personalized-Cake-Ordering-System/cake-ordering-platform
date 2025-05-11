@@ -1,23 +1,23 @@
-"use client";
+"use client" ;
 
-import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
-import NextTopLoader from "nextjs-toploader";
+import { useTheme } from "next-themes" 
+import { useEffect, useState } from "react" 
+import NextTopLoader from "nextjs-toploader" 
 
 export function ThemeAwareLoader() {
-  const { theme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+  const { theme } = useTheme() 
+  const [mounted, setMounted] = useState(false) 
   
   // Only show the loader once the component has mounted to avoid hydration issues
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    setMounted(true) 
+  }, []) 
   
   if (!mounted) {
-    return null;
+    return null 
   }
   
-  const loaderColor = theme === "dark" ? "#E87931" : "#14b8a6";
+  const loaderColor = theme === "dark" ? "#E87931" : "#14b8a6" 
   
   return (
     <NextTopLoader
@@ -25,5 +25,5 @@ export function ThemeAwareLoader() {
       color={loaderColor}
       shadow="0 0 10px #E87931, 0 0 5px #E87931"
     />
-  );
+  ) 
 } 

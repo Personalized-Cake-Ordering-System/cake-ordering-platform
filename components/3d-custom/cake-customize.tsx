@@ -1,86 +1,86 @@
-"use client";
+"use client" ;
 
-import { Button } from '@/components/ui/button';
-import { useCart } from '@/app/store/useCart';
-import { CakeConfig } from '@/types/cake';
-import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowLeft, Check, Download } from 'lucide-react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Image from 'next/image';
-import React, { useEffect, useState, useRef } from 'react';
-import { useCakeConfigStore } from '@/components/shared/client/stores/cake-config';
-import { toast } from 'react-hot-toast';
-import html2canvas from 'html2canvas';
+import { Button } from '@/components/ui/button' ;
+import { useCart } from '@/app/store/useCart' ;
+import { CakeConfig } from '@/types/cake' ;
+import { AnimatePresence, motion } from 'framer-motion' ;
+import { ArrowLeft, Check, Download } from 'lucide-react' ;
+import { useRouter, useSearchParams } from 'next/navigation' ;
+import Image from 'next/image' ;
+import React, { useEffect, useState, useRef } from 'react' ;
+import { useCakeConfigStore } from '@/components/shared/client/stores/cake-config' ;
+import { toast } from 'react-hot-toast' ;
+import html2canvas from 'html2canvas' ;
 
 // API response types
 interface ApiError {
-    code: string;
-    message: string;
-    details?: any;
+    code: string ;
+    message: string ;
+    details?: any ;
 }
 
 interface ApiResponse<T> {
-    status_code: number;
-    errors: ApiError[];
+    status_code: number ;
+    errors: ApiError[] ;
     meta_data: {
-        total_items_count: number;
-        page_size: number;
-        total_pages_count: number;
-        page_index: number;
-        has_next: boolean;
-        has_previous: boolean;
-    };
-    payload: T[];
+        total_items_count: number ;
+        page_size: number ;
+        total_pages_count: number ;
+        page_index: number ;
+        has_next: boolean ;
+        has_previous: boolean ;
+    } ;
+    payload: T[] ;
 }
 
 interface ApiImage {
-    file_name: string;
-    file_url: string;
-    id: string;
-    created_at: string;
-    created_by: string;
-    updated_at: string | null;
-    updated_by: string | null;
-    is_deleted: boolean;
+    file_name: string ;
+    file_url: string ;
+    id: string ;
+    created_at: string ;
+    created_by: string ;
+    updated_at: string | null ;
+    updated_by: string | null ;
+    is_deleted: boolean ;
 }
 
 interface ApiItem {
-    id: string;
-    name: string;
-    price: number;
-    color: string;
-    is_default: boolean;
-    description: string;
-    image_id: string | null;
-    image: ApiImage | null;
-    type: string;
-    bakery_id: string;
-    bakery: null;
-    created_at: string;
-    created_by: string;
-    updated_at: string | null;
-    updated_by: string | null;
-    is_deleted: boolean;
+    id: string ;
+    name: string ;
+    price: number ;
+    color: string ;
+    is_default: boolean ;
+    description: string ;
+    image_id: string | null ;
+    image: ApiImage | null ;
+    type: string ;
+    bakery_id: string ;
+    bakery: null ;
+    created_at: string ;
+    created_by: string ;
+    updated_at: string | null ;
+    updated_by: string | null ;
+    is_deleted: boolean ;
 }
 
 interface ApiOptionGroup {
-    type: string;
-    items: ApiItem[];
+    type: string ;
+    items: ApiItem[] ;
 }
 
 // Define type for the selected part
-type SelectedPart = 'cake' | 'decoration' | 'message' | 'extras' | null;
+type SelectedPart = 'cake' | 'decoration' | 'message' | 'extras' | null ;
 
 // Type for step status tracking
 type StepStatus = {
-    cake: boolean;
-    decoration: boolean;
-    message: boolean;
-    extras: boolean;
-};
+    cake: boolean ;
+    decoration: boolean ;
+    message: boolean ;
+    extras: boolean ;
+} ;
 
 // Type for board shape
-type BoardShape = 'round' | 'square';
+type BoardShape = 'round' | 'square' ;
 
 // Get initial cake configuration
 const getInitialCakeConfig = (): CakeConfig => {
@@ -104,16 +104,16 @@ const getInitialCakeConfig = (): CakeConfig => {
             uploadedImage: null,
             imageUrl: null,
             pipingColor: 'white'
-        };
+        } ;
     }
 
     // Try to get saved config from localStorage
-    const savedConfig = localStorage.getItem('cakeConfig');
+    const savedConfig = localStorage.getItem('cakeConfig') ;
     if (savedConfig) {
         try {
-            return JSON.parse(savedConfig);
+            return JSON.parse(savedConfig) ;
         } catch (error) {
-            console.error('Error parsing saved cake config:', error);
+            console.error('Error parsing saved cake config:', error) ;
         }
     }
 
@@ -136,8 +136,8 @@ const getInitialCakeConfig = (): CakeConfig => {
         uploadedImage: null,
         imageUrl: null,
         pipingColor: 'white'
-    };
-};
+    } ;
+} ;
 
 // Animation variants for selected items
 const selectedVariants = {
@@ -155,30 +155,30 @@ const selectedVariants = {
             duration: 0.2
         }
     }
-};
+} ;
 
 const CakeCustomizer = ({ storeId }: { storeId: string }) => {
-    const { addToCart, items } = useCart();
-    const router = useRouter();
-    const searchParams = useSearchParams();
-    const editId = searchParams.get('editId');
-    const { config, setConfig } = useCakeConfigStore();
-    const cakePreviewRef = useRef<HTMLDivElement>(null);
+    const { addToCart, items } = useCart() ;
+    const router = useRouter() ;
+    const searchParams = useSearchParams() ;
+    const editId = searchParams.get('editId') ;
+    const { config, setConfig } = useCakeConfigStore() ;
+    const cakePreviewRef = useRef<HTMLDivElement>(null) ;
 
     // UI state
-    const [selectedPart, setSelectedPart] = useState<SelectedPart>(null);
-    const [showJson, setShowJson] = useState(false);
-    const [isZoomed, setIsZoomed] = useState(false);
+    const [selectedPart, setSelectedPart] = useState<SelectedPart>(null) ;
+    const [showJson, setShowJson] = useState(false) ;
+    const [isZoomed, setIsZoomed] = useState(false) ;
 
     // API data state
-    const [decorationOptions, setDecorationOptions] = useState<ApiOptionGroup[]>([]);
-    const [partOptions, setPartOptions] = useState<ApiOptionGroup[]>([]);
-    const [messageOptions, setMessageOptions] = useState<ApiOptionGroup[]>([]);
-    const [extraOptions, setExtraOptions] = useState<ApiOptionGroup[]>([]);
+    const [decorationOptions, setDecorationOptions] = useState<ApiOptionGroup[]>([]) ;
+    const [partOptions, setPartOptions] = useState<ApiOptionGroup[]>([]) ;
+    const [messageOptions, setMessageOptions] = useState<ApiOptionGroup[]>([]) ;
+    const [extraOptions, setExtraOptions] = useState<ApiOptionGroup[]>([]) ;
     
     // Status and error handling
-    const [error, setError] = useState<ApiError | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<ApiError | null>(null) ;
+    const [isLoading, setIsLoading] = useState(false) ;
 
     // Tracking completion status of steps
     const [completedSteps, setCompletedSteps] = useState<StepStatus>({
@@ -186,10 +186,10 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
         decoration: false,
         message: false,
         extras: false
-    });
+    }) ;
 
     // Current active step
-    const [currentStep, setCurrentStep] = useState<'cake' | 'decoration' | 'message' | 'extras'>('cake');
+    const [currentStep, setCurrentStep] = useState<'cake' | 'decoration' | 'message' | 'extras'>('cake') ;
 
     // Load data when the component mounts
     useEffect(() => {
@@ -199,20 +199,20 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
             fetchMessageOptions(),
             fetchExtraOptions()
         ]).catch(error => {
-            console.error('Error initializing cake customizer:', error);
-            toast.error('Failed to load cake options. Please try again.');
-        });
-    }, [storeId]);
+            console.error('Error initializing cake customizer:', error) ;
+            toast.error('Failed to load cake options. Please try again.') ;
+        }) ;
+    }, [storeId]) ;
 
     // Update the initial state to load existing item if editing
     useEffect(() => {
         if (editId) {
-            const itemToEdit = items.find(item => item.id === editId);
+            const itemToEdit = items.find(item => item.id === editId) ;
             if (itemToEdit) {
-                setConfig(itemToEdit.config);
+                setConfig(itemToEdit.config) ;
             }
         }
-    }, [editId, items, setConfig]);
+    }, [editId, items, setConfig]) ;
 
     // Reset the cake configuration to defaults
     const handleResetConfig = () => {
@@ -234,313 +234,313 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
             uploadedImage: null,
             imageUrl: null,
             pipingColor: 'white'
-        };
-        setConfig(defaultConfig);
+        } ;
+        setConfig(defaultConfig) ;
         setCompletedSteps({
             cake: false,
             decoration: false,
             message: false,
             extras: false
-        });
-        setCurrentStep('cake');
-        setSelectedPart(null);
-    };
+        }) ;
+        setCurrentStep('cake') ;
+        setSelectedPart(null) ;
+    } ;
 
     // API fetch functions
     const fetchDecorationOptions = async () => {
         try {
-            setIsLoading(true);
-            setError(null);
-            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/decoration_options?bakeryId=${storeId}`);
+            setIsLoading(true) ;
+            setError(null) ;
+            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/decoration_options?bakeryId=${storeId}`) ;
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                throw new Error(`HTTP error! status: ${response.status}`) ;
             }
-            const data: ApiResponse<ApiOptionGroup> = await response.json();
+            const data: ApiResponse<ApiOptionGroup> = await response.json() ;
             if (data.errors && data.errors.length > 0) {
-                throw new Error(data.errors[0].message);
+                throw new Error(data.errors[0].message) ;
             }
-            setDecorationOptions(data.payload);
-            return data.payload;
+            setDecorationOptions(data.payload) ;
+            return data.payload ;
         } catch (error) {
-            console.error('Error fetching decoration options:', error);
+            console.error('Error fetching decoration options:', error) ;
             setError({
                 code: 'FETCH_ERROR',
                 message: error instanceof Error ? error.message : 'Failed to fetch decoration options'
-            });
-            return [];
+            }) ;
+            return [] ;
         } finally {
-            setIsLoading(false);
+            setIsLoading(false) ;
         }
-    };
+    } ;
 
     const fetchPartOptions = async () => {
         try {
-            setIsLoading(true);
-            setError(null);
-            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/part_options?bakeryId=${storeId}`);
+            setIsLoading(true) ;
+            setError(null) ;
+            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/part_options?bakeryId=${storeId}`) ;
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                throw new Error(`HTTP error! status: ${response.status}`) ;
             }
-            const data: ApiResponse<ApiOptionGroup> = await response.json();
+            const data: ApiResponse<ApiOptionGroup> = await response.json() ;
             if (data.errors && data.errors.length > 0) {
-                throw new Error(data.errors[0].message);
+                throw new Error(data.errors[0].message) ;
             }
-            setPartOptions(data.payload);
+            setPartOptions(data.payload) ;
 
             // Set default size if not already set
             if (!config.size && data.payload.length > 0) {
-                const sizeGroup = data.payload.find(group => group.type === 'Size');
+                const sizeGroup = data.payload.find(group => group.type === 'Size') ;
                 if (sizeGroup && sizeGroup.items.length > 0) {
-                    const defaultSize = sizeGroup.items[0];
+                    const defaultSize = sizeGroup.items[0] ;
                     setConfig(prev => ({
                         ...prev,
                         size: defaultSize.name,
                         price: defaultSize.price
-                    }));
+                    })) ;
                 }
             }
-            return data.payload;
+            return data.payload ;
         } catch (error) {
-            console.error('Error fetching part options:', error);
+            console.error('Error fetching part options:', error) ;
             setError({
                 code: 'FETCH_ERROR',
                 message: error instanceof Error ? error.message : 'Failed to fetch part options'
-            });
-            return [];
+            }) ;
+            return [] ;
         } finally {
-            setIsLoading(false);
+            setIsLoading(false) ;
         }
-    };
+    } ;
 
     const fetchMessageOptions = async () => {
         try {
-            setIsLoading(true);
-            setError(null);
-            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/message_options?bakeryId=${storeId}`);
+            setIsLoading(true) ;
+            setError(null) ;
+            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/message_options?bakeryId=${storeId}`) ;
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                throw new Error(`HTTP error! status: ${response.status}`) ;
             }
-            const data: ApiResponse<ApiOptionGroup> = await response.json();
+            const data: ApiResponse<ApiOptionGroup> = await response.json() ;
             if (data.errors && data.errors.length > 0) {
-                throw new Error(data.errors[0].message);
+                throw new Error(data.errors[0].message) ;
             }
-            setMessageOptions(data.payload);
-            return data.payload;
+            setMessageOptions(data.payload) ;
+            return data.payload ;
         } catch (error) {
-            console.error('Error fetching message options:', error);
+            console.error('Error fetching message options:', error) ;
             setError({
                 code: 'FETCH_ERROR',
                 message: error instanceof Error ? error.message : 'Failed to fetch message options'
-            });
-            return [];
+            }) ;
+            return [] ;
         } finally {
-            setIsLoading(false);
+            setIsLoading(false) ;
         }
-    };
+    } ;
 
     const fetchExtraOptions = async () => {
         try {
-            setIsLoading(true);
-            setError(null);
-            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/extra_options?bakeryId=${storeId}`);
+            setIsLoading(true) ;
+            setError(null) ;
+            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/extra_options?bakeryId=${storeId}`) ;
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                throw new Error(`HTTP error! status: ${response.status}`) ;
             }
-            const data: ApiResponse<ApiOptionGroup> = await response.json();
+            const data: ApiResponse<ApiOptionGroup> = await response.json() ;
             if (data.errors && data.errors.length > 0) {
-                throw new Error(data.errors[0].message);
+                throw new Error(data.errors[0].message) ;
             }
-            setExtraOptions(data.payload);
-            return data.payload;
+            setExtraOptions(data.payload) ;
+            return data.payload ;
         } catch (error) {
-            console.error('Error fetching extra options:', error);
+            console.error('Error fetching extra options:', error) ;
             setError({
                 code: 'FETCH_ERROR',
                 message: error instanceof Error ? error.message : 'Failed to fetch extra options'
-            });
-            return [];
+            }) ;
+            return [] ;
         } finally {
-            setIsLoading(false);
+            setIsLoading(false) ;
         }
-    };
+    } ;
 
     // Handle part selection
     const handlePartSelect = (part: SelectedPart) => {
-        setError(null);
+        setError(null) ;
 
         // Determine which steps are available based on completion status
-        const canSelectCake = true; // Always available
-        const canSelectDecoration = completedSteps.cake;
-        const canSelectMessage = completedSteps.decoration;
-        const canSelectExtras = completedSteps.message;
+        const canSelectCake = true ; // Always available
+        const canSelectDecoration = completedSteps.cake ;
+        const canSelectMessage = completedSteps.decoration ;
+        const canSelectExtras = completedSteps.message ;
 
         // Only allow selecting steps that are available
         if (part === 'cake') {
-            setSelectedPart(part);
+            setSelectedPart(part) ;
             if (partOptions.length === 0) {
-                fetchPartOptions();
+                fetchPartOptions() ;
             }
         } else if (part === 'decoration' && canSelectDecoration) {
-            setSelectedPart(part);
+            setSelectedPart(part) ;
             if (decorationOptions.length === 0) {
-                fetchDecorationOptions();
+                fetchDecorationOptions() ;
             }
         } else if (part === 'message' && canSelectMessage) {
-            setSelectedPart(part);
+            setSelectedPart(part) ;
             if (messageOptions.length === 0) {
-                fetchMessageOptions();
+                fetchMessageOptions() ;
             }
         } else if (part === 'extras' && canSelectExtras) {
-            setSelectedPart(part);
+            setSelectedPart(part) ;
             if (extraOptions.length === 0) {
-                fetchExtraOptions();
+                fetchExtraOptions() ;
             }
         } else if (part !== null) {
             // Show error message if trying to select a locked step
-            toast.error('Please complete the previous steps first');
+            toast.error('Please complete the previous steps first') ;
         }
 
         // Update current step based on selection
         if (part === 'cake' && !completedSteps.cake) {
-            setCurrentStep('cake');
+            setCurrentStep('cake') ;
         } else if (part === 'decoration' && !completedSteps.decoration) {
-            setCurrentStep('decoration');
+            setCurrentStep('decoration') ;
         } else if (part === 'message' && !completedSteps.message) {
-            setCurrentStep('message');
+            setCurrentStep('message') ;
         } else if (part === 'extras' && !completedSteps.extras) {
-            setCurrentStep('extras');
+            setCurrentStep('extras') ;
         }
-    };
+    } ;
 
     // Handle option selection for size
     const handleSizeSelect = (option: ApiItem) => {
         // Find current size option to calculate price difference
-        const currentSizeId = config.size;
+        const currentSizeId = config.size ;
         const currentSize = partOptions.find(group => group.type === 'Size')?.items
-            .find(item => item.name === currentSizeId);
+            .find(item => item.name === currentSizeId) ;
         
         // Calculate price difference and update config
-        const currentPrice = currentSize?.price || 0;
-        const priceDifference = option.price - currentPrice;
+        const currentPrice = currentSize?.price || 0 ;
+        const priceDifference = option.price - currentPrice ;
         
         setConfig(prev => ({
             ...prev,
             size: option.name,
             price: prev.price + priceDifference
-        }));
-    };
+        })) ;
+    } ;
 
     // Handle option selection for sponge
     const handleSpongeSelect = (option: ApiItem) => {
         // Find current sponge to calculate price difference
-        const currentSpongeId = config.sponge;
+        const currentSpongeId = config.sponge ;
         const currentSponge = partOptions.find(group => group.type === 'Sponge')?.items
-            .find(item => item.id === currentSpongeId);
+            .find(item => item.id === currentSpongeId) ;
         
         // Calculate price difference
-        const currentPrice = currentSponge?.price || 0;
-        const priceDifference = option.price - currentPrice;
+        const currentPrice = currentSponge?.price || 0 ;
+        const priceDifference = option.price - currentPrice ;
         
         setConfig(prev => ({
             ...prev,
             sponge: option.id,
             price: prev.price + priceDifference
-        }));
-    };
+        })) ;
+    } ;
 
     // Handle option selection for filling
     const handleFillingSelect = (option: ApiItem) => {
         // Find current filling to calculate price difference
-        const currentFillingId = config.filling;
+        const currentFillingId = config.filling ;
         const currentFilling = partOptions.find(group => group.type === 'Filling')?.items
-            .find(item => item.id === currentFillingId);
+            .find(item => item.id === currentFillingId) ;
         
         // Calculate price difference
-        const currentPrice = currentFilling?.price || 0;
-        const priceDifference = option.price - currentPrice;
+        const currentPrice = currentFilling?.price || 0 ;
+        const priceDifference = option.price - currentPrice ;
         
         setConfig(prev => ({
             ...prev,
             filling: option.id,
             price: prev.price + priceDifference
-        }));
-    };
+        })) ;
+    } ;
 
     // Handle option selection for icing
     const handleIcingSelect = (option: ApiItem) => {
         // Find current icing to calculate price difference
-        const currentIcingId = config.icing;
+        const currentIcingId = config.icing ;
         const currentIcing = partOptions.find(group => group.type === 'Icing')?.items
-            .find(item => item.id === currentIcingId);
+            .find(item => item.id === currentIcingId) ;
         
         // Calculate price difference
-        const currentPrice = currentIcing?.price || 0;
-        const priceDifference = option.price - currentPrice;
+        const currentPrice = currentIcing?.price || 0 ;
+        const priceDifference = option.price - currentPrice ;
         
         setConfig(prev => ({
             ...prev,
             icing: option.id,
             price: prev.price + priceDifference
-        }));
-    };
+        })) ;
+    } ;
 
     // Handle option selection for outer icing (decoration)
     const handleDecorationSelect = (option: ApiItem) => {
         // Find current outer icing to calculate price difference
-        const currentIcingId = config.outerIcing;
+        const currentIcingId = config.outerIcing ;
         const currentIcing = decorationOptions.flatMap(group => group.items)
-            .find(item => item.id === currentIcingId);
+            .find(item => item.id === currentIcingId) ;
         
         // Calculate price difference
-        const currentPrice = currentIcing?.price || 0;
-        const priceDifference = option.price - currentPrice;
+        const currentPrice = currentIcing?.price || 0 ;
+        const priceDifference = option.price - currentPrice ;
         
         setConfig(prev => ({
             ...prev,
             outerIcing: option.id,
             price: prev.price + priceDifference
-        }));
-    };
+        })) ;
+    } ;
 
     // Handle option selection for goo
     const handleGooSelect = (option: ApiItem) => {
         // Find current goo to calculate price difference
-        const currentGooId = config.goo;
+        const currentGooId = config.goo ;
         const currentGoo = partOptions.find(group => group.type === 'Goo')?.items
-            .find(item => item.id === currentGooId);
+            .find(item => item.id === currentGooId) ;
         
         // Calculate price difference
-        const currentPrice = currentGoo?.price || 0;
-        const priceDifference = option.price - currentPrice;
+        const currentPrice = currentGoo?.price || 0 ;
+        const priceDifference = option.price - currentPrice ;
         
         setConfig(prev => ({
             ...prev,
             goo: option.id,
             price: prev.price + priceDifference
-        }));
-    };
+        })) ;
+    } ;
 
     // Handle option selection for message type
     const handleMessageTypeSelect = (messageType: 'none' | 'piped' | 'edible') => {
         // Find current message type to calculate price difference
-        const currentMessageType = config.messageType;
+        const currentMessageType = config.messageType ;
         const currentMessageOption = messageOptions.find(group => group.type === 'MESSAGE_TYPE')?.items.find(item => 
             (currentMessageType === 'none' && item.name === 'NONE') ||
             (currentMessageType === 'piped' && item.name === 'PIPED MESSAGE') ||
             (currentMessageType === 'edible' && item.name === 'EDIBLE IMAGE')
-        );
+        ) ;
         
         // Find new message type to calculate price
         const newMessageOption = messageOptions.find(group => group.type === 'MESSAGE_TYPE')?.items.find(item => 
             (messageType === 'none' && item.name === 'NONE') ||
             (messageType === 'piped' && item.name === 'PIPED MESSAGE') ||
             (messageType === 'edible' && item.name === 'EDIBLE IMAGE')
-        );
+        ) ;
         
         // Calculate price difference
-        const currentPrice = currentMessageOption?.price || 0;
-        const newPrice = newMessageOption?.price || 0;
-        const priceDifference = newPrice - currentPrice;
+        const currentPrice = currentMessageOption?.price || 0 ;
+        const newPrice = newMessageOption?.price || 0 ;
+        const priceDifference = newPrice - currentPrice ;
         
         setConfig(prev => ({
             ...prev,
@@ -549,74 +549,74 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
             message: messageType === 'none' ? '' : prev.message,
             uploadedImage: messageType === 'edible' ? prev.uploadedImage : null,
             price: prev.price + priceDifference
-        }));
-    };
+        })) ;
+    } ;
 
     // Handle message text change
     const handleMessageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setConfig(prev => ({
             ...prev,
             message: e.target.value.slice(0, 30)
-        }));
-    };
+        })) ;
+    } ;
 
     // Handle plaque color selection for piped message
     const handlePlaqueColorSelect = (option: ApiItem) => {
         setConfig(prev => ({
             ...prev,
             plaqueColor: option.id
-        }));
-    };
+        })) ;
+    } ;
 
     // Handle piping color selection for piped message
     const handlePipingColorSelect = (option: ApiItem) => {
         setConfig(prev => ({
             ...prev,
             pipingColor: option.id
-        }));
-    };
+        })) ;
+    } ;
 
     // Handle image upload for edible image
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
+        const file = e.target.files?.[0] ;
         if (file) {
-            const reader = new FileReader();
+            const reader = new FileReader() ;
             reader.onload = (e) => {
                 setConfig(prev => ({
                     ...prev,
                     uploadedImage: e.target?.result as string
-                }));
-            };
-            reader.readAsDataURL(file);
+                })) ;
+            } ;
+            reader.readAsDataURL(file) ;
         }
-    };
+    } ;
 
     // Handle removing uploaded image
     const handleImageRemove = () => {
         setConfig(prev => ({
             ...prev,
             uploadedImage: null
-        }));
-    };
+        })) ;
+    } ;
 
     // Handle selecting extras (candles, board, etc.)
     const handleExtraSelect = (option: ApiItem) => {
-        const extras = Array.isArray(config.extras) ? [...config.extras] : [];
-        const isAlreadySelected = extras.includes(option.id);
+        const extras = Array.isArray(config.extras) ? [...config.extras] : [] ;
+        const isAlreadySelected = extras.includes(option.id) ;
         
         // Check if there's an existing option of same type to replace
         const existingOptionOfSameType = extras.find(id => {
             const existingOption = extraOptions.flatMap(group => group.items)
-                .find(item => item.id === id);
-            return existingOption?.type === option.type && id !== option.id;
-        });
+                .find(item => item.id === id) ;
+            return existingOption?.type === option.type && id !== option.id ;
+        }) ;
         
-        let priceDifference = 0;
+        let priceDifference = 0 ;
         
         if (isAlreadySelected) {
             // Remove if already selected
-            const newExtras = extras.filter(id => id !== option.id);
-            priceDifference = -option.price;
+            const newExtras = extras.filter(id => id !== option.id) ;
+            priceDifference = -option.price ;
             
             setConfig(prev => ({
                 ...prev,
@@ -625,25 +625,25 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                 // If removing a board or candles, update those fields too
                 ...(option.type === 'CakeBoard' ? { board: '' } : {}),
                 ...(option.type === 'Candles' ? { candles: null } : {})
-            }));
+            })) ;
         } else {
             // If replacing an existing option of same type
-            let newExtras = [...extras];
+            let newExtras = [...extras] ;
             
             if (existingOptionOfSameType) {
                 const existingOption = extraOptions.flatMap(group => group.items)
-                    .find(item => item.id === existingOptionOfSameType);
+                    .find(item => item.id === existingOptionOfSameType) ;
                 
                 // Remove existing and its price
-                newExtras = newExtras.filter(id => id !== existingOptionOfSameType);
-                priceDifference = option.price - (existingOption?.price || 0);
+                newExtras = newExtras.filter(id => id !== existingOptionOfSameType) ;
+                priceDifference = option.price - (existingOption?.price || 0) ;
             } else {
                 // Just add the new option's price
-                priceDifference = option.price;
+                priceDifference = option.price ;
             }
             
             // Add the new option
-            newExtras.push(option.id);
+            newExtras.push(option.id) ;
             
             setConfig(prev => ({
                 ...prev,
@@ -652,75 +652,75 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                 // Update board or candles field if applicable
                 ...(option.type === 'CakeBoard' ? { board: option.id } : {}),
                 ...(option.type === 'Candles' ? { candles: option.id } : {})
-            }));
+            })) ;
         }
-    };
+    } ;
 
     // Complete the current step and move to the next
     const handleStepComplete = () => {
         // Validation checks for each step
         if (currentStep === 'cake') {
             if (!config.size || !config.sponge || !config.filling || !config.icing) {
-                toast.error('Please select size, sponge, filling, and icing options');
-                return;
+                toast.error('Please select size, sponge, filling, and icing options') ;
+                return ;
             }
-            setCompletedSteps(prev => ({ ...prev, cake: true }));
-            setCurrentStep('decoration');
-            setSelectedPart('decoration');
+            setCompletedSteps(prev => ({ ...prev, cake: true })) ;
+            setCurrentStep('decoration') ;
+            setSelectedPart('decoration') ;
         } 
         else if (currentStep === 'decoration') {
             if (!config.outerIcing) {
-                toast.error('Please select a decoration option');
-                return;
+                toast.error('Please select a decoration option') ;
+                return ;
             }
-            setCompletedSteps(prev => ({ ...prev, decoration: true }));
-            setCurrentStep('message');
-            setSelectedPart('message');
+            setCompletedSteps(prev => ({ ...prev, decoration: true })) ;
+            setCurrentStep('message') ;
+            setSelectedPart('message') ;
         }
         else if (currentStep === 'message') {
             // Message step is optional, always allow completion
-            setCompletedSteps(prev => ({ ...prev, message: true }));
-            setCurrentStep('extras');
-            setSelectedPart('extras');
+            setCompletedSteps(prev => ({ ...prev, message: true })) ;
+            setCurrentStep('extras') ;
+            setSelectedPart('extras') ;
         }
         else if (currentStep === 'extras') {
             // Extras are optional, always allow completion
-            setCompletedSteps(prev => ({ ...prev, extras: true }));
-            setSelectedPart(null);
-            toast.success('Cake customization complete! You can now add it to cart.');
+            setCompletedSteps(prev => ({ ...prev, extras: true })) ;
+            setSelectedPart(null) ;
+            toast.success('Cake customization complete! You can now add it to cart.') ;
         }
-    };
+    } ;
 
     // Save the current design to localStorage
     const handleSaveDesign = () => {
         try {
-            localStorage.setItem('cakeConfig', JSON.stringify(config));
-            toast.success('Design saved successfully!');
+            localStorage.setItem('cakeConfig', JSON.stringify(config)) ;
+            toast.success('Design saved successfully!') ;
         } catch (error) {
-            console.error('Error saving design:', error);
-            toast.error('Failed to save design');
+            console.error('Error saving design:', error) ;
+            toast.error('Failed to save design') ;
         }
-    };
+    } ;
 
     // Add the customized cake to cart
     const handleOrderCake = async () => {
         try {
-            console.log('Order button clicked');
-            console.log('Current cake config:', config);
+            console.log('Order button clicked') ;
+            console.log('Current cake config:', config) ;
 
             // Get the access token from localStorage
-            const accessToken = localStorage.getItem('accessToken');
+            const accessToken = localStorage.getItem('accessToken') ;
             if (!accessToken) {
-                toast.error('You need to be logged in to add items to cart');
-                return;
+                toast.error('You need to be logged in to add items to cart') ;
+                return ;
             }
 
             // Capture the cake preview as an image
-            let cakeImageUrl = null;
+            let cakeImageUrl = null ;
             if (cakePreviewRef.current) {
                 try {
                     // Show loading toast
-                    const loadingToast = toast.loading('Generating cake image...');
+                    const loadingToast = toast.loading('Generating cake image...') ;
 
                     // Capture the cake preview
                     const canvas = await html2canvas(cakePreviewRef.current, {
@@ -729,69 +729,69 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                         logging: false,
                         useCORS: true,
                         allowTaint: true
-                    });
+                    }) ;
 
                     // Convert canvas to data URL
-                    cakeImageUrl = canvas.toDataURL('image/png');
+                    cakeImageUrl = canvas.toDataURL('image/png') ;
 
                     // Update loading toast
-                    toast.dismiss(loadingToast);
-                    toast.success('Cake image generated successfully!');
+                    toast.dismiss(loadingToast) ;
+                    toast.success('Cake image generated successfully!') ;
                 } catch (error) {
-                    console.error('Error capturing cake image:', error);
-                    toast.error('Failed to generate cake image. Using default image instead.');
+                    console.error('Error capturing cake image:', error) ;
+                    toast.error('Failed to generate cake image. Using default image instead.') ;
                 }
             }
 
             // Get message options from API response
-            const messageTypeGroup = messageOptions.find(group => group.type === 'MESSAGE_TYPE');
-            const plaqueColorGroup = messageOptions.find(group => group.type === 'PLAQUE_COLOUR');
-            const pipingColorGroup = messageOptions.find(group => group.type === 'PIPING_COLOUR');
+            const messageTypeGroup = messageOptions.find(group => group.type === 'MESSAGE_TYPE') ;
+            const plaqueColorGroup = messageOptions.find(group => group.type === 'PLAQUE_COLOUR') ;
+            const pipingColorGroup = messageOptions.find(group => group.type === 'PIPING_COLOUR') ;
 
             // Get the selected message type option
             const selectedMessageType = messageTypeGroup?.items.find(item =>
                 (config.messageType === 'none' && item.name === 'NONE') ||
                 (config.messageType === 'piped' && item.name === 'PIPED MESSAGE') ||
                 (config.messageType === 'edible' && item.name === 'EDIBLE IMAGE')
-            );
+            ) ;
 
             // Get the selected plaque color option
             const selectedPlaqueColor = plaqueColorGroup?.items.find(item =>
                 item.name.toLowerCase().includes(config.plaqueColor.toLowerCase())
-            );
+            ) ;
 
             // Get the selected piping color option
             const selectedPipingColor = pipingColorGroup?.items.find(item =>
                 item.name.toLowerCase().includes(config.pipingColor.toLowerCase())
-            );
+            ) ;
 
             // Collect all selected message option IDs
             const messageOptionIds = [
                 selectedMessageType?.id,
                 config.messageType === 'piped' ? selectedPlaqueColor?.id : null,
                 config.messageType === 'piped' ? selectedPipingColor?.id : null
-            ].filter(Boolean) as string[];
+            ].filter(Boolean) as string[] ;
 
-            console.log('Selected message option IDs:', messageOptionIds);
+            console.log('Selected message option IDs:', messageOptionIds) ;
 
             // Ensure we have valid GUID IDs for all selections
-            const defaultGuid = '3fa85f64-5717-4562-b3fc-2c963f66afa6';
+            const defaultGuid = '3fa85f64-5717-4562-b3fc-2c963f66afa6' ;
             
             // Helper to ensure we have valid GUIDs
             const getValidGuid = (id: string | undefined): string => {
-                if (!id) return defaultGuid;
+                if (!id) return defaultGuid ;
                 // Simple validation - GUIDs should be in format like '00000000-0000-0000-0000-000000000000'
-                const guidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-                return guidPattern.test(id) ? id : defaultGuid;
-            };
+                const guidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i ;
+                return guidPattern.test(id) ? id : defaultGuid ;
+            } ;
 
             // Get selected options for description
-            const selectedSize = config.size;
-            const selectedSponge = getSelectedOption('Sponge', config.sponge);
-            const selectedFilling = getSelectedOption('Filling', config.filling);
-            const selectedIcing = getSelectedOption('Icing', config.icing);
-            const selectedOuterIcing = getSelectedOption('OuterIcing', config.outerIcing);
-            const selectedGoo = getSelectedOption('Goo', config.goo);
+            const selectedSize = config.size ;
+            const selectedSponge = getSelectedOption('Sponge', config.sponge) ;
+            const selectedFilling = getSelectedOption('Filling', config.filling) ;
+            const selectedIcing = getSelectedOption('Icing', config.icing) ;
+            const selectedOuterIcing = getSelectedOption('OuterIcing', config.outerIcing) ;
+            const selectedGoo = getSelectedOption('Goo', config.goo) ;
 
             // Prepare the API request body
             const requestBody = {
@@ -837,20 +837,20 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                 ],
                 extra_selections: Array.isArray(config.extras) ? config.extras.filter(id => {
                     // Only include extras that actually exist in the extraOptions array
-                    const option = extraOptions.flatMap(group => group.items).find(item => item.id === id);
-                    return !!option; // Only keep extras that exist
+                    const option = extraOptions.flatMap(group => group.items).find(item => item.id === id) ;
+                    return !!option ; // Only keep extras that exist
                 }).map(id => {
-                    const option = extraOptions.flatMap(group => group.items).find(item => item.id === id);
+                    const option = extraOptions.flatMap(group => group.items).find(item => item.id === id) ;
                     return {
                         extra_type: option?.type || "UNKNOWN",
                         extra_option_id: getValidGuid(option?.id)
-                    };
+                    } ;
                 }) : []
-            };
-            console.log('Prepared request body:', requestBody);
+            } ;
+            console.log('Prepared request body:', requestBody) ;
 
             // Call the API to create the custom cake
-            console.log('Making API request to create custom cake...');
+            console.log('Making API request to create custom cake...') ;
             const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/custom_cakes', {
                 method: 'POST',
                 headers: {
@@ -858,32 +858,32 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                     'Authorization': `Bearer ${accessToken}`
                 },
                 body: JSON.stringify(requestBody)
-            });
+            }) ;
 
-            const responseText = await response.text();
-            console.log('API raw response:', responseText);
+            const responseText = await response.text() ;
+            console.log('API raw response:', responseText) ;
             
-            let data;
+            let data ;
             try {
-                data = JSON.parse(responseText);
-                console.log('Parsed API response:', data);
+                data = JSON.parse(responseText) ;
+                console.log('Parsed API response:', data) ;
             } catch (parseError) {
-                console.error('Error parsing API response:', parseError);
-                toast.error(`Server responded with invalid JSON. Check console for details.`);
-                return;
+                console.error('Error parsing API response:', parseError) ;
+                toast.error(`Server responded with invalid JSON. Check console for details.`) ;
+                return ;
             }
 
             if (!response.ok) {
-                console.error('API request failed:', response.status, response.statusText);
+                console.error('API request failed:', response.status, response.statusText) ;
                 const errorMessage = data?.errors && Array.isArray(data.errors) && data.errors.length > 0 
                     ? `Error: ${data.errors.join(', ')}` 
-                    : 'Failed to create custom cake';
-                toast.error(errorMessage);
-                return;
+                    : 'Failed to create custom cake' ;
+                toast.error(errorMessage) ;
+                return ;
             }
 
             // Continue with the rest of the code
-            console.log('API response:', data);
+            console.log('API response:', data) ;
 
             // Prepare the cart data according to the API requirements
             const cartData = {
@@ -920,9 +920,9 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                         bakery_id: storeId
                     }
                 ]
-            };
+            } ;
 
-            console.log('Adding to cart with data:', cartData);
+            console.log('Adding to cart with data:', cartData) ;
 
             // Make the API call to add to cart
             const cartResponse = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/carts', {
@@ -932,16 +932,16 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                     'Authorization': `Bearer ${accessToken}`
                 },
                 body: JSON.stringify(cartData)
-            });
+            }) ;
 
             if (!cartResponse.ok) {
-                const errorData = await cartResponse.json();
-                console.error('Error adding to cart:', errorData);
-                throw new Error('Failed to add item to cart');
+                const errorData = await cartResponse.json() ;
+                console.error('Error adding to cart:', errorData) ;
+                throw new Error('Failed to add item to cart') ;
             }
 
-            const cartResult = await cartResponse.json();
-            console.log('Cart API response:', cartResult);
+            const cartResult = await cartResponse.json() ;
+            console.log('Cart API response:', cartResult) ;
 
             // Also add to local cart state for UI updates
             const cartItem = {
@@ -957,46 +957,46 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                     extras: Array.isArray(config.extras) ? config.extras : [],
                     imageUrl: cakeImageUrl // Add the captured image URL
                 }
-            };
+            } ;
 
-            addToCart(cartItem);
-            toast.success('Cake added to cart successfully!');
-            console.log('Order process completed successfully');
-            router.push('/cart');
+            addToCart(cartItem) ;
+            toast.success('Cake added to cart successfully!') ;
+            console.log('Order process completed successfully') ;
+            router.push('/cart') ;
         } catch (error) {
-            console.error('Error in handleOrderCake:', error);
-            toast.error('Failed to order cake. Please try again.');
+            console.error('Error in handleOrderCake:', error) ;
+            toast.error('Failed to order cake. Please try again.') ;
         }
-    };
+    } ;
 
     // Helper function to get a selected option
     const getSelectedOption = (type: string, id: string | null): ApiItem | undefined => {
-        if (!id) return undefined;
+        if (!id) return undefined ;
         
         if (type === 'Sponge' || type === 'Filling' || type === 'Size' || type === 'Goo' || type === 'Icing') {
             return partOptions.find(group => group.type === type)?.items
-                .find(item => item.id === id);
+                .find(item => item.id === id) ;
         }
         
         if (type === 'OuterIcing') {
             return decorationOptions.flatMap(group => group.items)
-                .find(item => item.id === id);
+                .find(item => item.id === id) ;
         }
         
         if (type === 'Candles' || type === 'CakeBoard') {
             return extraOptions.find(group => group.type === type)?.items
-                .find(item => item.id === id);
+                .find(item => item.id === id) ;
         }
         
-        return undefined;
-    };
+        return undefined ;
+    } ;
 
     // Format color from API to Tailwind class
     const convertColorToTailwind = (color: string): string => {
-        if (!color) return 'bg-gray-200';
+        if (!color) return 'bg-gray-200' ;
         
         // Remove any 'bg-' prefix if exists
-        const normalizedColor = color.toLowerCase().trim().replace('bg-', '');
+        const normalizedColor = color.toLowerCase().trim().replace('bg-', '') ;
         
         // Map API color names to Tailwind classes
         const colorMap: Record<string, string> = {
@@ -1012,38 +1012,38 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
             'purple': 'bg-purple-500',
             'pink': 'bg-pink-500',
             'brown': 'bg-amber-800'
-        };
+        } ;
         
-        return colorMap[normalizedColor] || `bg-${normalizedColor}-500`;
-    };
+        return colorMap[normalizedColor] || `bg-${normalizedColor}-500` ;
+    } ;
 
     // Render the cake visualization based on selected options
     const renderCake = () => {
         // Get selected options
-        const selectedSize = config.size;
-        const selectedSponge = getSelectedOption('Sponge', config.sponge);
-        const selectedFilling = getSelectedOption('Filling', config.filling);
-        const selectedIcing = getSelectedOption('Icing', config.icing);
-        const selectedOuterIcing = getSelectedOption('OuterIcing', config.outerIcing);
-        const selectedGoo = getSelectedOption('Goo', config.goo);
-        const selectedCandles = getSelectedOption('Candles', config.candles);
-        const selectedBoard = getSelectedOption('CakeBoard', config.board);
+        const selectedSize = config.size ;
+        const selectedSponge = getSelectedOption('Sponge', config.sponge) ;
+        const selectedFilling = getSelectedOption('Filling', config.filling) ;
+        const selectedIcing = getSelectedOption('Icing', config.icing) ;
+        const selectedOuterIcing = getSelectedOption('OuterIcing', config.outerIcing) ;
+        const selectedGoo = getSelectedOption('Goo', config.goo) ;
+        const selectedCandles = getSelectedOption('Candles', config.candles) ;
+        const selectedBoard = getSelectedOption('CakeBoard', config.board) ;
         
         // Get colors for visualization
-        const spongeColor = selectedSponge ? convertColorToTailwind(selectedSponge.color) : 'bg-amber-50';
-        const fillingColor = selectedFilling ? convertColorToTailwind(selectedFilling.color) : 'bg-white';
-        const icingColor = selectedIcing ? convertColorToTailwind(selectedIcing.color) : 'bg-pink-200';
-        const gooColor = selectedGoo ? convertColorToTailwind(selectedGoo.color) : null;
+        const spongeColor = selectedSponge ? convertColorToTailwind(selectedSponge.color) : 'bg-amber-50' ;
+        const fillingColor = selectedFilling ? convertColorToTailwind(selectedFilling.color) : 'bg-white' ;
+        const icingColor = selectedIcing ? convertColorToTailwind(selectedIcing.color) : 'bg-pink-200' ;
+        const gooColor = selectedGoo ? convertColorToTailwind(selectedGoo.color) : null ;
         
         // Handle special preview for message section
         if (selectedPart === 'message') {
             const messageColor = config.messageType === 'piped'
                 ? convertColorToTailwind(config.plaqueColor)
-                : 'bg-white';
+                : 'bg-white' ;
             
             const textColor = config.messageType === 'piped'
                 ? convertColorToTailwind(config.pipingColor)
-                : 'text-pink-600';
+                : 'text-pink-600' ;
             
             return (
                 <div className="relative w-full aspect-square flex items-center justify-center">
@@ -1071,7 +1071,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                     </div>
                     {renderCakeControls()}
                 </div>
-            );
+            ) ;
         }
         
         return (
@@ -1192,8 +1192,8 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                     </div>
                 </div>
             </div>
-        );
-    };
+        ) ;
+    } ;
 
     // Render cake control buttons
     const renderCakeControls = () => {
@@ -1242,12 +1242,12 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                     </svg>
                 </motion.button>
             </motion.div>
-        );
-    };
+        ) ;
+    } ;
 
     // Render the appropriate customization panel based on selected part
     const renderCustomizationPanel = () => {
-        if (!selectedPart) return null;
+        if (!selectedPart) return null ;
 
         if (error) {
             return (
@@ -1256,15 +1256,15 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                     <p className="text-red-500 text-center">{error.message}</p>
                     <Button
                         onClick={() => {
-                            setError(null);
-                            handlePartSelect(selectedPart);
+                            setError(null) ;
+                            handlePartSelect(selectedPart) ;
                         }}
                         variant="outline"
                     >
                         Thử lại
                     </Button>
                 </div>
-            );
+            ) ;
         }
 
         if (isLoading) {
@@ -1273,7 +1273,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500"></div>
                     <p className="text-gray-500">Đang tải tùy chọn...</p>
                 </div>
-            );
+            ) ;
         }
 
         const renderCompleteButton = () => (
@@ -1285,7 +1285,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
             >
                 HOÀN THÀNH BƯỚC NÀY
             </motion.button>
-        );
+        ) ;
 
         switch (selectedPart) {
             case 'cake':
@@ -1559,7 +1559,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                         </div>
                         {renderCompleteButton()}
                     </div>
-                );
+                ) ;
 
             case 'decoration':
                 return (
@@ -1644,7 +1644,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                         </div>
                         {renderCompleteButton()}
                     </div>
-                );
+                ) ;
 
             case 'message':
                 // Define message type options
@@ -1652,7 +1652,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                     { id: 'none', name: 'KHÔNG', icon: '✖️' },
                     { id: 'piped', name: 'CHỮ VIẾT TAY', icon: '✍️' },
                     { id: 'edible', name: 'HÌNH ẢNH ĂN ĐƯỢC', icon: '🖼️' }
-                ];
+                ] ;
 
                 return (
                     <div className="space-y-6">
@@ -1725,8 +1725,8 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                                         />
                                                         <button
                                                             onClick={(e) => {
-                                                                e.preventDefault();
-                                                                handleImageRemove();
+                                                                e.preventDefault() ;
+                                                                handleImageRemove() ;
                                                             }}
                                                             className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
                                                         >
@@ -1843,7 +1843,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                         )}
                         {renderCompleteButton()}
                     </div>
-                );
+                ) ;
 
             case 'extras':
                 return (
@@ -1937,12 +1937,12 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                         </div>
                         {renderCompleteButton()}
                     </div>
-                );
+                ) ;
 
             default:
-                return null;
+                return null ;
         }
-    };
+    } ;
 
     return (
         <motion.div
@@ -1953,35 +1953,35 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
             {/* Add global styles */}
             <style jsx global>{`
                 .custom-scrollbar {
-                    scrollbar-width: thin;
-                    scrollbar-color: rgba(236, 72, 153, 0.3) transparent;
+                    scrollbar-width: thin ;
+                    scrollbar-color: rgba(236, 72, 153, 0.3) transparent ;
                 }
 
                 .custom-scrollbar::-webkit-scrollbar {
-                    width: 6px;
+                    width: 6px ;
                 }
 
                 .custom-scrollbar::-webkit-scrollbar-track {
-                    background: transparent;
+                    background: transparent ;
                 }
 
                 .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background-color: rgba(236, 72, 153, 0.3);
-                    border-radius: 3px;
+                    background-color: rgba(236, 72, 153, 0.3) ;
+                    border-radius: 3px ;
                 }
 
                 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background-color: rgba(236, 72, 153, 0.5);
+                    background-color: rgba(236, 72, 153, 0.5) ;
                 }
 
                 @keyframes float {
-                    0% { transform: translateY(0px); }
-                    50% { transform: translateY(-10px); }
-                    100% { transform: translateY(0px); }
+                    0% { transform: translateY(0px) ; }
+                    50% { transform: translateY(-10px) ; }
+                    100% { transform: translateY(0px) ; }
                 }
 
                 .float-animation {
-                    animation: float 3s ease-in-out infinite;
+                    animation: float 3s ease-in-out infinite ;
                 }
             `}</style>
             
@@ -2203,8 +2203,8 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                 </motion.div>
             </motion.div>
         </motion.div>
-    );
-};
+    ) ;
+} ;
 
 // MenuItem component for the main menu
 const MenuItem = ({
@@ -2216,13 +2216,13 @@ const MenuItem = ({
     disabled,
     completed
 }: {
-    icon: string;
-    title: string;
-    subtitle: string;
-    onClick: () => void;
-    gradient: string;
-    disabled: boolean;
-    completed: boolean;
+    icon: string ;
+    title: string ;
+    subtitle: string ;
+    onClick: () => void ;
+    gradient: string ;
+    disabled: boolean ;
+    completed: boolean ;
 }) => {
     return (
         <motion.button
@@ -2275,7 +2275,7 @@ const MenuItem = ({
                 </motion.svg>
             )}
         </motion.button>
-    );
-};
+    ) ;
+} ;
 
-export default CakeCustomizer;
+export default CakeCustomizer ;

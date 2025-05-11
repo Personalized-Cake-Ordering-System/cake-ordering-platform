@@ -1,24 +1,24 @@
 
 
-"use server";
-import { unstable_noStore as noStore, revalidatePath } from "next/cache";
+"use server" ;
+import { unstable_noStore as noStore, revalidatePath } from "next/cache" ;
 
-import { ApiListResponse, fetchListData } from "@/lib/api/api-handler/generic";
-import { SearchParams } from "@/types/table";
-import { ICustomCake } from "../types/custome-cake";
+import { ApiListResponse, fetchListData } from "@/lib/api/api-handler/generic" ;
+import { SearchParams } from "@/types/table" ;
+import { ICustomCake } from "../types/custome-cake" ;
 
 export const getCustomCakes = async (
   searchParams: SearchParams
 ): Promise<ApiListResponse<ICustomCake>> => {
-  noStore();
+  noStore() ;
 
   const result = await fetchListData<ICustomCake>(
     "/custom_cakes",
     searchParams
-  );
+  ) ;
 
   if (!result.success) {
-    console.error("Failed to fetch list ICustomCake:", result.error);
+    console.error("Failed to fetch list ICustomCake:", result.error) ;
     return {
       status_code: 400,
       errors: [result.error],
@@ -28,10 +28,10 @@ export const getCustomCakes = async (
         total_items_count: 0,
       },
       success: false,
-    };
+    } ;
   }
-  console.log("CustomCake data:", result);
+  console.log("CustomCake data:", result) ;
 
 
-  return result.data;   
-};
+  return result.data ;   
+} ;

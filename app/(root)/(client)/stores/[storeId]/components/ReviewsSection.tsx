@@ -1,38 +1,38 @@
-"use client";
+"use client" ;
 
-import Link from 'next/link';
-import { Card } from '@/components/ui/card';
-import { Star } from 'lucide-react';
+import Link from 'next/link' ;
+import { Card } from '@/components/ui/card' ;
+import { Star } from 'lucide-react' ;
 
 interface Review {
-  id: number | string;
-  text: string;
-  rating?: number;
-  user_name?: string;
-  created_at?: string;
+  id: number | string ;
+  text: string ;
+  rating?: number ;
+  user_name?: string ;
+  created_at?: string ;
 }
 
 interface ReviewsSectionProps {
-  reviews?: Review[];
+  reviews?: Review[] ;
 }
 
 export default function ReviewsSection({ reviews = [] }: ReviewsSectionProps) {
   // Format date to relative time
   const formatDate = (dateString?: string) => {
-    if (!dateString) return "Recently";
+    if (!dateString) return "Recently" ;
     
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const date = new Date(dateString) ;
+    const now = new Date() ;
+    const diffTime = Math.abs(now.getTime() - date.getTime()) ;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) ;
     
-    if (diffDays < 1) return "Today";
-    if (diffDays === 1) return "Yesterday";
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-    if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
-    return `${Math.floor(diffDays / 365)} years ago`;
-  };
+    if (diffDays < 1) return "Today" ;
+    if (diffDays === 1) return "Yesterday" ;
+    if (diffDays < 7) return `${diffDays} days ago` ;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago` ;
+    if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago` ;
+    return `${Math.floor(diffDays / 365)} years ago` ;
+  } ;
   
   return (
     <div className="space-y-5 pt-2">
@@ -81,5 +81,5 @@ export default function ReviewsSection({ reviews = [] }: ReviewsSectionProps) {
         ))}
       </div>
     </div>
-  );
+  ) ;
 } 

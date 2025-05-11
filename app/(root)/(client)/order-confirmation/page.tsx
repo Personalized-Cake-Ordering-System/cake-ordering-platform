@@ -1,45 +1,45 @@
-'use client';
+'use client' ;
 
-import { motion } from 'framer-motion';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { CheckCircle, Home, ShoppingBag, Clock, Wallet } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import Link from 'next/link';
+import { motion } from 'framer-motion' ;
+import { useRouter } from 'next/navigation' ;
+import { Button } from '@/components/ui/button' ;
+import { Card } from '@/components/ui/card' ;
+import { CheckCircle, Home, ShoppingBag, Clock, Wallet } from 'lucide-react' ;
+import { useEffect, useState } from 'react' ;
+import { Badge } from '@/components/ui/badge' ;
+import { Separator } from '@/components/ui/separator' ;
+import Link from 'next/link' ;
 
 // Function to decode JWT token (if needed)
 const decodeJWT = (token: string) => {
   try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const base64Url = token.split('.')[1] ;
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/') ;
     const jsonPayload = decodeURIComponent(
       atob(base64)
         .split('')
         .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
         .join('')
-    );
-    return JSON.parse(jsonPayload);
+    ) ;
+    return JSON.parse(jsonPayload) ;
   } catch (error) {
-    console.error('Error decoding JWT token:', error);
-    return null;
+    console.error('Error decoding JWT token:', error) ;
+    return null ;
   }
-};
+} ;
 
 const OrderConfirmationPage = () => {
-  const router = useRouter();
-  const [orderDetails, setOrderDetails] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const router = useRouter() ;
+  const [orderDetails, setOrderDetails] = useState<any>(null) ;
+  const [loading, setLoading] = useState(true) ;
 
   // Add VND currency formatter
   const formatVND = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND'
-    }).format(amount);
-  };
+    }).format(amount) ;
+  } ;
 
   // Animation variants
   const containerVariants = {
@@ -51,7 +51,7 @@ const OrderConfirmationPage = () => {
         staggerChildren: 0.2
       }
     }
-  };
+  } ;
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -60,28 +60,28 @@ const OrderConfirmationPage = () => {
       y: 0,
       transition: { duration: 0.5 }
     }
-  };
+  } ;
 
   useEffect(() => {
     // Get order details from localStorage
-    const savedOrder = localStorage.getItem('currentOrder');
+    const savedOrder = localStorage.getItem('currentOrder') ;
     if (savedOrder) {
-      const orderData = JSON.parse(savedOrder);
-      setOrderDetails(orderData);
+      const orderData = JSON.parse(savedOrder) ;
+      setOrderDetails(orderData) ;
       // Clear the current order from localStorage
-      localStorage.removeItem('currentOrder');
+      localStorage.removeItem('currentOrder') ;
       // Clear cart after successful order
-      localStorage.removeItem('cart');
+      localStorage.removeItem('cart') ;
     }
-    setLoading(false);
-  }, []);
+    setLoading(false) ;
+  }, []) ;
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
       </div>
-    );
+    ) ;
   }
 
   if (!orderDetails) {
@@ -89,13 +89,13 @@ const OrderConfirmationPage = () => {
       <div className="container mx-auto px-4 py-16 max-w-md">
         <Card className="p-6 text-center border dark:border-border">
           <h2 className="text-xl font-bold mb-4">No order information found</h2>
-          <p className="text-muted-foreground mb-6">We couldn&apos;t find any details for your order.</p>
+          <p className="text-muted-foreground mb-6">We couldn&apos ;t find any details for your order.</p>
           <Button asChild>
             <Link href="/checkout">Return to Checkout</Link>
           </Button>
         </Card>
       </div>
-    );
+    ) ;
   }
 
   return (
@@ -227,7 +227,7 @@ const OrderConfirmationPage = () => {
         </motion.div>
       </Card>
     </motion.div>
-  );
-};
+  ) ;
+} ;
 
-export default OrderConfirmationPage; 
+export default OrderConfirmationPage ; 

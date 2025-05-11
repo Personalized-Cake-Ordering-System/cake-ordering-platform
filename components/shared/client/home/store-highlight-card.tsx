@@ -1,30 +1,30 @@
-"use client";
+"use client" ;
 
-import React from "react";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { IBakery } from "@/features/barkeries/types/barkeries-type";
-import { motion } from "framer-motion";
+import React from "react" ;
+import Image from "next/image" ;
+import { useRouter } from "next/navigation" ;
+import { Card, CardContent } from "@/components/ui/card" ;
+import { Button } from "@/components/ui/button" ;
+import { IBakery } from "@/features/barkeries/types/barkeries-type" ;
+import { motion } from "framer-motion" ;
 
 interface StoreHighlightCardProps {
   store: {
-    id: string;
-    name: string;
-    rating?: number;
-    imageUrl: string;
-    isFeatured?: boolean;
-    isNew?: boolean;
-    reviewCount?: number;
-    categories?: string[];
-    priceRange?: string;
-    cake_description?: string;
-    price_description?: string;
-    bakery_description?: string;
-  };
-  bgColor?: string;
-  textColor?: string;
+    id: string ;
+    name: string ;
+    rating?: number ;
+    imageUrl: string ;
+    isFeatured?: boolean ;
+    isNew?: boolean ;
+    reviewCount?: number ;
+    categories?: string[] ;
+    priceRange?: string ;
+    cake_description?: string ;
+    price_description?: string ;
+    bakery_description?: string ;
+  } ;
+  bgColor?: string ;
+  textColor?: string ;
 }
 
 export const StoreHighlightCard = ({
@@ -32,13 +32,13 @@ export const StoreHighlightCard = ({
   bgColor = "bg-custom-pink/30",
   textColor = "text-custom-teal",
 }: StoreHighlightCardProps) => {
-  const router = useRouter();
+  const router = useRouter() ;
   // Default placeholder image in case store.imageUrl is empty
-  const imageUrl = store.imageUrl || "/placeholder-store.jpg";
+  const imageUrl = store.imageUrl || "/placeholder-store.jpg" ;
 
   const handleViewStore = () => {
-    router.push(`/stores/${store.id}`);
-  };
+    router.push(`/stores/${store.id}`) ;
+  } ;
 
   return (
     <motion.div
@@ -129,5 +129,5 @@ export const StoreHighlightCard = ({
         </CardContent>
       </Card>
     </motion.div>
-  );
-};
+  ) ;
+} ;

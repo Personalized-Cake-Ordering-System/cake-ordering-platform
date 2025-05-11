@@ -1,6 +1,6 @@
-"use client";
+"use client" ;
 
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@hookform/resolvers/zod" ;
 import {
   DefaultValues,
   FieldValues,
@@ -8,10 +8,10 @@ import {
   SubmitHandler,
   useForm,
   UseFormReturn,
-} from "react-hook-form";
-import { ZodType } from "zod";
+} from "react-hook-form" ;
+import { ZodType } from "zod" ;
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button" ;
 import {
   Form,
   FormControl,
@@ -19,19 +19,19 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import Link from "next/link";
-import { FIELD_NAMES, FIELD_TYPES } from "@/constants/field-constants";
-import { useToast } from "@/components/ui/use-toast";
-import { useRouter } from "next/navigation";
+} from "@/components/ui/form" ;
+import { Input } from "@/components/ui/input" ;
+import Link from "next/link" ;
+import { FIELD_NAMES, FIELD_TYPES } from "@/constants/field-constants" ;
+import { useToast } from "@/components/ui/use-toast" ;
+import { useRouter } from "next/navigation" ;
 
 interface Props<T extends FieldValues> {
-  schema: ZodType<T>;
-  defaultValues: T;
-  onSubmit: (data: T) => Promise<{ success: boolean; error?: string }>;
-  type: "SIGN_IN" | "SIGN_UP";
-  isLoading?: boolean;
+  schema: ZodType<T> ;
+  defaultValues: T ;
+  onSubmit: (data: T) => Promise<{ success: boolean ; error?: string }> ;
+  type: "SIGN_IN" | "SIGN_UP" ;
+  isLoading?: boolean ;
 }
 
 const AuthForm = <T extends FieldValues>({
@@ -41,18 +41,18 @@ const AuthForm = <T extends FieldValues>({
   onSubmit,
   isLoading = false,
 }: Props<T>) => {
-  const router = useRouter();
-  const { toast } = useToast();
+  const router = useRouter() ;
+  const { toast } = useToast() ;
 
-  const isSignIn = type === "SIGN_IN";
+  const isSignIn = type === "SIGN_IN" ;
 
   const form: UseFormReturn<T> = useForm({
     resolver: zodResolver(schema),
     defaultValues: defaultValues as DefaultValues<T>,
-  });
+  }) ;
 
   const handleSubmit: SubmitHandler<T> = async (data) => {
-    const result = await onSubmit(data);
+    const result = await onSubmit(data) ;
 
     if (result.success) {
       toast({
@@ -60,17 +60,17 @@ const AuthForm = <T extends FieldValues>({
         description: isSignIn
           ? "You have successfully signed in."
           : "You have successfully signed up.",
-      });
+      }) ;
 
-      router.push("/");
+      router.push("/") ;
     } else {
       toast({
         title: `Error ${isSignIn ? "signing in" : "signing up"}`,
         description: result.error ?? "An error occurred.",
         variant: "destructive",
-      });
+      }) ;
     }
-  };
+  } ;
 
   return (
     <div className="flex flex-col gap-6 max-w-md mx-auto p-6 bg-white dark:bg-gray-800 shadow-lg rounded-xl">
@@ -93,7 +93,7 @@ const AuthForm = <T extends FieldValues>({
           {Object.keys(defaultValues).map((field) => {
             // Skip rendering hidden fields in the UI
             if (FIELD_TYPES[field as keyof typeof FIELD_TYPES] === "hidden") {
-              return null;
+              return null ;
             }
 
             return (
@@ -118,7 +118,7 @@ const AuthForm = <T extends FieldValues>({
                   </FormItem>
                 )}
               />
-            );
+            ) ;
           })}
 
           <Button
@@ -151,7 +151,7 @@ const AuthForm = <T extends FieldValues>({
         )} */}
       </div>
     </div>
-  );
-};
+  ) ;
+} ;
 
-export default AuthForm;
+export default AuthForm ;

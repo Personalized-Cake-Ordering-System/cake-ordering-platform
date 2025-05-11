@@ -1,17 +1,17 @@
-import React from "react";
+import React from "react" ;
 
 export interface StoreItemProps {
-  icon: React.ReactNode;
-  name: string;
-  rating: number;
-  speciality: string;
+  icon: React.ReactNode ;
+  name: string ;
+  rating: number ;
+  speciality: string ;
 }
 
 export const StoreItem: React.FC<StoreItemProps> = ({
-  icon,
-  name,
-  rating,
-  speciality,
+  icon ,
+  name ,
+  rating ,
+  speciality ,
 }) => {
   return (
     <div className="group bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer border border-gray-100 dark:border-gray-800">
@@ -22,7 +22,7 @@ export const StoreItem: React.FC<StoreItemProps> = ({
         {name}
       </span>
       <div className="flex items-center mt-3 space-x-0.5">
-        {[...Array(5)].map((_, i) => (
+        {[...Array(5)].map((_ , i) => (
           <svg
             key={i}
             className={`w-5 h-5 transition-colors duration-300 ${i < rating
@@ -40,5 +40,5 @@ export const StoreItem: React.FC<StoreItemProps> = ({
         {speciality}
       </span>
     </div>
-  );
-};
+  ) ;
+} ;

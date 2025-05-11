@@ -1,10 +1,10 @@
-'use client';
+'use client' ;
 
-import Link from 'next/link';
-import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin } from 'react-icons/fa';
+import Link from 'next/link' ;
+import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin } from 'react-icons/fa' ;
 
-const Footer = () => {
-  return (
+const Footer = () =>  {
+    return (
     <footer className="bg-gradient-to-r from-pink-100 to-teal-100 dark:from-gray-900 dark:to-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -84,7 +84,7 @@ const Footer = () => {
         </div>
       </div>
     </footer>
-  );
-};
+  ) ;
+} ;
 
-export default Footer;
+export default Footer ;
