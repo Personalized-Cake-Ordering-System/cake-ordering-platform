@@ -885,7 +885,47 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
             // Continue with the rest of the code
             console.log('API response:', data) ;
 
-            // Prepare the cart data according to the API requirements
+            // Get current cart from API first to preserve existing items
+            console.log('Fetching current cart to preserve existing items...');
+            const currentCartResponse = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/carts', {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'accept': '*/*'
+                }
+            });
+            
+            const currentCartData = await currentCartResponse.json();
+            let existingCartItems = [];
+            
+            if (currentCartData.status_code === 200 && currentCartData.payload && currentCartData.payload.cartItems) {
+                existingCartItems = currentCartData.payload.cartItems;
+                console.log('Found existing cart items:', existingCartItems.length);
+            }
+            
+            // New custom cake item to add
+            const newCartItem = {
+                cake_name: `Custom ${selectedSize} Cake`,
+                main_image_id: data.payload.image_id || "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                main_image: data.payload.image || {
+                    id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                    created_at: new Date().toISOString(),
+                    created_by: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                    updated_at: new Date().toISOString(),
+                    updated_by: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                    is_deleted: false,
+                    file_name: "custom-cake.jpg",
+                    file_url: cakeImageUrl || "/imagecake.jpg"
+                },
+                quantity: 1,
+                cake_note: `Delicious ${selectedSize} cake with ${selectedSponge?.name || 'Unknown'} sponge, filled with ${selectedFilling?.name || 'Unknown'}, iced with ${selectedIcing?.name || 'Unknown'}, and covered in ${selectedOuterIcing?.name || 'Unknown'} icing${config.goo ? `, topped with ${selectedGoo?.name || ''} drip` : ''}${Array.isArray(config.extras) && config.extras.length > 0 ? `. With ${config.extras.length} special extras added` : ''}.${config.message ? ` Personalized with "${config.message}"` : ''}`,
+                sub_total_price: config.price,
+                total_price: config.price,
+                available_cake_id: null,
+                custom_cake_id: data.payload.id,
+                bakery_id: storeId
+            };
+
+            // Prepare the cart data with both existing items and the new item
             const cartData = {
                 bakeryId: storeId,
                 order_note: "",
@@ -897,32 +937,10 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                 shipping_type: "DELIVERY",
                 payment_type: "CASH",
                 voucher_code: "",
-                cartItems: [
-                    {
-                        cake_name: `Custom ${selectedSize} Cake`,
-                        main_image_id: data.payload.image_id || "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                        main_image: data.payload.image || {
-                            id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                            created_at: new Date().toISOString(),
-                            created_by: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                            updated_at: new Date().toISOString(),
-                            updated_by: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                            is_deleted: false,
-                            file_name: "custom-cake.jpg",
-                            file_url: cakeImageUrl || "/imagecake.jpg"
-                        },
-                        quantity: 1,
-                        cake_note: `Delicious ${selectedSize} cake with ${selectedSponge?.name || 'Unknown'} sponge, filled with ${selectedFilling?.name || 'Unknown'}, iced with ${selectedIcing?.name || 'Unknown'}, and covered in ${selectedOuterIcing?.name || 'Unknown'} icing${config.goo ? `, topped with ${selectedGoo?.name || ''} drip` : ''}${Array.isArray(config.extras) && config.extras.length > 0 ? `. With ${config.extras.length} special extras added` : ''}.${config.message ? ` Personalized with "${config.message}"` : ''}`,
-                        sub_total_price: config.price,
-                        total_price: config.price, // Add total_price field for consistency
-                        available_cake_id: null,
-                        custom_cake_id: data.payload.id,
-                        bakery_id: storeId
-                    }
-                ]
-            } ;
+                cartItems: [...existingCartItems, newCartItem]
+            };
 
-            console.log('Adding to cart with data:', cartData) ;
+            console.log('Adding to cart with data:', cartData);
 
             // Make the API call to add to cart
             const cartResponse = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/carts', {
@@ -932,16 +950,16 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                     'Authorization': `Bearer ${accessToken}`
                 },
                 body: JSON.stringify(cartData)
-            }) ;
+            });
 
             if (!cartResponse.ok) {
-                const errorData = await cartResponse.json() ;
-                console.error('Error adding to cart:', errorData) ;
-                throw new Error('Failed to add item to cart') ;
+                const errorData = await cartResponse.json();
+                console.error('Error adding to cart:', errorData);
+                throw new Error('Failed to add item to cart');
             }
 
-            const cartResult = await cartResponse.json() ;
-            console.log('Cart API response:', cartResult) ;
+            const cartResult = await cartResponse.json();
+            console.log('Cart API response:', cartResult);
 
             // Also add to local cart state for UI updates
             const cartItem = {
@@ -957,17 +975,17 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                     extras: Array.isArray(config.extras) ? config.extras : [],
                     imageUrl: cakeImageUrl // Add the captured image URL
                 }
-            } ;
+            };
 
-            addToCart(cartItem) ;
-            toast.success('Cake added to cart successfully!') ;
-            console.log('Order process completed successfully') ;
-            router.push('/cart') ;
+            addToCart(cartItem);
+            toast.success('Cake added to cart successfully!');
+            console.log('Order process completed successfully');
+            router.push('/cart');
         } catch (error) {
-            console.error('Error in handleOrderCake:', error) ;
-            toast.error('Failed to order cake. Please try again.') ;
+            console.error('Error in handleOrderCake:', error);
+            toast.error('Failed to order cake. Please try again.');
         }
-    } ;
+    };
 
     // Helper function to get a selected option
     const getSelectedOption = (type: string, id: string | null): ApiItem | undefined => {

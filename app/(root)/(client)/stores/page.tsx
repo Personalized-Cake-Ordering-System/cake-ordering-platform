@@ -20,7 +20,7 @@ const StoresPage = async ({ searchParams }: IndexPageProps) => {
   const [barkeriesPromise] = await Promise.all([getBakeries((await searchParams))]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50 to-white dark:from-gray-950 dark:to-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-rose-50 to-purple-50 dark:from-gray-900 dark:via-purple-950 dark:to-gray-950">
       <StoresBody barkeriesPromise={barkeriesPromise} />
     </div>
   );

@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Filter, Search } from "lucide-react";
+import { ChevronDown, Filter, Search, Cake, SlidersHorizontal } from "lucide-react";
 import {
     Select,
     SelectContent,
@@ -157,96 +157,128 @@ const StoresBody = ({ barkeriesPromise }: StoreSectionProps) => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-pink-50 to-white dark:from-gray-950 dark:to-gray-900">
-            {/* Header */}
-            {/* <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm">
-                <div className="container mx-auto px-4 py-4">
-                    <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                            Cửa hàng bánh tại TP.HCM
-                        </h1>
-
-                        <div className="flex w-full md:w-auto items-center">
-                            <div className="relative flex-1 md:w-64">
-                                <Input
-                                    type="search"
-                                    placeholder="Tìm tên cửa hàng..."
-                                    className="pr-10 border-gray-300 dark:border-gray-700 focus:border-custom-teal dark:focus:border-custom-teal focus:ring-custom-teal/20 dark:focus:ring-custom-teal/20"
-                                    value={filters.bakeryName}
-                                    onChange={(e) => setBakeryName(e.target.value)}
-                                />
-                                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                            </div>
-
-                            <Button
-                                variant="outline"
-                                className="ml-2 border-gray-300 dark:border-gray-700 flex items-center"
-                                onClick={() => setIsFilterOpen(!isFilterOpen)}
-                            >
-                                <Filter className="h-5 w-5 mr-1" />
-                                <span>Lọc</span>
-                                {activeFiltersCount > 0 && (
-                                    <span className="ml-1 bg-custom-teal text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                                        {activeFiltersCount}
-                                    </span>
-                                )}
-                            </Button>
+        <div>
+            {/* Header with Search */}
+            <div className="relative">
+                {/* Decorative elements */}
+                <div className="absolute top-20 left-10 w-32 h-32 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+                <div className="absolute top-10 right-20 w-32 h-32 bg-yellow-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+                <div className="absolute bottom-10 left-1/2 w-32 h-32 bg-pink-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
+                
+                <div className="container mx-auto px-4 py-12">
+                    <div className="max-w-4xl mx-auto text-center mb-12">
+                        <div className="flex items-center justify-center mb-4">
+                            <Cake className="h-8 w-8 text-rose-500 mr-2" />
+                            <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-rose-500 to-purple-600">
+                                Cửa hàng bánh tại TP.HCM
+                            </h1>
                         </div>
+                        <p className="text-gray-600 dark:text-gray-300 text-lg max-w-2xl mx-auto">
+                            Khám phá các cửa hàng bánh ngon, chất lượng và uy tín nhất trong khu vực của bạn
+                        </p>
+                    </div>
+                    
+                    <div className="max-w-2xl mx-auto backdrop-blur-sm bg-white/80 dark:bg-gray-900/80 p-3 rounded-full shadow-lg border border-gray-100 dark:border-gray-800 flex items-center mb-12">
+                        <div className="relative flex-1">
+                            <Input
+                                type="search"
+                                placeholder="Tìm kiếm cửa hàng bánh..."
+                                className="border-0 bg-transparent pl-10 focus-visible:ring-0 focus-visible:ring-offset-0 rounded-full"
+                                value={filters.bakeryName}
+                                onChange={(e) => setBakeryName(e.target.value)}
+                            />
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                        </div>
+                        <Button
+                            variant="outline"
+                            className="rounded-full bg-transparent border-0 hover:bg-gray-100 dark:hover:bg-gray-800 ml-2 flex items-center"
+                            onClick={() => setIsFilterOpen(!isFilterOpen)}
+                        >
+                            <SlidersHorizontal className="h-5 w-5 mr-1 text-gray-500 dark:text-gray-400" />
+                            <span className="text-gray-700 dark:text-gray-300">Bộ lọc</span>
+                            {activeFiltersCount > 0 && (
+                                <span className="ml-1 bg-rose-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                    {activeFiltersCount}
+                                </span>
+                            )}
+                        </Button>
                     </div>
                 </div>
-            </div> */}
+            </div>
 
-            <div className="container mx-auto px-4 py-6">
-                <div className="flex flex-col md:flex-row gap-6">
+            <div className="container mx-auto px-4 pb-16">
+                <div className="flex flex-col md:flex-row gap-8">
                     {isFilterOpen && (
-                        <div className="w-full md:w-64 bg-white dark:bg-gray-900 p-6 rounded-lg shadow-lg border border-gray-200 dark:border-gray-800">
+                        <div className="w-full md:w-80 backdrop-blur-sm bg-white/80 dark:bg-gray-900/80 p-6 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 self-start sticky top-24">
                             <StoreFilters cakeCategories={cakeCategories} />
                         </div>
                     )}
                     <div className="flex-1">
                         {loading ? (
                             <div className="flex justify-center items-center h-64">
-                                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-custom-teal"></div>
+                                <div className="relative">
+                                    <div className="w-12 h-12 rounded-full absolute border-4 border-solid border-gray-200"></div>
+                                    <div className="w-12 h-12 rounded-full animate-spin absolute border-4 border-solid border-rose-500 border-t-transparent"></div>
+                                </div>
                             </div>
                         ) : error ? (
-                            <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg text-red-600 dark:text-red-400">
+                            <div className="backdrop-blur-sm bg-red-50/90 dark:bg-red-900/20 p-6 rounded-2xl text-red-600 dark:text-red-400 shadow-lg border border-red-100 dark:border-red-900/30 text-center">
+                                <div className="mb-3 flex justify-center">
+                                    <div className="rounded-full bg-red-100 dark:bg-red-900/50 p-3">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <h3 className="text-lg font-medium mb-2">Đã xảy ra lỗi</h3>
                                 {error}
                             </div>
                         ) : bakeries.length === 0 ? (
-                            <div className="bg-gray-50 dark:bg-gray-900/50 p-8 rounded-lg text-center">
-                                <h3 className="text-lg font-medium text-gray-600 dark:text-gray-400">
+                            <div className="backdrop-blur-sm bg-white/80 dark:bg-gray-800/80 p-8 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 text-center">
+                                <div className="mb-4 flex justify-center">
+                                    <div className="rounded-full bg-gray-100 dark:bg-gray-700 p-3">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
                                     Không tìm thấy cửa hàng nào
                                 </h3>
-                                <p className="mt-2 text-gray-500 dark:text-gray-500">
-                                    Vui lòng thử lại với bộ lọc khác
+                                <p className="text-gray-500 dark:text-gray-400">
+                                    Vui lòng thử lại với bộ lọc khác hoặc mở rộng phạm vi tìm kiếm
                                 </p>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                                 {bakeries.map((bakery) => (
                                     <StoreCard key={bakery.id} bakery={bakery} />
                                 ))}
                             </div>
                         )}
 
-                        {/* Pagination */}
+                        {/* Pagination with updated style */}
                         {!loading && bakeries.length > 0 && pagination.totalPages > 1 && (
-                            <div className="mt-8 flex justify-center">
-                                <div className="flex space-x-1">
+                            <div className="mt-12 flex justify-center">
+                                <div className="backdrop-blur-sm bg-white/60 dark:bg-gray-900/60 p-2 rounded-full shadow-lg border border-gray-100 dark:border-gray-800 inline-flex gap-1">
                                     <Button
-                                        variant="outline"
-                                        className="w-10 h-10 p-0 border-gray-300 dark:border-gray-700"
+                                        variant="ghost"
+                                        size="sm"
+                                        className="w-10 h-10 p-0 rounded-full text-gray-700 dark:text-gray-300 hover:bg-gray-100 hover:text-rose-600 dark:hover:bg-gray-800"
                                         onClick={() => handlePageChange(Math.max(0, pagination.currentPage - 1))}
                                         disabled={pagination.currentPage === 0}
                                     >
-                                        <ChevronDown className="h-4 w-4 rotate-90" />
+                                        <ChevronDown className="h-5 w-5 rotate-90" />
                                     </Button>
 
                                     {Array.from({ length: pagination.totalPages }, (_, i) => (
                                         <Button
                                             key={i}
-                                            variant="outline"
-                                            className={`w-10 h-10 p-0 border-gray-300 dark:border-gray-700 ${pagination.currentPage === i ? "bg-custom-teal text-white" : ""
+                                            variant="ghost"
+                                            size="sm"
+                                            className={`w-10 h-10 p-0 rounded-full ${pagination.currentPage === i
+                                                ? "bg-gradient-to-r from-rose-500 to-purple-600 text-white"
+                                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                                                 }`}
                                             onClick={() => handlePageChange(i)}
                                         >
@@ -255,12 +287,13 @@ const StoresBody = ({ barkeriesPromise }: StoreSectionProps) => {
                                     ))}
 
                                     <Button
-                                        variant="outline"
-                                        className="w-10 h-10 p-0 border-gray-300 dark:border-gray-700"
+                                        variant="ghost"
+                                        size="sm"
+                                        className="w-10 h-10 p-0 rounded-full text-gray-700 dark:text-gray-300 hover:bg-gray-100 hover:text-rose-600 dark:hover:bg-gray-800"
                                         onClick={() => handlePageChange(Math.min(pagination.totalPages - 1, pagination.currentPage + 1))}
                                         disabled={pagination.currentPage === pagination.totalPages - 1}
                                     >
-                                        <ChevronDown className="h-4 w-4 -rotate-90" />
+                                        <ChevronDown className="h-5 w-5 -rotate-90" />
                                     </Button>
                                 </div>
                             </div>

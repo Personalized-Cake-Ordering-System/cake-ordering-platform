@@ -10,23 +10,28 @@ const Footer = () =>  {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Company Info */}
           <div className="space-y-4">
-            <h3 className="text-gray-900 dark:text-white text-lg font-bold">Cake Ordering Platform</h3>
+            <h3 className="text-gray-900 dark:text-white text-lg font-bold">Nền Tảng Đặt Bánh</h3>
             <p className="text-gray-600 dark:text-gray-300">
-              Making your celebrations sweeter, one cake at a time.
+              Làm cho kỷ niệm của bạn ngọt ngào hơn, từng chiếc bánh một.
             </p>
           </div>
 
           {/* Quick Links */}
           <div className="space-y-4">
-            <h4 className="text-gray-900 dark:text-white text-lg font-semibold">Quick Links</h4>
+            <h4 className="text-gray-900 dark:text-white text-lg font-semibold">Liên Kết Nhanh</h4>
             <ul className="space-y-2">
-              {['Home', 'About', 'Menu', 'Order Now'].map((item) => (
-                <li key={item}>
+              {[
+                { name: 'Trang chủ', path: '/' },
+                { name: 'Giới thiệu', path: '/about' },
+                { name: 'Thực đơn', path: '/menu' },
+                { name: 'Đặt ngay', path: '/order-now' }
+              ].map((item) => (
+                <li key={item.name}>
                   <Link
-                    href="/"
+                    href={item.path}
                     className="text-gray-600 dark:text-gray-300 hover:text-custom-teal dark:hover:text-custom-teal transition-colors"
                   >
-                    {item}
+                    {item.name}
                   </Link>
                 </li>
               ))}
@@ -35,29 +40,29 @@ const Footer = () =>  {
 
           {/* Contact Info */}
           <div className="space-y-4">
-            <h4 className="text-gray-900 dark:text-white text-lg font-semibold">Contact Us</h4>
+            <h4 className="text-gray-900 dark:text-white text-lg font-semibold">Liên Hệ</h4>
             <div className="space-y-2 text-gray-600 dark:text-gray-300">
-              <p>Email: contact@cakeplatform.com</p>
-              <p>Phone: (555) 123-4567</p>
-              <p>Address: 123 Bakery Street</p>
+              <p>Email: lienhe@nentangdatbanh.com</p>
+              <p>Điện thoại: (028) 123-4567</p>
+              <p>Địa chỉ: 123 Đường Bánh, TP.HCM</p>
             </div>
           </div>
 
           {/* Newsletter */}
           <div className="space-y-4">
-            <h4 className="text-gray-900 dark:text-white text-lg font-semibold">Newsletter</h4>
-            <p className="text-gray-600 dark:text-gray-300">Stay updated with our latest offers!</p>
+            <h4 className="text-gray-900 dark:text-white text-lg font-semibold">Bản Tin</h4>
+            <p className="text-gray-600 dark:text-gray-300">Cập nhật với những ưu đãi mới nhất!</p>
             <form className="space-y-2">
               <input
                 type="email"
-                placeholder="Enter your email"
+                placeholder="Nhập email của bạn"
                 className="w-full px-4 py-2 rounded-lg bg-white/50 dark:bg-gray-800/50 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-custom-teal focus:border-custom-teal"
               />
               <button
                 type="submit"
                 className="w-full px-4 py-2 bg-custom-teal hover:bg-custom-pink text-white rounded-lg font-semibold transition-colors"
               >
-                Subscribe
+                Đăng Ký
               </button>
             </form>
           </div>
@@ -78,7 +83,7 @@ const Footer = () =>  {
               ))}
             </div>
             <p className="text-gray-600 dark:text-gray-300 text-sm">
-              © {new Date().getFullYear()} Cake Ordering Platform. All rights reserved.
+              © {new Date().getFullYear()} Nền Tảng Đặt Bánh. Đã đăng ký bản quyền.
             </p>
           </div>
         </div>

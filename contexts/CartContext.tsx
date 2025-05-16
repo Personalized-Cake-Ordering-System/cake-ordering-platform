@@ -1,13 +1,26 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { CakeConfig } from '@/types/cake';
+import { CakeConfig as BaseCakeConfig } from '@/types/cake';
 import { CartItem } from '@/types/cart';
+import { useCart as useCartStore } from '@/app/store/useCart';
+
+// Extended CakeConfig that includes the fields from the API
+interface ExtendedCakeConfig extends BaseCakeConfig {
+    name: string;
+    description: string;
+    type: string;
+}
+
+// Ensure CartItem uses the extended CakeConfig
+interface ExtendedCartItem extends Omit<CartItem, 'config'> {
+    config: ExtendedCakeConfig;
+}
 
 interface CartContextType {
-    items: CartItem[];
-    addToCart: (config: CakeConfig) => void;
-    editCartItem: (id: string, newConfig: CakeConfig) => void;
+    items: ExtendedCartItem[];
+    addToCart: (config: ExtendedCakeConfig) => void;
+    editCartItem: (id: string, newConfig: ExtendedCakeConfig) => void;
     removeFromCart: (id: string) => void;
     clearCart: () => void;
     updateQuantity: (id: string, quantity: number) => void;
@@ -16,9 +29,12 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-    const [items, setItems] = useState<CartItem[]>([]);
+    const [items, setItems] = useState<ExtendedCartItem[]>([]);
     const [isInitialized, setIsInitialized] = useState(false);
     const counterRef = useRef(0);
+    
+    // Get access to the Zustand store
+    const cartStore = useCartStore();
     
     // Generate unique IDs without random values
     const generateId = () => {
@@ -28,29 +44,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     // Load cart data from localStorage after component mounts
     useEffect(() => {
-        const savedCart = localStorage.getItem('cart');
-        if (savedCart) {
-            try {
-                setItems(JSON.parse(savedCart));
-            } catch (error) {
-                console.warn('Failed to parse cart data:', error);
-            }
-        }
+        // Get items from Zustand store instead of directly from localStorage
+        setItems(cartStore.items as unknown as ExtendedCartItem[]);
         setIsInitialized(true);
-    }, []);
+    }, [cartStore.items]);
 
-    // Save cart data to localStorage whenever it changes
-    useEffect(() => {
-        if (isInitialized) {
-            try {
-                localStorage.setItem('cart', JSON.stringify(items));
-            } catch (error) {
-                console.warn('Failed to save cart to localStorage:', error);
-            }
-        }
-    }, [items, isInitialized]);
-
-    const calculatePrice = (config: CakeConfig) => {
+    const calculatePrice = (config: ExtendedCakeConfig) => {
         let basePrice = 0;
 
         // Base price by size
@@ -80,40 +79,69 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         return basePrice;
     };
 
-    const addToCart = (config: CakeConfig) => {
+    const addToCart = (config: ExtendedCakeConfig) => {
         const price = calculatePrice(config);
-        const newId = generateId() ;
-        setItems(prev => [...prev, {
+        const newId = generateId();
+        const newItem: ExtendedCartItem = {
             id: newId,
             config,
             quantity: 1,
             price
-        }]);
+        };
+        
+        // Add to local state
+        setItems(prev => [...prev, newItem]);
+        
+        // Also add to Zustand store
+        cartStore.addToCart(newItem as any);
     };
 
-    const editCartItem = (id: string, newConfig: CakeConfig) => {
+    const editCartItem = (id: string, newConfig: ExtendedCakeConfig) => {
         const price = calculatePrice(newConfig);
+        
+        // Update local state
         setItems(prev => prev.map(item =>
             item.id === id
                 ? { ...item, config: newConfig, price }
                 : item
         ));
+        
+        // Also update in Zustand store by removing and adding
+        cartStore.removeFromCart(id);
+        cartStore.addToCart({
+            id,
+            config: newConfig,
+            quantity: 1, // Default quantity
+            price
+        } as any);
     };
 
     const removeFromCart = (id: string) => {
+        // Update local state
         setItems(prev => prev.filter(item => item.id !== id));
+        
+        // Also remove from Zustand store
+        cartStore.removeFromCart(id);
     };
 
     const clearCart = () => {
+        // Update local state
         setItems([]);
+        
+        // Also clear Zustand store
+        cartStore.clearCart();
     };
 
     const updateQuantity = (id: string, quantity: number) => {
+        // Update local state
         setItems(prev => prev.map(item =>
             item.id === id
                 ? { ...item, quantity }
                 : item
         ));
+        
+        // Also update in Zustand store
+        cartStore.updateQuantity(id, quantity);
     };
 
     return (

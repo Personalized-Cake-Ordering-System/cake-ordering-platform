@@ -267,7 +267,7 @@ const CakeDetail = () => {
     }
   }, [cakeData, customerDetails, reviewImages]);
 
-  // Add handleAddToCart function
+  // Update handleAddToCart function
   const handleAddToCart = async () => {
     if (!cakeData) return;
 
@@ -279,6 +279,71 @@ const CakeDetail = () => {
         return;
       }
 
+      // First, add to local storage using Zustand store
+      const cartItem = {
+        id: `item-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        quantity: quantity,
+        config: {
+          price: cakeData.available_cake_price,
+          size: cakeData.available_cake_size || "6",
+          sponge: "",
+          filling: "",
+          outerIcing: "",
+          icing: "",
+          topping: null,
+          candles: null,
+          message: "",
+          messageType: "none" as const,
+          plaqueColor: "",
+          goo: null,
+          extras: [],
+          board: "",
+          uploadedImage: null,
+          imageUrl: cakeData.available_cake_image_files?.[0]?.file_url || null,
+          pipingColor: "",
+          name: cakeData.available_cake_name,
+          description: cakeData.available_cake_description,
+          type: cakeData.available_cake_type
+        },
+        price: cakeData.available_cake_price * quantity
+      };
+      
+      // Add to local storage first
+      addToCart(cartItem);
+
+      // Then fetch current cart from API to get all existing items
+      const cartResponse = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/carts', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'accept': '*/*'
+        }
+      });
+      
+      const cartData = await cartResponse.json();
+      
+      // Prepare the new cart item
+      const newCartItem = {
+        cake_name: cakeData.available_cake_name,
+        main_image_id: cakeData.available_cake_image_files[0]?.id || "",
+        main_image: cakeData.available_cake_image_files[0] || null,
+        quantity: quantity,
+        cake_note: "",
+        sub_total_price: cakeData.available_cake_price * quantity,
+        available_cake_id: cakeData.id,
+        custom_cake_id: null,
+        bakery_id: cakeData.bakery_id || ""
+      };
+      
+      // Get existing cart items or initialize empty array
+      let existingCartItems = [];
+      if (cartData.status_code === 200 && cartData.payload && cartData.payload.cartItems) {
+        existingCartItems = cartData.payload.cartItems;
+      }
+      
+      // Add the new item to existing items
+      const updatedCartItems = [...existingCartItems, newCartItem];
+      
+      // Prepare the complete cart payload with all items
       const cartPayload = {
         bakeryId: cakeData.bakery_id || "",
         order_note: "",
@@ -290,19 +355,10 @@ const CakeDetail = () => {
         shipping_type: "DELIVERY",
         payment_type: "QR_CODE",
         voucher_code: "",
-        cartItems: [{
-          cake_name: cakeData.available_cake_name,
-          main_image_id: cakeData.available_cake_image_files[0]?.id || "",
-          main_image: cakeData.available_cake_image_files[0] || null,
-          quantity: quantity,
-          cake_note: "",
-          sub_total_price: cakeData.available_cake_price * quantity,
-          available_cake_id: cakeData.id,
-          custom_cake_id: null,
-          bakery_id: cakeData.bakery_id || ""
-        }]
+        cartItems: updatedCartItems
       };
 
+      // Update the cart with all items
       const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/carts', {
         method: 'PUT',
         headers: {

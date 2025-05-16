@@ -1,30 +1,18 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { CakeConfig as TypedCakeConfig } from '@/types/cake';
+import { CartItem as TypedCartItem } from '@/types/cart';
 
-interface CakeConfig {
-    price: number;
-    size: string;
-    sponge: string;
-    filling: string;
-    outerIcing: string;
-    imageUrl?: string | null;
-    candles: string | null;
-    message?: string;
-    messageType?: 'none' | 'piped' | 'edible';
-    plaqueColor?: string;
-    goo: string | null;
-    extras: string[];
-    board: string;
+// Extended CakeConfig that includes the fields from the API
+interface CakeConfig extends TypedCakeConfig {
     name: string;
     description: string;
     type: string;
 }
 
-interface CartItem {
-    id: string;
-    quantity: number;
+// Ensure CartItem matches the type definition
+interface CartItem extends TypedCartItem {
     config: CakeConfig;
-    price: number;
 }
 
 interface CartStore {
