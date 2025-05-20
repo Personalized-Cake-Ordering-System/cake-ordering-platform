@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -38,6 +36,7 @@ import { useInView } from 'react-intersection-observer';
 import { useWishlist } from '@/app/store/useWishlist';
 import { toast } from 'sonner';
 import { useCart } from '@/app/store/useCart';
+import BakerySwitchModal from '@/components/shared/bakery-switch-modal';
 
 // Add interface for API cake type
 interface ApiCake {
@@ -128,8 +127,11 @@ const CakeDetail = () => {
   const [currentPage, setCurrentPage] = useState(1);
 
   // Add cart state
-  const { addToCart } = useCart();
+  const { addToCart, openBakerySwitchModal, bakerySwitchModal } = useCart();
   const [quantity, setQuantity] = useState(1);
+  
+  // Add new state for handling modal state locally
+  const [pendingCartItem, setPendingCartItem] = useState<any>(null);
 
   // Add wishlist hook
   const { addToWishlist, removeFromWishlist, items } = useWishlist();
@@ -281,50 +283,11 @@ const CakeDetail = () => {
         return;
       }
 
-      // First fetch current cart from API to check bakery ID
-      const cartResponse = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/carts', {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'accept': '*/*'
-        }
-      });
-      
-      const cartData = await cartResponse.json();
-      
-      // Get existing cart items or initialize empty array
-      let existingCartItems = [];
-      let existingBakeryId = null;
-      
-      if (cartData.status_code === 200 && cartData.payload && cartData.payload.cartItems) {
-        existingCartItems = cartData.payload.cartItems;
-        if (existingCartItems.length > 0 && existingCartItems[0].bakery_id) {
-          existingBakeryId = existingCartItems[0].bakery_id;
-        }
-      }
-      
-      // If we have items from a different bakery, ask for confirmation
-      if (existingBakeryId && existingCartItems.length > 0 && existingBakeryId !== cakeData.bakery_id) {
-        const confirmChange = window.confirm(
-          'Giỏ hàng của bạn đang có bánh từ một tiệm bánh khác. Thêm bánh này sẽ xóa các mặt hàng hiện tại trong giỏ hàng của bạn. Bạn có muốn tiếp tục không?'
-        );
-        
-        if (!confirmChange) {
-          return; // User canceled, do nothing
-        }
-        
-        // Use the new changeBakery function to clear cart and set new bakeryId
-        const { changeBakery } = useCart.getState();
-        changeBakery(cakeData.bakery_id || '', true);
-        
-        // Clear existing cart items for API call
-        existingCartItems = [];
-      }
-
       // Create new cart item for local storage
       const cartItem = {
         id: cakeData.id,
         quantity: quantity,
-        bakeryId: cakeData.bakery_id,
+        bakeryId: cakeData.bakery_id || '',
         config: {
           price: cakeData.available_cake_price,
           size: cakeData.available_cake_size || "6",
@@ -350,21 +313,173 @@ const CakeDetail = () => {
         price: cakeData.available_cake_price * quantity
       };
       
-      // Add to local storage using Zustand store
-      const { addToCart } = useCart.getState();
-      addToCart(cartItem);
+      // Check if the bakeryId is valid
+      if (!cartItem.bakeryId) {
+        toast.error('This item cannot be added to cart: missing bakery information');
+        return;
+      }
+      
+      // Get cart state
+      const cartState = useCart.getState();
+      const { items, currentBakeryId, addToCart, openBakerySwitchModal } = cartState;
+      
+      // Debug what's happening with the cart state
+      console.log('Current cart state:', { items: items.length, currentBakeryId });
+      
+      // Check if cart is truly empty - both no items and no bakery ID
+      const isCartEmpty = items.length === 0;
+      
+      // Check if this is a different bakery than what's already in cart
+      if (!isCartEmpty && currentBakeryId && currentBakeryId !== cartItem.bakeryId) {
+        // Save the pending cart item for later use after confirmation
+        setPendingCartItem(cartItem);
+        
+        // Get bakery names to display in the modal
+        const currentBakeryName = "hiện tại";
+        const newBakeryName = cakeData.available_cake_name.split(' ')[0] || "mới";
+        
+        // Open the bakery switch modal
+        openBakerySwitchModal(
+          currentBakeryName,
+          newBakeryName,
+          () => {
+            // This function runs when user confirms switch
+            handleConfirmBakerySwitch(cartItem);
+          }
+        );
+        
+        return;
+      }
+      
+      // If no bakery conflict or empty cart, proceed with adding to cart
+      const added = addToCart(cartItem);
+      
+      if (!added) {
+        toast.error('Could not add item to cart. Please try again.');
+        return;
+      }
+      
+      // Process with API request to add to cart
+      await processApiCartUpdate(cartItem);
+      
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      toast.error('Failed to add to cart');
+    }
+  };
+  
+  // Function to handle confirmed bakery switch
+  const handleConfirmBakerySwitch = async (cartItem: any) => {
+    try {
+      // Get cart store actions
+      const { changeBakery, addToCart, closeBakerySwitchModal } = useCart.getState();
+      
+      console.log('Switching bakery to:', cartItem.bakeryId);
+      
+      // Clear cart and set new bakery - now awaited
+      const changeBakeryResult = await changeBakery(cartItem.bakeryId, true);
+      
+      if (!changeBakeryResult) {
+        toast.error('Failed to change bakery. Please try again.');
+        closeBakerySwitchModal();
+        return;
+      }
+      
+      console.log('Successfully changed bakery, now adding item');
+      
+      // Add the new item
+      const added = addToCart(cartItem);
+      
+      if (!added) {
+        toast.error('Failed to add item after bakery switch');
+        closeBakerySwitchModal();
+        return;
+      }
+      
+      // Make sure to close the modal regardless of what happens with the API update
+      closeBakerySwitchModal();
+      
+      // Process with API request to add to cart
+      await processApiCartUpdate(cartItem);
+      
+      // Save notification about bakery change for cart page
+      localStorage.setItem('bakeryChangeNotice', JSON.stringify({
+        bakeryName: cartItem.config.name.split(' ')[0] || 'new bakery'
+      }));
+      
+    } catch (error) {
+      console.error('Error handling bakery switch:', error);
+      toast.error('Failed to switch bakery');
+      
+      // Make sure modal is closed even on error
+      const { closeBakerySwitchModal } = useCart.getState();
+      closeBakerySwitchModal();
+    }
+  };
+  
+  // Function to handle the API cart update
+  const processApiCartUpdate = async (cartItem: any) => {
+    const accessToken = localStorage.getItem('accessToken');
+    if (!accessToken) return;
+    
+    try {
+      // At this point, the API cart should be empty or have items from the same bakery
+      // Fetch current API cart to get the latest state
+      const cartResponse = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/carts', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'accept': '*/*'
+        }
+      });
+      
+      if (!cartResponse.ok) {
+        throw new Error(`Failed to fetch cart: ${cartResponse.status}`);
+      }
+      
+      const cartData = await cartResponse.json();
+      
+      // Get existing cart items or initialize empty array
+      let existingCartItems = [];
+      
+      if (cartData.status_code === 200 && cartData.payload && cartData.payload.cartItems) {
+        existingCartItems = cartData.payload.cartItems;
+        
+        // Check if there are items from a different bakery
+        const hasDifferentBakeryItems = existingCartItems.some(
+          (item: any) => item.bakery_id && item.bakery_id !== cartItem.bakeryId
+        );
+        
+        if (hasDifferentBakeryItems) {
+          // Need to delete cart first before adding new items
+          console.log("Detected items from different bakery in API cart, deleting first");
+          const deleteResponse = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/carts', {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (!deleteResponse.ok) {
+            throw new Error(`Failed to delete cart: ${deleteResponse.status}`);
+          }
+          
+          // Reset existing items
+          existingCartItems = [];
+        }
+      }
       
       // Prepare the new cart item for API
       const newCartItem = {
-        cake_name: cakeData.available_cake_name,
-        main_image_id: cakeData.available_cake_image_files[0]?.id || "",
-        main_image: cakeData.available_cake_image_files[0] || null,
-        quantity: quantity,
+        cake_name: cartItem.config.name,
+        main_image_id: cakeData?.available_cake_image_files[0]?.id || "",
+        main_image: cakeData?.available_cake_image_files[0] || null,
+        quantity: cartItem.quantity,
         cake_note: "",
-        sub_total_price: cakeData.available_cake_price * quantity,
-        available_cake_id: cakeData.id,
+        sub_total_price: cartItem.price,
+        available_cake_id: cartItem.id,
         custom_cake_id: null,
-        bakery_id: cakeData.bakery_id || ""
+        bakery_id: cartItem.bakeryId || ""
       };
       
       // Add the new item to existing items
@@ -372,7 +487,7 @@ const CakeDetail = () => {
       
       // Prepare the complete cart payload with all items
       const cartPayload = {
-        bakeryId: cakeData.bakery_id || "",
+        bakeryId: cartItem.bakeryId || "",
         order_note: "",
         phone_number: "",
         shipping_address: "",
@@ -404,8 +519,8 @@ const CakeDetail = () => {
         toast.error(data.errors?.[0] || 'Failed to add to cart');
       }
     } catch (error) {
-      console.error('Error adding to cart:', error);
-      toast.error('Failed to add to cart');
+      console.error('Error during API cart update:', error);
+      toast.error('Failed to update cart on server');
     }
   };
 
@@ -781,6 +896,15 @@ const CakeDetail = () => {
           </div>
         )}
       </motion.div>
+
+      {/* Add the BakerySwitchModal */}
+      <BakerySwitchModal
+        isOpen={bakerySwitchModal.isOpen}
+        currentBakeryName={bakerySwitchModal.currentBakeryName}
+        newBakeryName={bakerySwitchModal.newBakeryName}
+        onConfirm={bakerySwitchModal.onConfirm}
+        onCancel={bakerySwitchModal.onCancel}
+      />
     </div>
   );
 };

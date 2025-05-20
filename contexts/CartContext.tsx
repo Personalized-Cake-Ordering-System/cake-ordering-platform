@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useRef } from 'r
 import { CakeConfig as BaseCakeConfig } from '@/types/cake';
 import { CartItem } from '@/types/cart';
 import { useCart as useCartStore } from '@/app/store/useCart';
+import { toast } from 'sonner';
 
 // Extended CakeConfig that includes the fields from the API
 interface ExtendedCakeConfig extends BaseCakeConfig {
@@ -15,17 +16,18 @@ interface ExtendedCakeConfig extends BaseCakeConfig {
 // Ensure CartItem uses the extended CakeConfig
 interface ExtendedCartItem extends Omit<CartItem, 'config'> {
     config: ExtendedCakeConfig;
+    bakeryId?: string;
 }
 
 interface CartContextType {
     items: ExtendedCartItem[];
-    addToCart: (config: ExtendedCakeConfig) => void;
+    addToCart: (config: ExtendedCakeConfig, bakeryId?: string) => boolean;
     editCartItem: (id: string, newConfig: ExtendedCakeConfig) => void;
     removeFromCart: (id: string) => void;
     clearCart: () => void;
     deleteCartAPI: () => Promise<boolean>;
     updateQuantity: (id: string, quantity: number) => void;
-    changeBakery: (bakeryId: string, clearExisting?: boolean) => boolean;
+    changeBakery: (bakeryId: string, clearExisting?: boolean) => Promise<boolean>;
     currentBakeryId: string | null;
 }
 
@@ -82,57 +84,71 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         return basePrice;
     };
 
-    const addToCart = (config: ExtendedCakeConfig) => {
+    const addToCart = (config: ExtendedCakeConfig, bakeryId?: string) => {
         const price = calculatePrice(config);
         const newId = generateId();
+        
+        // Create the cart item
         const newItem: ExtendedCartItem = {
             id: newId,
             config,
             quantity: 1,
-            price
+            price,
+            bakeryId: bakeryId || ''
         };
         
-        // Add to local state
-        setItems(prev => [...prev, newItem]);
+        // Add directly through Zustand store which now handles all the bakery switching logic
+        const added = cartStore.addToCart(newItem as any);
         
-        // Also add to Zustand store
-        cartStore.addToCart(newItem as any);
+        // We don't need to update local state here as the Zustand store change will trigger our useEffect
+        return added;
     };
 
     const editCartItem = (id: string, newConfig: ExtendedCakeConfig) => {
         const price = calculatePrice(newConfig);
         
-        // Update local state
-        setItems(prev => prev.map(item =>
-            item.id === id
-                ? { ...item, config: newConfig, price }
-                : item
-        ));
+        // Find the item to get its bakeryId
+        const item = items.find(item => item.id === id);
+        
+        if (!item) {
+            toast.error("Item not found");
+            return;
+        }
         
         // Also update in Zustand store by removing and adding
         cartStore.removeFromCart(id);
-        cartStore.addToCart({
+        const added = cartStore.addToCart({
             id,
             config: newConfig,
             quantity: 1, // Default quantity
-            price
+            price,
+            bakeryId: item.bakeryId
         } as any);
+        
+        // Only update local state if Zustand update was successful
+        if (added) {
+            setItems(prev => prev.map(item =>
+                item.id === id
+                    ? { ...item, config: newConfig, price }
+                    : item
+            ));
+        }
     };
 
     const removeFromCart = (id: string) => {
-        // Update local state
-        setItems(prev => prev.filter(item => item.id !== id));
-        
-        // Also remove from Zustand store
+        // Remove through Zustand store
         cartStore.removeFromCart(id);
+        
+        // Also update local state for immediate UI update
+        setItems(prev => prev.filter(item => item.id !== id));
     };
 
     const clearCart = () => {
-        // Update local state
-        setItems([]);
-        
-        // Also clear Zustand store
+        // Clear through Zustand store
         cartStore.clearCart();
+        
+        // Also update local state
+        setItems([]);
     };
     
     // Add deletion API function
@@ -145,20 +161,33 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     };
 
     const updateQuantity = (id: string, quantity: number) => {
-        // Update local state
+        // Update through Zustand store
+        cartStore.updateQuantity(id, quantity);
+        
+        // Also update local state for immediate UI update
         setItems(prev => prev.map(item =>
             item.id === id
                 ? { ...item, quantity }
                 : item
         ));
-        
-        // Also update in Zustand store
-        cartStore.updateQuantity(id, quantity);
     };
     
     // Add ability to change bakery
-    const changeBakery = (bakeryId: string, clearExisting: boolean = false) => {
-        return cartStore.changeBakery(bakeryId, clearExisting);
+    const changeBakery = async (bakeryId: string, clearExisting: boolean = false) => {
+        try {
+            // Call the Zustand store's changeBakery and await its result
+            const result = await cartStore.changeBakery(bakeryId, clearExisting);
+            
+            // Update local state if requested and successful
+            if (result && clearExisting) {
+                setItems([]);
+            }
+            
+            return result;
+        } catch (error) {
+            console.error('Error changing bakery:', error);
+            return false;
+        }
     };
 
     return (

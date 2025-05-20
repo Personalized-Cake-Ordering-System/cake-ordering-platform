@@ -1,4 +1,3 @@
- 
 "use client" ;
 
 import { Button } from '@/components/ui/button' ;
@@ -12,6 +11,7 @@ import React, { useEffect, useState, useRef } from 'react' ;
 import { useCakeConfigStore } from '@/components/shared/client/stores/cake-config' ;
 import { toast } from 'react-hot-toast' ;
 import html2canvas from 'html2canvas' ;
+import BakerySwitchModal from '@/components/shared/bakery-switch-modal';
 
 // API response types
 interface ApiError {
@@ -159,12 +159,15 @@ const selectedVariants = {
 } ;
 
 const CakeCustomizer = ({ storeId }: { storeId: string }) => {
-    const { addToCart, items } = useCart() ;
+    const { addToCart, items, bakerySwitchModal } = useCart() ;
     const router = useRouter() ;
     const searchParams = useSearchParams() ;
     const editId = searchParams.get('editId') ;
     const { config, setConfig } = useCakeConfigStore() ;
     const cakePreviewRef = useRef<HTMLDivElement>(null) ;
+    
+    // Add state for pending cart item
+    const [pendingCartItem, setPendingCartItem] = useState<any>(null);
 
     // UI state
     const [selectedPart, setSelectedPart] = useState<SelectedPart>(null) ;
@@ -717,41 +720,81 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
             }
 
             // Check if we already have items from a different bakery
-            const currentCartResponse = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/carts', {
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                    'accept': '*/*'
-                }
-            });
+            const cartState = useCart.getState();
+            const { openBakerySwitchModal, currentBakeryId, items } = cartState;
             
-            const currentCartData = await currentCartResponse.json();
-            let existingCartItems = [];
-            let existingBakeryId = null;
+            console.log('Current cart state:', { items: items.length, currentBakeryId, storeId });
             
-            if (currentCartData.status_code === 200 && currentCartData.payload && currentCartData.payload.cartItems) {
-                existingCartItems = currentCartData.payload.cartItems;
-                if (existingCartItems.length > 0 && existingCartItems[0].bakery_id) {
-                    existingBakeryId = existingCartItems[0].bakery_id;
-                }
-            }
+            // Check if cart is truly empty
+            const isCartEmpty = items.length === 0;
             
-            // If we have items from a different bakery, ask for confirmation
-            if (existingBakeryId && existingCartItems.length > 0 && existingBakeryId !== storeId) {
-                const confirmChange = window.confirm(
-                    'Giỏ hàng của bạn đang có bánh từ một tiệm bánh khác. Thêm bánh này sẽ xóa các mặt hàng hiện tại trong giỏ hàng của bạn. Bạn có muốn tiếp tục không?'
+            // Check if this is a different bakery than what's already in cart
+            if (!isCartEmpty && currentBakeryId && currentBakeryId !== storeId) {
+                // Get bakery names for the modal
+                const currentBakeryName = items[0]?.config?.name?.split(' ')?.[0] || "hiện tại";
+                const newBakeryName = "mới";
+                
+                // Open the bakery switch modal
+                openBakerySwitchModal(
+                    currentBakeryName,
+                    newBakeryName,
+                    // This function runs when user confirms to switch bakeries
+                    async () => {
+                        // Proceed with creating the cake after confirmation
+                        await createCustomCakeAndAddToCart();
+                    }
                 );
                 
-                if (!confirmChange) {
-                    return; // User canceled, do nothing
-                }
-                
-                // Clear current cart items for the API call
-                existingCartItems = [];
-                
-                // Use the new changeBakery function to clear cart and set new bakeryId
-                const { changeBakery } = useCart.getState();
-                changeBakery(storeId, true);
+                return;
             }
+            
+            // If no bakery conflict, proceed with creating the cake
+            await createCustomCakeAndAddToCart();
+            
+        } catch (error) {
+            console.error('Error in handleOrderCake:', error);
+            toast.error('Failed to order cake. Please try again.');
+        }
+    };
+    
+    // Function to create custom cake and add to cart
+    const createCustomCakeAndAddToCart = async () => {
+        try {
+            const accessToken = localStorage.getItem('accessToken');
+            if (!accessToken) return;
+
+            // First, clear cart if needed - get currentBakeryId from the store
+            const { changeBakery, currentBakeryId, closeBakerySwitchModal } = useCart.getState();
+            
+            console.log('Creating custom cake, current bakeryId:', currentBakeryId, 'storeId:', storeId);
+            
+            // If bakery ID is different, we need to clear the cart first
+            if (currentBakeryId && currentBakeryId !== storeId) {
+                console.log('Different bakery detected, clearing cart first');
+                
+                try {
+                    // Use the async changeBakery function to clear cart and set new bakeryId
+                    // This will also delete the API cart
+                    const changeBakeryResult = await changeBakery(storeId, true);
+                    
+                    if (!changeBakeryResult) {
+                        toast.error('Failed to change bakery. Please try again.');
+                        closeBakerySwitchModal();
+                        return;
+                    }
+                    
+                    console.log('Successfully changed bakery to:', storeId);
+                    
+                } catch (error) {
+                    console.error('Error changing bakery:', error);
+                    toast.error('Failed to clear existing cart items');
+                    closeBakerySwitchModal();
+                    return;
+                }
+            }
+            
+            // Make sure to close the modal regardless of what happens next
+            closeBakerySwitchModal();
 
             // Capture the cake preview as an image
             let cakeImageUrl = null;
@@ -920,9 +963,6 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                 return;
             }
 
-            // Continue with the rest of the code
-            console.log('API response:', data);
-
             // Get current cart from API first to preserve existing items
             console.log('Fetching current cart to preserve existing items...');
             const updatedCartResponse = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/carts', {
@@ -931,6 +971,12 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                     'accept': '*/*'
                 }
             });
+            
+            if (!updatedCartResponse.ok) {
+                console.error('Error fetching current cart:', updatedCartResponse.status, updatedCartResponse.statusText);
+                toast.error('Failed to fetch current cart');
+                return;
+            }
             
             const updatedCartData = await updatedCartResponse.json();
             let currentCartItems = [];
@@ -1000,11 +1046,12 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
             console.log('Cart API response:', cartResult);
 
             // Also add to local cart state for UI updates
+            const { addToCart } = useCart.getState();
             const cartItem = {
                 id: data.payload.id,
                 quantity: 1,
                 price: config.price,
-                storeId: storeId,
+                bakeryId: storeId,
                 config: {
                     ...config,
                     name: `Custom ${selectedSize} Cake`,
@@ -1015,13 +1062,19 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                 }
             };
 
+            // Add the item to the cart state
             addToCart(cartItem);
+            
             toast.success('Cake added to cart successfully!');
             console.log('Order process completed successfully');
             router.push('/cart');
         } catch (error) {
-            console.error('Error in handleOrderCake:', error);
-            toast.error('Failed to order cake. Please try again.');
+            console.error('Error creating custom cake:', error);
+            toast.error('Failed to create custom cake');
+            
+            // Make sure modal is closed even on error
+            const { closeBakerySwitchModal } = useCart.getState();
+            closeBakerySwitchModal();
         }
     };
 
@@ -2258,6 +2311,15 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                     </div>
                 </motion.div>
             </motion.div>
+            
+            {/* Add the BakerySwitchModal */}
+            <BakerySwitchModal
+                isOpen={bakerySwitchModal.isOpen}
+                currentBakeryName={bakerySwitchModal.currentBakeryName}
+                newBakeryName={bakerySwitchModal.newBakeryName}
+                onConfirm={bakerySwitchModal.onConfirm}
+                onCancel={bakerySwitchModal.onCancel}
+            />
         </motion.div>
     ) ;
 } ;

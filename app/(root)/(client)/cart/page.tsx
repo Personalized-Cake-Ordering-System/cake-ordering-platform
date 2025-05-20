@@ -1,4 +1,3 @@
-
 'use client'
 import * as React from 'react';
 import { motion } from 'framer-motion';
@@ -86,7 +85,66 @@ const CartPage = () => {
     }).format(amount);
   };
 
-  // Add fetchCart function
+  // Add this function to correct current cart in local storage if needed
+  const syncCartWithAPI = (apiCartItems: CartItem[]) => {
+    if (!apiCartItems || apiCartItems.length === 0) {
+      return;
+    }
+    
+    // Get the bakery ID from the first item
+    const bakeryId = apiCartItems[0].bakery_id;
+    
+    if (!bakeryId) {
+      return;
+    }
+    
+    // Get the local cart
+    const localCart = useCart.getState();
+    
+    // Set correct bakery ID in local storage
+    if (localCart.currentBakeryId !== bakeryId) {
+      console.log('Updating local bakeryId to match API:', bakeryId);
+      // Clear cart and set new bakeryId
+      localCart.clearCart();
+      
+      // Map API cart items to local storage format and add each one
+      apiCartItems.forEach(item => {
+        const itemId = item.available_cake_id || item.custom_cake_id || `item-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+        localCart.addToCart({
+          id: itemId,
+          quantity: item.quantity,
+          bakeryId: bakeryId,
+          config: {
+            price: item.sub_total_price / item.quantity,
+            size: "",
+            sponge: "",
+            filling: "",
+            outerIcing: "",
+            icing: "",
+            topping: null,
+            candles: null,
+            message: "",
+            messageType: "none" as const,
+            plaqueColor: "",
+            goo: null,
+            extras: [],
+            board: "",
+            uploadedImage: null,
+            imageUrl: item.main_image?.file_url || null,
+            pipingColor: "",
+            name: item.cake_name,
+            description: "",
+            type: ""
+          },
+          price: item.sub_total_price
+        });
+      });
+      
+      console.log('Cart synchronized with API');
+    }
+  }
+
+  // Update the fetchCart function to include syncing
   const fetchCart = async () => {
     const accessToken = localStorage.getItem('accessToken');
     if (!accessToken) {
@@ -108,88 +166,11 @@ const CartPage = () => {
       console.log('Cart API Response:', data);
 
       if (data.status_code === 200 && data.payload) {
-        setCartItems(data.payload.cartItems || []);
+        const apiCartItems = data.payload.cartItems || [];
+        setCartItems(apiCartItems);
         
-        // Get the local cart from Zustand store
-        const localCart = useCart.getState();
-        
-        // Always sync API data to local storage when fetching cart
-        if (data.payload.cartItems?.length > 0) {
-          // Define the type for the mapped items
-          interface LocalCartItem {
-            id: string;
-            quantity: number;
-            bakeryId?: string;
-            config: {
-              price: number;
-              size: string;
-              sponge: string;
-              filling: string;
-              outerIcing: string;
-              icing: string;
-              topping: string | null;
-              candles: string | null;
-              message: string;
-              messageType: 'none' | 'piped' | 'edible';
-              plaqueColor: string;
-              goo: string | null;
-              extras: string[];
-              board: string;
-              uploadedImage: string | null;
-              imageUrl: string | null;
-              pipingColor: string;
-              name: string;
-              description: string;
-              type: string;
-            };
-            price: number;
-          }
-          
-          // Clear local cart first
-          localCart.clearCart();
-          
-          // Map API cart items to local storage format
-          const localItems: LocalCartItem[] = data.payload.cartItems.map((item: CartItem) => {
-            const itemId = item.available_cake_id || item.custom_cake_id || `item-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-            return {
-              id: itemId,
-              quantity: item.quantity, // Ensure API quantity is used
-              bakeryId: item.bakery_id,
-              config: {
-                price: item.sub_total_price / item.quantity,
-                size: "",
-                sponge: "",
-                filling: "",
-                outerIcing: "",
-                icing: "",
-                topping: null,
-                candles: null,
-                message: "",
-                messageType: "none" as const,
-                plaqueColor: "",
-                goo: null,
-                extras: [],
-                board: "",
-                uploadedImage: null,
-                imageUrl: item.main_image?.file_url || null,
-                pipingColor: "",
-                name: item.cake_name,
-                description: "",
-                type: ""
-              },
-              price: item.sub_total_price
-            };
-          });
-          
-          // Add each item to local cart
-          localItems.forEach((item: LocalCartItem) => localCart.addToCart(item));
-          
-          console.log('Synchronized local storage with API cart data');
-        } else if (data.payload.cartItems?.length === 0) {
-          // If API cart is empty, clear local cart too
-          localCart.clearCart();
-          console.log('API cart is empty, cleared local cart');
-        }
+        // Sync local storage with API data
+        syncCartWithAPI(apiCartItems);
       } else {
         setCartItems([]);
       }
