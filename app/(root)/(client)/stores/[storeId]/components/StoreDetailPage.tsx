@@ -131,6 +131,7 @@ interface Review {
   customer?: {
     name: string ;
   } ;
+  isCurrentUser?: boolean ;
 }
 
 interface ReviewApiResponse {
@@ -155,6 +156,13 @@ interface ReviewFilters {
   sortBy: 'newest' | 'oldest' | 'highest' | 'lowest' ;
 }
 
+// Before useState declarations
+interface UploadedFile {
+  id: string;
+  name: string;
+  preview?: string;
+}
+
 export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
   const router = useRouter() ;
   const [activeTab, setActiveTab] = useState('info') ;
@@ -172,6 +180,7 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
   // Add new state for filters
   const [sortBy, setSortBy] = useState('newest') ;
   const [filterBy, setFilterBy] = useState('all') ;
+  const [isReviewsLoading, setIsReviewsLoading] = useState(false) ;
 
   const [pagination, setPagination] = useState({
     currentPage: 0,
@@ -197,14 +206,29 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
   const [storeReportDialogOpen, setStoreReportDialogOpen] = useState(false) ;
   const [storeReportContent, setStoreReportContent] = useState('') ;
   const [isSubmittingStoreReport, setIsSubmittingStoreReport] = useState(false) ;
-  const [uploadedFiles, setUploadedFiles] = useState<Array<{ id: string, name: string }>>([]) ;
+  const [uploadedFiles, setUploadedFiles] = useState<Array<UploadedFile>>([]) ;
   const [isUploading, setIsUploading] = useState(false) ;
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null) ;
+  const [reviewImageErrors, setReviewImageErrors] = useState<{[key: string]: boolean}>({}) ;
 
   // Add filtered and sorted reviews
   const [reviewFilters, setReviewFilters] = useState<ReviewFilters>({
     rating: null,
     sortBy: 'newest'
   }) ;
+
+  // Get current user ID from localStorage on component mount
+  useEffect(() => {
+    try {
+      const accessToken = localStorage.getItem('accessToken') ;
+      if (accessToken) {
+        const tokenPayload = JSON.parse(atob(accessToken.split('.')[1])) ;
+        setCurrentUserId(tokenPayload.sub) ;
+      }
+    } catch (error) {
+      console.error("Error parsing user token:", error) ;
+    }
+  }, []) ;
 
   const filteredAndSortedReviews = useMemo(() => {
     let result = [...reviews] ;
@@ -234,7 +258,7 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
   }, [reviews, reviewFilters]) ;
 
   useEffect(() => {
-    if (!bakery) return ;
+    if (!bakery) return;
 
     try {
       const storeData: StoreInfo = {
@@ -255,15 +279,15 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
         cake_description: "Chuyên cung cấp các loại bánh kem tươi, bánh sinh nhật và bánh theo yêu cầu với nguyên liệu chất lượng cao.",
         price_description: "Giá cả hợp lý từ 150.000đ, tùy theo kích thước và thiết kế bánh.",
         bakery_description: "BreadTalk là tiệm bánh gia đình với hơn 5 năm kinh nghiệm trong việc làm bánh và phục vụ khách hàng khu vực trung tâm Sài Gòn."
-      } ;
+      };
 
-      setStoreInfo(storeData) ;
-      setIsLoading(false) ;
+      setStoreInfo(storeData);
+      setIsLoading(false);
     } catch (error) {
-      console.error("Error processing bakery data:", error) ;
-      toast.error("Có lỗi xảy ra khi chuẩn bị thông tin cửa hàng") ;
+      console.error("Error processing bakery data:", error);
+      toast.error("Có lỗi xảy ra khi chuẩn bị thông tin cửa hàng");
     }
-  }, [bakery]) ;
+  }, [bakery]);
 
   useEffect(() => {
     const fetchCakes = async () => {
@@ -275,60 +299,53 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
             'sort-by': sortBy,
             'filter-by': filterBy
           }
-        }) ;
+        });
         if (response.data.status_code === 200) {
-          setCakes(response.data.payload) ;
+          setCakes(response.data.payload);
           setPagination(prev => ({
             ...prev,
             totalPages: response.data.meta_data.total_pages_count,
             totalItems: response.data.meta_data.total_items_count
-          })) ;
+          }));
         }
       } catch (error) {
-        console.error("Error fetching cakes:", error) ;
-        toast.error("Có lỗi xảy ra khi tải các bánh có sẵn") ;
+        console.error("Error fetching cakes:", error);
+        toast.error("Có lỗi xảy ra khi tải các bánh có sẵn");
       }
-    } ;
+    };
 
     if (bakery?.id) {
-      fetchCakes() ;
+      fetchCakes();
     }
-  }, [bakery?.id, pagination.currentPage, pagination.pageSize, sortBy, filterBy]) ;
+  }, [bakery?.id, pagination.currentPage, pagination.pageSize, sortBy, filterBy]);
 
-  useEffect(() => {
-    const fetchReviews = async () => {
-      try {
-        const response = await axios.get<ReviewApiResponse>(
-          `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/bakeries/${bakery.id}`,
-          {
-            params: {
-              'page-index': reviewPagination.currentPage,
-              'page-size': reviewPagination.pageSize,
-            }
+  // Extract fetchReviews function outside useEffect for reuse
+  const fetchReviews = async () => {
+    try {
+      setIsReviewsLoading(true) ;
+      const response = await axios.get<ReviewApiResponse>(
+        `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/bakeries/${bakery.id}`,
+        {
+          params: {
+            'page-index': reviewPagination.currentPage,
+            'page-size': reviewPagination.pageSize,
           }
-        ) ;
-        if (response.data.status_code === 200) {
-          // Fetch additional data for each review
-          const reviewsWithDetails = await Promise.all(
-            response.data.payload.reviews.map(async (review) => {
-              let imageUrl = null ;
-              let customerName = 'Anonymous' ;
-
-              // Fetch image if image_id exists
-              if (review.image_id) {
-                try {
-                  const imageResponse = await axios.get(
-                    `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/files/${review.image_id}`
-                  ) ;
-                  if (imageResponse.data.status_code === 200) {
-                    imageUrl = imageResponse.data.payload.file_url ;
-                  }
-                } catch (error) {
-                  console.error("Error fetching review image:", error) ;
-                }
-              }
-
-              // Fetch customer details
+        }
+      ) ;
+      if (response.data.status_code === 200) {
+        // Fetch additional data for each review
+        const reviewsWithDetails = await Promise.all(
+          response.data.payload.reviews.map(async (review) => {
+            let imageUrl = null ;
+            let customerName = 'Anonymous' ;
+            let isCurrentUser = false ;
+            
+            // Check if this review belongs to current user
+            if (currentUserId && review.customer_id === currentUserId) {
+              customerName = 'You' ;
+              isCurrentUser = true ;
+            } else {
+              // Fetch customer details only if not current user
               try {
                 console.log('Fetching customer details for ID:', review.customer_id) ;
                 const accessToken = localStorage.getItem('accessToken') ;
@@ -357,28 +374,47 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
                 console.error("Error fetching customer details:", error) ;
                 console.error("Customer ID that failed:", review.customer_id) ;
               }
+            }
 
-              return {
-                ...review,
-                image: imageUrl ? { file_url: imageUrl } : undefined,
-                customer: { name: customerName }
-              } ;
-            })
-          ) ;
+            // Fetch image if image_id exists
+            if (review.image_id) {
+              try {
+                const imageResponse = await axios.get(
+                  `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/files/${review.image_id}`
+                ) ;
+                if (imageResponse.data.status_code === 200) {
+                  imageUrl = imageResponse.data.payload.file_url ;
+                }
+              } catch (error) {
+                console.error("Error fetching review image:", error) ;
+              }
+            }
 
-          setReviews(reviewsWithDetails as Review[]) ;
-          setReviewPagination(prev => ({
-            ...prev,
-            totalPages: Math.ceil(response.data.payload.reviews.length / reviewPagination.pageSize),
-            totalItems: response.data.payload.reviews.length
-          })) ;
-        }
-      } catch (error) {
-        console.error("Error fetching reviews:", error) ;
-        toast.error("Có lỗi xảy ra khi tải đánh giá của cửa hàng") ;
+            return {
+              ...review,
+              image: imageUrl ? { file_url: imageUrl } : undefined,
+              customer: { name: customerName },
+              isCurrentUser
+            } ;
+          })
+        ) ;
+
+        setReviews(reviewsWithDetails as Review[]) ;
+        setReviewPagination(prev => ({
+          ...prev,
+          totalPages: Math.ceil(response.data.payload.reviews.length / reviewPagination.pageSize),
+          totalItems: response.data.payload.reviews.length
+        })) ;
       }
-    } ;
+    } catch (error) {
+      console.error("Error fetching reviews:", error) ;
+      toast.error("Có lỗi xảy ra khi tải đánh giá của cửa hàng") ;
+    } finally {
+      setIsReviewsLoading(false) ;
+    }
+  } ;
 
+  useEffect(() => {
     if (bakery?.id) {
       fetchReviews() ;
     }
@@ -417,30 +453,34 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
 
   const handleCreateReview = async () => {
     if (!userReview.trim()) {
-      toast.error("Vui lòng nhập nội dung đánh giá") ;
-      return ;
+      toast.error("Vui lòng nhập nội dung đánh giá");
+      return;
     }
 
-    setIsSubmitting(true) ;
+    setIsSubmitting(true);
     try {
-      const accessToken = localStorage.getItem('accessToken') ;
+      const accessToken = localStorage.getItem('accessToken');
       if (!accessToken) {
-        toast.error("Vui lòng đăng nhập để đánh giá cửa hàng") ;
-        return ;
+        toast.error("Vui lòng đăng nhập để đánh giá cửa hàng");
+        return;
       }
 
       // Decode JWT to get customer_id
-      const tokenPayload = JSON.parse(atob(accessToken.split('.')[1])) ;
-      const customerId = tokenPayload.sub ;
+      const tokenPayload = JSON.parse(atob(accessToken.split('.')[1]));
+      const customerId = tokenPayload.sub;
+
+      // Extract the file ID if available
+      const fileId = uploadedFiles.length > 0 ? uploadedFiles[0].id : null;
+      const filePreview = uploadedFiles.length > 0 ? uploadedFiles[0].preview : null;
 
       const response = await axios.post(
         `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/reviews`,
         {
           rating: userRating,
-          comment: userReview,
+          content: userReview,
           customer_id: customerId,
           review_type: "BAKERY_REVIEW",
-          image_id: uploadedFiles.length > 0 ? uploadedFiles[0].id : null,
+          image_id: fileId,
           bakery_id: bakery.id
         },
         {
@@ -449,25 +489,44 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
             'Content-Type': 'application/json'
           }
         }
-      ) ;
+      );
 
       if (response.data.status_code === 200) {
-        toast.success("Đánh giá của bạn đã được gửi thành công") ;
-        setUserReview('') ;
-        setUserRating(5) ;
-        setUploadedFiles([]) ; // Clear uploaded files after successful submission
-        // Refresh reviews
-        const currentPage = reviewPagination.currentPage ;
-        setReviewPagination(prev => ({ ...prev, currentPage: 0 })) ;
-        setTimeout(() => setReviewPagination(prev => ({ ...prev, currentPage })), 100) ;
+        toast.success("Đánh giá của bạn đã được gửi thành công");
+        
+        // Reset form
+        setUserReview('');
+        setUserRating(5);
+        setUploadedFiles([]);
+        
+        // Add optimistic update with the new review
+        const newReview = {
+          id: response.data.payload?.id || `temp-${Date.now()}`,
+          rating: userRating,
+          content: userReview,
+          customer_id: customerId,
+          created_at: new Date().toISOString(),
+          image_id: fileId,
+          image: filePreview ? { file_url: filePreview } : undefined,
+          customer: { name: "You" },
+          isCurrentUser: true
+        };
+        
+        // Add to beginning of reviews array (newest first)
+        setReviews(prevReviews => [newReview, ...prevReviews]);
+        
+        // Then refresh from server after a slight delay to ensure the review is available
+        setTimeout(() => {
+          fetchReviews();
+        }, 1000);
       }
     } catch (error: any) {
-      console.error("Error creating review:", error) ;
-      toast.error(error.response?.data?.message || "Có lỗi xảy ra khi gửi đánh giá") ;
+      console.error("Error creating review:", error);
+      toast.error(error.response?.data?.message || "Có lỗi xảy ra khi gửi đánh giá");
     } finally {
-      setIsSubmitting(false) ;
+      setIsSubmitting(false);
     }
-  } ;
+  };
 
   const handleReportReview = async () => {
     if (!selectedReviewId || !reportReason.trim()) {
@@ -496,41 +555,43 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
   } ;
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files ;
-    if (!files || files.length === 0) return ;
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
 
-    setIsUploading(true) ;
-    const formData = new FormData() ;
+    setIsUploading(true);
+    const formData = new FormData();
 
     try {
-      for (let i = 0 ; i < files.length ; i++) {
-        formData.set('formFile', files[i]) ;
+      // Create a local preview first
+      const filePreview = URL.createObjectURL(files[0]);
+      
+      formData.set('formFile', files[0]);
 
-        const response = await axios.post(
-          'https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/files',
-          formData,
-          {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
-          }
-        ) ;
-
-        if (response.data.status_code === 200) {
-          setUploadedFiles(prev => [...prev, {
-            id: response.data.payload.id,
-            name: response.data.payload.file_name
-          }]) ;
-          console.log('File uploaded successfully:', response.data.payload) ;
+      const response = await axios.post(
+        'https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/files',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
         }
+      );
+
+      if (response.data.status_code === 200) {
+        setUploadedFiles([{
+          id: response.data.payload.id,
+          name: response.data.payload.file_name,
+          preview: filePreview
+        }]);
+        console.log('File uploaded successfully:', response.data.payload);
       }
     } catch (error) {
-      console.error('Error uploading file:', error) ;
-      toast.error("Có lỗi xảy ra khi tải lên tệp") ;
+      console.error('Error uploading file:', error);
+      toast.error("Có lỗi xảy ra khi tải lên tệp");
     } finally {
-      setIsUploading(false) ;
+      setIsUploading(false);
     }
-  } ;
+  };
 
   const handleRemoveFile = (fileId: string) => {
     setUploadedFiles(prev => prev.filter(file => file.id !== fileId)) ;
@@ -581,6 +642,13 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
       setIsSubmittingStoreReport(false) ;
     }
   } ;
+
+  const handleImageError = (reviewId: string) => {
+    setReviewImageErrors(prev => ({
+      ...prev,
+      [reviewId]: true
+    }));
+  };
 
   if (isLoading || !storeInfo) {
     return (
@@ -1235,32 +1303,43 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
                         accept="image/*"
                         onChange={handleFileUpload}
                       />
-                      <label
-                        htmlFor="review-image"
-                        className="flex flex-col items-center justify-center cursor-pointer"
-                      >
-                        <Upload className="w-8 h-8 text-gray-400 mb-2" />
-                        <span className="text-sm text-gray-500">
-                          {isUploading ? 'Đang tải lên...' : 'Nhấn để tải lên hình ảnh'}
-                        </span>
-                      </label>
-                    </div>
-                    {uploadedFiles.length > 0 && (
-                      <div className="grid grid-cols-2 gap-2">
-                        {uploadedFiles.map((file) => (
-                          <div key={file.id} className="relative group flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                            <span className="text-sm text-gray-600 truncate">{file.id}</span>
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveFile(file.id)}
-                              className="p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
+                      
+                      {uploadedFiles.length > 0 ? (
+                        <div className="relative">
+                          <div className="aspect-video relative w-full max-w-md mx-auto rounded-lg overflow-hidden border border-gray-200">
+                            {uploadedFiles[0].preview ? (
+                              <Image 
+                                src={uploadedFiles[0].preview} 
+                                alt="Preview" 
+                                fill 
+                                className="object-cover"
+                              />
+                            ) : (
+                              <div className="h-full w-full flex items-center justify-center bg-gray-100">
+                                <FileText className="w-12 h-12 text-gray-400" />
+                              </div>
+                            )}
                           </div>
-                        ))}
-                      </div>
-                    )}
+                          <button
+                            type="button"
+                            onClick={() => setUploadedFiles([])}
+                            className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <label
+                          htmlFor="review-image"
+                          className="flex flex-col items-center justify-center cursor-pointer"
+                        >
+                          <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                          <span className="text-sm text-gray-500">
+                            {isUploading ? 'Đang tải lên...' : 'Nhấn để tải lên hình ảnh'}
+                          </span>
+                        </label>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <Button
@@ -1274,7 +1353,11 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
             </div>
 
             {/* Reviews List */}
-            {filteredAndSortedReviews.length === 0 ? (
+            {isReviewsLoading ? (
+              <div className="flex justify-center items-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-custom-teal"></div>
+              </div>
+            ) : filteredAndSortedReviews.length === 0 ? (
               <div className="text-center py-12 bg-gray-50 rounded-xl">
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
                   <Star className="w-8 h-8 text-gray-400" />
@@ -1284,20 +1367,33 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
             ) : (
               <div className="space-y-6">
                 {filteredAndSortedReviews.map((review) => (
-                  <div key={review.id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 p-6">
+                  <div 
+                    key={review.id} 
+                    className={`bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 p-6 border ${review.isCurrentUser ? 'border-custom-teal/40 bg-custom-teal/5' : 'border-gray-100'}`}
+                  >
                     <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 relative flex-shrink-0 ring-2 ring-white shadow-sm">
+                      <div className={`w-12 h-12 rounded-full overflow-hidden relative flex-shrink-0 ring-2 ${review.isCurrentUser ? 'ring-custom-teal/50 bg-custom-teal/20' : 'ring-white bg-gradient-to-br from-gray-100 to-gray-200'} shadow-sm`}>
                         <Image
-                          src="/images/default-avatar.png"
+                          src={review.isCurrentUser ? "/images/user-avatar.png" : "/images/default-avatar.png"}
                           alt={review.customer?.name || 'Anonymous'}
                           fill
                           className="object-cover"
+                          priority={review.isCurrentUser}
                         />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
                           <div>
-                            <h3 className="font-semibold text-gray-900 text-lg">{review.customer?.name || 'Anonymous'}</h3>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold text-gray-900 text-lg">
+                                {review.customer?.name || 'Anonymous'}
+                              </h3>
+                              {review.isCurrentUser && (
+                                <span className="bg-custom-teal/20 text-custom-teal text-xs px-2 py-0.5 rounded-full border border-custom-teal/30">
+                                  You
+                                </span>
+                              )}
+                            </div>
                             <div className="flex items-center gap-2 mt-1">
                               <div className="flex items-center">
                                 {Array.from({ length: 5 }).map((_, index) => (
@@ -1319,37 +1415,87 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
                               </span>
                             </div>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-gray-400 hover:text-red-500 hover:bg-red-50"
-                            onClick={() => {
-                              setSelectedReviewId(review.id) ;
-                              setReportDialogOpen(true) ;
-                            }}
-                          >
-                            <AlertTriangle className="w-4 h-4" />
-                          </Button>
+                          
+                          {!review.isCurrentUser && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-gray-400 hover:text-red-500 hover:bg-red-50"
+                              onClick={() => {
+                                setSelectedReviewId(review.id);
+                                setReportDialogOpen(true);
+                              }}
+                            >
+                              <AlertTriangle className="w-4 h-4" />
+                            </Button>
+                          )}
+                          
+                          {review.isCurrentUser && (
+                            <div className="flex space-x-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-gray-400 hover:text-custom-teal hover:bg-custom-teal/10"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-gray-400 hover:text-red-500 hover:bg-red-50"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                              </Button>
+                            </div>
+                          )}
                         </div>
 
                         {review.content ? (
-                          <p className="mt-4 text-gray-600 leading-relaxed">{review.content}</p>
+                          <div className={`mt-4 p-4 rounded-lg ${review.isCurrentUser ? 'bg-white' : 'bg-gray-50'}`}>
+                            <p className="text-gray-600 leading-relaxed">{review.content}</p>
+                          </div>
                         ) : (
                           <p className="mt-4 text-gray-400 italic">Không có nội dung đánh giá</p>
                         )}
 
-                        {review.image?.file_url && (
+                        {review.image?.file_url && !reviewImageErrors[review.id] && (
                           <div className="mt-4">
-                            <div className="relative w-48 h-48 rounded-lg overflow-hidden">
-                              <Image
-                                src={review.image.file_url}
-                                alt="Review image"
-                                fill
-                                className="object-cover"
-                              />
+                            <div className="relative rounded-lg overflow-hidden">
+                              <div className="aspect-video w-full max-w-md relative rounded-lg overflow-hidden">
+                                <Image
+                                  src={review.image.file_url}
+                                  alt="Review image"
+                                  fill
+                                  className="object-cover"
+                                  onError={() => handleImageError(review.id)}
+                                />
+                              </div>
+                              <div 
+                                className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
+                                onClick={() => window.open(review.image?.file_url, '_blank')}
+                              >
+                                <div className="absolute bottom-2 right-2 bg-black/50 text-white p-2 rounded-full">
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 3 6 6m-6-6v4.8m6-4.8h-4.8"/><path d="M9 21H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4.5"/><path d="M19 15v4a2 2 0 0 1-2 2h-4.5"/></svg>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         )}
+
+                        {/* Interactive elements */}
+                        <div className="mt-4 flex items-center gap-4">
+                          <button className="flex items-center gap-2 text-gray-500 hover:text-gray-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 12H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M12 10v10"/><path d="m8 16 4-4 4 4"/></svg>
+                            <span className="text-sm">Helpful</span>
+                          </button>
+
+                          <span className="text-gray-300">|</span>
+
+                          <button className="flex items-center gap-2 text-gray-500 hover:text-gray-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                            <span className="text-sm">Reply</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
