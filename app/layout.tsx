@@ -23,14 +23,14 @@ export const metadata: Metadata = {
     template: `%s - ${siteConfig.name}`,
   },
   description: siteConfig.description,
-  keywords: ["nextjs", "movemate"],
+  keywords: ["nextjs", ""],
   authors: [
     {
-      name: "vinhnt2002",
-      url: "https://portfolio-vinhnt2002.vercel.app",
+      name: "",
+      url: "",
     },
   ],
-  creator: "vinhnt2002",
+  creator: "",
   icons: {
     icon: "/images/icons_favicon/icon.png",
   },

@@ -545,17 +545,20 @@ const BakerySignUpPage = () => {
                   Đăng ký cửa hàng bánh
                 </CardTitle>
                 <CardDescription className="text-gray-600 dark:text-gray-300">
-                  Hoàn tất thông tin để trở thành đối tác bán bánh trên nền tảng CusCake
+                  Hoàn tất thông tin để trở thành đối tác bán bánh trên nền tảng
+                  CusCake
                 </CardDescription>
               </div>
             </div>
           </CardHeader>
-          
+
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Thông tin cửa hàng</h3>
-                
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                  Thông tin cửa hàng
+                </h3>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="bakery_name">Tên cửa hàng</Label>
@@ -566,10 +569,12 @@ const BakerySignUpPage = () => {
                       className="bg-white dark:bg-gray-700"
                     />
                     {errors.bakery_name && (
-                      <p className="text-sm text-red-500">{errors.bakery_name.message}</p>
+                      <p className="text-sm text-red-500">
+                        {errors.bakery_name.message}
+                      </p>
                     )}
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="owner_name">Tên chủ cửa hàng</Label>
                     <Input
@@ -579,10 +584,12 @@ const BakerySignUpPage = () => {
                       className="bg-white dark:bg-gray-700"
                     />
                     {errors.owner_name && (
-                      <p className="text-sm text-red-500">{errors.owner_name.message}</p>
+                      <p className="text-sm text-red-500">
+                        {errors.owner_name.message}
+                      </p>
                     )}
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
                     <Input
@@ -593,10 +600,12 @@ const BakerySignUpPage = () => {
                       className="bg-white dark:bg-gray-700"
                     />
                     {errors.email && (
-                      <p className="text-sm text-red-500">{errors.email.message}</p>
+                      <p className="text-sm text-red-500">
+                        {errors.email.message}
+                      </p>
                     )}
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="password">Mật khẩu</Label>
                     <Input
@@ -607,10 +616,12 @@ const BakerySignUpPage = () => {
                       className="bg-white dark:bg-gray-700"
                     />
                     {errors.password && (
-                      <p className="text-sm text-red-500">{errors.password.message}</p>
+                      <p className="text-sm text-red-500">
+                        {errors.password.message}
+                      </p>
                     )}
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="phone">Số điện thoại</Label>
                     <Input
@@ -620,10 +631,12 @@ const BakerySignUpPage = () => {
                       className="bg-white dark:bg-gray-700"
                     />
                     {errors.phone && (
-                      <p className="text-sm text-red-500">{errors.phone.message}</p>
+                      <p className="text-sm text-red-500">
+                        {errors.phone.message}
+                      </p>
                     )}
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="address">Địa chỉ</Label>
                     <Input
@@ -633,10 +646,12 @@ const BakerySignUpPage = () => {
                       className="bg-white dark:bg-gray-700"
                     />
                     {errors.address && (
-                      <p className="text-sm text-red-500">{errors.address.message}</p>
+                      <p className="text-sm text-red-500">
+                        {errors.address.message}
+                      </p>
                     )}
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="tax_code">Mã số thuế</Label>
                     <Input
@@ -646,10 +661,12 @@ const BakerySignUpPage = () => {
                       className="bg-white dark:bg-gray-700"
                     />
                     {errors.tax_code && (
-                      <p className="text-sm text-red-500">{errors.tax_code.message}</p>
+                      <p className="text-sm text-red-500">
+                        {errors.tax_code.message}
+                      </p>
                     )}
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="identity_card_number">Số CMND/CCCD</Label>
                     <Input
@@ -659,7 +676,9 @@ const BakerySignUpPage = () => {
                       className="bg-white dark:bg-gray-700"
                     />
                     {errors.identity_card_number && (
-                      <p className="text-sm text-red-500">{errors.identity_card_number.message}</p>
+                      <p className="text-sm text-red-500">
+                        {errors.identity_card_number.message}
+                      </p>
                     )}
                   </div>
 
@@ -677,10 +696,12 @@ const BakerySignUpPage = () => {
                       ))}
                     </select>
                     {errors.open_time && (
-                      <p className="text-sm text-red-500">{errors.open_time.message}</p>
+                      <p className="text-sm text-red-500">
+                        {errors.open_time.message}
+                      </p>
                     )}
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="close_time">Giờ đóng cửa</Label>
                     <select
@@ -695,7 +716,9 @@ const BakerySignUpPage = () => {
                       ))}
                     </select>
                     {errors.close_time && (
-                      <p className="text-sm text-red-500">{errors.close_time.message}</p>
+                      <p className="text-sm text-red-500">
+                        {errors.close_time.message}
+                      </p>
                     )}
                   </div>
 
@@ -708,7 +731,9 @@ const BakerySignUpPage = () => {
                       className="bg-white dark:bg-gray-700"
                     />
                     {errors.cake_description && (
-                      <p className="text-sm text-red-500">{errors.cake_description.message}</p>
+                      <p className="text-sm text-red-500">
+                        {errors.cake_description.message}
+                      </p>
                     )}
                   </div>
                   <div className="space-y-2">
@@ -720,7 +745,9 @@ const BakerySignUpPage = () => {
                       className="bg-white dark:bg-gray-700"
                     />
                     {errors.price_description && (
-                      <p className="text-sm text-red-500">{errors.price_description.message}</p>
+                      <p className="text-sm text-red-500">
+                        {errors.price_description.message}
+                      </p>
                     )}
                   </div>
                   <div className="space-y-2 md:col-span-2">
@@ -732,17 +759,19 @@ const BakerySignUpPage = () => {
                       className="bg-white dark:bg-gray-700"
                     />
                     {errors.bakery_description && (
-                      <p className="text-sm text-red-500">{errors.bakery_description.message}</p>
+                      <p className="text-sm text-red-500">
+                        {errors.bakery_description.message}
+                      </p>
                     )}
                   </div>
                 </div>
               </div>
-              
+
               <div className="border-t border-gray-200 dark:border-gray-700 pt-6 space-y-4">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                   Hình ảnh cửa hàng
                 </h3>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <ImageUploader
                     label="Logo cửa hàng"
@@ -751,7 +780,7 @@ const BakerySignUpPage = () => {
                     onUpload={handleAvatarImageUpload}
                     icon={<Store className="h-10 w-10 text-gray-400" />}
                   />
-                  
+
                   <ImageUploader
                     label="Hình ảnh cửa hàng"
                     imageUrl={shopImageUrl}
@@ -761,12 +790,12 @@ const BakerySignUpPage = () => {
                   />
                 </div>
               </div>
-              
+
               <div className="border-t border-gray-200 dark:border-gray-700 pt-6 space-y-4">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                   Ảnh CMND/CCCD
                 </h3>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <ImageUploader
                     label="Mặt trước CMND/CCCD"
@@ -774,7 +803,7 @@ const BakerySignUpPage = () => {
                     isLoading={frontCardImageLoading}
                     onUpload={handleFrontCardImageUpload}
                   />
-                  
+
                   <ImageUploader
                     label="Mặt sau CMND/CCCD"
                     imageUrl={backCardImageUrl}
@@ -783,7 +812,7 @@ const BakerySignUpPage = () => {
                   />
                 </div>
               </div>
-              
+
               <div className="border-t border-gray-200 dark:border-gray-700 pt-6 space-y-4">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                   Giấy tờ pháp lý
@@ -803,11 +832,19 @@ const BakerySignUpPage = () => {
                   />
                 </div>
               </div>
-              
+
               <div className="flex flex-col pt-6">
                 <Button
                   type="submit"
-                  disabled={isLoading || shopImageLoading || avatarImageLoading || frontCardImageLoading || backCardImageLoading || businessLicenseImageLoading || foodSafetyCertificateImageLoading}
+                  disabled={
+                    isLoading ||
+                    shopImageLoading ||
+                    avatarImageLoading ||
+                    frontCardImageLoading ||
+                    backCardImageLoading ||
+                    businessLicenseImageLoading ||
+                    foodSafetyCertificateImageLoading
+                  }
                   className="w-full bg-custom-teal hover:bg-custom-teal/90 text-white rounded-lg py-2.5"
                 >
                   {isLoading ? (
@@ -820,7 +857,8 @@ const BakerySignUpPage = () => {
                   )}
                 </Button>
                 <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-4">
-                  Bằng cách đăng ký, bạn đồng ý với các Điều khoản dịch vụ và Chính sách bảo mật của chúng tôi.
+                  Bằng cách đăng ký, bạn đồng ý với các Điều khoản dịch vụ và
+                  Chính sách bảo mật của chúng tôi.
                 </p>
               </div>
             </form>
@@ -839,13 +877,19 @@ const BakerySignUpPage = () => {
               Đăng ký cửa hàng thành công!
             </DialogTitle>
             <DialogDescription className="text-center text-gray-600 dark:text-gray-300">
-              Hệ thống đang xử lý thông tin của bạn. Vui lòng đợi xác thực từ đội ngũ quản trị viên trước khi bạn có thể bán sản phẩm trên nền tảng.
+              Hệ thống đang xử lý thông tin của bạn. Vui lòng đợi xác thực từ
+              đội ngũ quản trị viên trước khi bạn có thể bán sản phẩm trên nền
+              tảng.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex flex-col space-y-3 sm:flex-row sm:space-x-3 sm:space-y-0 sm:justify-center mt-4">
-          
             <Button
-              onClick={() => window.open('https://cake-ordering-dashboard-reveiw3.vercel.app/', '_blank')}
+              onClick={() =>
+                window.open(
+                  "https://cake-ordering-dashboard.vercel.app/",
+                  "_blank"
+                )
+              }
               className="flex-1 sm:flex-none bg-custom-teal hover:bg-custom-teal/90 text-white"
             >
               Đi đến trang quản lý
@@ -854,7 +898,7 @@ const BakerySignUpPage = () => {
         </DialogContent>
       </Dialog>
     </>
-  ) ;
+  );
 } ;
 
 export default BakerySignUpPage ; 
