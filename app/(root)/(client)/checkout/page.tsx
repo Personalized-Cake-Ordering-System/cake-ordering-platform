@@ -199,6 +199,46 @@ const CheckoutPage = () => {
     }).format(amount);
   };
 
+  const formatDeliveryTime = (shippingTimeValue: number, distance?: number) => {
+    // If we have distance, calculate a more realistic time
+    // Assume average speed of 30 km/h in city traffic
+    let totalMinutes: number;
+    
+    if (distance && distance > 0) {
+      // Calculate time based on distance (30 km/h average speed)
+      const timeInHours = distance / 30;
+      totalMinutes = Math.ceil(timeInHours * 60);
+      
+      // Add buffer time for preparation and delivery logistics
+      totalMinutes += 15; // 15 minutes buffer
+      
+      // Minimum delivery time should be 30 minutes
+      totalMinutes = Math.max(totalMinutes, 30);
+    } else {
+      // Fallback to API value, but check if it seems to be in hours or minutes
+      if (shippingTimeValue < 5) {
+        // Likely in hours, convert to minutes
+        totalMinutes = Math.ceil(shippingTimeValue * 60);
+      } else {
+        // Likely already in minutes
+        totalMinutes = Math.ceil(shippingTimeValue);
+      }
+    }
+    
+    if (totalMinutes < 60) {
+      return `${totalMinutes} phút`;
+    } else {
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      
+      if (minutes === 0) {
+        return `${hours} tiếng`;
+      } else {
+        return `${hours} tiếng ${minutes} phút`;
+      }
+    }
+  };
+
   // Calculate totals based on actual cart items
   const subtotal = cartItems.reduce((sum, item) => sum + item.sub_total_price, 0);
   const deliveryFee = deliveryType === 'DELIVERY' ? (standardDelivery || 0) : 0;
@@ -714,7 +754,7 @@ const CheckoutPage = () => {
           {shippingInfo && (
             <div className="text-xs text-muted-foreground pl-2">
               <p>Khoảng cách: {shippingInfo.shipping_distance.toFixed(1)} km</p>
-              <p>Thời gian dự kiến: {Math.ceil(shippingInfo.shipping_time)} phút</p>
+              <p>Thời gian dự kiến: {formatDeliveryTime(shippingInfo.shipping_time, shippingInfo.shipping_distance)}</p>
             </div>
           )}
         </div>

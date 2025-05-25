@@ -788,8 +788,48 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
         return new Intl.NumberFormat('vi-VN' , {
             style: 'currency' ,
             currency: 'VND'
-        }).format(amount) ;
-    } ;
+        }).format(amount);
+    };
+
+    const formatDeliveryTime = (shippingTimeValue: number, distance?: number) => {
+        // If we have distance, calculate a more realistic time
+        // Assume average speed of 30 km/h in city traffic
+        let totalMinutes: number;
+        
+        if (distance && distance > 0) {
+            // Calculate time based on distance (30 km/h average speed)
+            const timeInHours = distance / 30;
+            totalMinutes = Math.ceil(timeInHours * 60);
+            
+            // Add buffer time for preparation and delivery logistics
+            totalMinutes += 15; // 15 minutes buffer
+            
+            // Minimum delivery time should be 30 minutes
+            totalMinutes = Math.max(totalMinutes, 30);
+        } else {
+            // Fallback to API value, but check if it seems to be in hours or minutes
+            if (shippingTimeValue < 5) {
+                // Likely in hours, convert to minutes
+                totalMinutes = Math.ceil(shippingTimeValue * 60);
+            } else {
+                // Likely already in minutes
+                totalMinutes = Math.ceil(shippingTimeValue);
+            }
+        }
+        
+        if (totalMinutes < 60) {
+            return `${totalMinutes} phút`;
+        } else {
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            
+            if (minutes === 0) {
+                return `${hours} tiếng`;
+            } else {
+                return `${hours} tiếng ${minutes} phút`;
+            }
+        }
+    };
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -1620,7 +1660,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                                     <div className="flex items-center gap-3">
                                         <Clock className="h-5 w-5 text-custom-teal dark:text-custom-teal/90" />
                                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                                            Thời gian giao hàng dự kiến: {Math.round(order.shipping_time * 60)} phút
+                                            Thời gian giao hàng dự kiến: {formatDeliveryTime(order.shipping_time, order.shipping_distance)}
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-3">
