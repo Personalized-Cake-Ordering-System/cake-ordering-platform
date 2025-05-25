@@ -3704,7 +3704,6 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                         : 'btn-primary neon-purple'}`}
                             >
                                 <span className="relative z-10 flex items-center justify-center gap-3">
-                                    <span className="text-xl">🛒</span>
                                     THÊM VÀO GIỎ HÀNG
                                 </span>
                                 {(completedSteps.cake && completedSteps.decoration && completedSteps.message && completedSteps.extras) && (
