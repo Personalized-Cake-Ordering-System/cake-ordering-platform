@@ -289,7 +289,7 @@ const CakeDetail = () => {
         quantity: quantity,
         bakeryId: cakeData.bakery_id || '',
         config: {
-          price: cakeData.available_cake_price,
+          price: cakeData?.available_cake_price || 0,
           size: cakeData.available_cake_size || "6",
           sponge: "",
           filling: "",
@@ -310,7 +310,7 @@ const CakeDetail = () => {
           description: cakeData.available_cake_description,
           type: cakeData.available_cake_type
         },
-        price: cakeData.available_cake_price * quantity
+        price: (cakeData?.available_cake_price || 0) * quantity
       };
       
       // Check if the bakeryId is valid
@@ -469,21 +469,38 @@ const CakeDetail = () => {
         }
       }
       
-      // Prepare the new cart item for API
-      const newCartItem = {
-        cake_name: cartItem.config.name,
-        main_image_id: cakeData?.available_cake_image_files[0]?.id || "",
-        main_image: cakeData?.available_cake_image_files[0] || null,
-        quantity: cartItem.quantity,
-        cake_note: "",
-        sub_total_price: cartItem.price,
-        available_cake_id: cartItem.id,
-        custom_cake_id: null,
-        bakery_id: cartItem.bakeryId || ""
-      };
+      // Check if the same cake already exists in API cart
+      const existingItemIndex = existingCartItems.findIndex(
+        (item: any) => item.available_cake_id === cartItem.id
+      );
       
-      // Add the new item to existing items
-      const updatedCartItems = [...existingCartItems, newCartItem];
+      let updatedCartItems;
+      
+      if (existingItemIndex !== -1) {
+        // Item exists, update quantity
+        updatedCartItems = [...existingCartItems];
+        const existingItem = updatedCartItems[existingItemIndex];
+        updatedCartItems[existingItemIndex] = {
+          ...existingItem,
+          quantity: existingItem.quantity + cartItem.quantity,
+          sub_total_price: (cakeData?.available_cake_price || 0) * (existingItem.quantity + cartItem.quantity)
+        };
+      } else {
+        // New item, add to cart
+        const newCartItem = {
+          cake_name: cartItem.config.name,
+          main_image_id: cakeData?.available_cake_image_files[0]?.id || "",
+          main_image: cakeData?.available_cake_image_files[0] || null,
+          quantity: cartItem.quantity,
+          cake_note: "",
+          sub_total_price: cartItem.price,
+          available_cake_id: cartItem.id,
+          custom_cake_id: null,
+          bakery_id: cartItem.bakeryId || ""
+        };
+        
+        updatedCartItems = [...existingCartItems, newCartItem];
+      }
       
       // Prepare the complete cart payload with all items
       const cartPayload = {
@@ -537,7 +554,7 @@ const CakeDetail = () => {
       addToWishlist({
         id: cakeData.id,
         name: cakeData.available_cake_name,
-        price: cakeData.available_cake_price,
+        price: cakeData?.available_cake_price || 0,
         image: cakeData.available_cake_image_files?.[0]?.file_url || '/placeholder-cake.jpg',
       });
       toast.success('Added to wishlist');

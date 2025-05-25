@@ -114,7 +114,7 @@ export const useCart = create<CartStore>()(
                 
                 const { currentBakeryId, items } = get();
                 
-                // If cart is empty or bakery IDs match, add normally
+                // If cart is empty or bakery IDs match, proceed
                 if (!currentBakeryId || items.length === 0) {
                     // First item in cart - set bakery ID
                     set({
@@ -127,15 +127,32 @@ export const useCart = create<CartStore>()(
                     });
                     return true;
                 } else if (currentBakeryId === itemBakeryId) {
-                    // Same bakery, add to existing cart
-                    set({
-                        items: [...items, { 
-                            ...item, 
-                            price: item.price || item.config.price, 
-                            bakeryId: itemBakeryId 
-                        }]
-                    });
-                    return true;
+                    // Same bakery, check if item already exists
+                    const existingItemIndex = items.findIndex(cartItem => cartItem.id === item.id);
+                    
+                    if (existingItemIndex !== -1) {
+                        // Item exists, update quantity
+                        const updatedItems = [...items];
+                        const existingItem = updatedItems[existingItemIndex];
+                        updatedItems[existingItemIndex] = {
+                            ...existingItem,
+                            quantity: existingItem.quantity + (item.quantity || 1),
+                            price: existingItem.config.price * (existingItem.quantity + (item.quantity || 1))
+                        };
+                        
+                        set({ items: updatedItems });
+                        return true;
+                    } else {
+                        // New item, add to cart
+                        set({
+                            items: [...items, { 
+                                ...item, 
+                                price: item.price || item.config.price, 
+                                bakeryId: itemBakeryId 
+                            }]
+                        });
+                        return true;
+                    }
                 } else {
                     // Different bakery - modal handling should be done at component level
                     // This function should only add items from the same bakery or to an empty cart

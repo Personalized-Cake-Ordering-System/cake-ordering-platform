@@ -86,6 +86,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     const addToCart = (config: ExtendedCakeConfig, bakeryId?: string) => {
         const price = calculatePrice(config);
+        
+        // Check if item with same config already exists
+        const existingItem = items.find(item => 
+            item.config.name === config.name && 
+            item.bakeryId === (bakeryId || '')
+        );
+        
+        if (existingItem) {
+            // Update quantity instead of adding new item
+            updateQuantity(existingItem.id, existingItem.quantity + 1);
+            return true;
+        }
+        
         const newId = generateId();
         
         // Create the cart item
