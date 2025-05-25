@@ -2,7 +2,7 @@
 import { useCart } from '@/app/store/useCart';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { motion } from 'framer-motion';
-import { AlertCircle, ArrowLeft, Check, ChevronDown, ChevronUp, CreditCard, MapPin, PackageCheck, ShieldCheck, Ticket, Wallet, Truck } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Check, ChevronDown, ChevronUp, CreditCard, MapPin, PackageCheck, ShieldCheck, Ticket, Wallet, Truck, User, Search, ShoppingBag } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import * as React from 'react';
@@ -41,7 +41,6 @@ import { useRouter } from 'next/navigation';
 import { CheckoutFormValues } from './types';
 import { createOrder } from './api';
 import { cartService } from '@/app/services/cartService';
-import { ShoppingBag } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { voucherService } from '@/app/services/voucherService';
 import axios from 'axios';
@@ -59,14 +58,41 @@ type GeocodingResponse = {
   status: string;
 };
 
+// Add interface for Customer data
+interface CustomerData {
+  id: string;
+  name: string;
+  phone: string;
+  address: string;
+  latitude: string;
+  longitude: string;
+  email: string;
+  account_type: string;
+  created_at: string;
+  updated_at: string;
+  is_deleted: boolean;
+}
+
+// Add interface for address suggestions
+interface AddressSuggestion {
+  place_id: string;
+  formatted_address: string;
+  geometry: {
+    location: {
+      lat: number;
+      lng: number;
+    }
+  };
+}
+
 // Form schema for checkout validation
 const checkoutSchema = z.object({
   // Delivery details
   fullName: z.string().min(2, { message: 'Full name is required' }),
   email: z.string().email({ message: 'Please enter a valid email address' }),
   phone: z.string().min(10, { message: 'Phone number should be at least 10 digits' }),
-  province: z.string().min(2, { message: 'Tỉnh/Thành phố không được để trống' }),
-  district: z.string().min(2, { message: 'Quận/Huyện không được để trống' }),
+  province: z.string().optional(),
+  district: z.string().optional(),
   address: z.string().min(5, { message: 'Địa chỉ không được để trống' }),
   deliveryType: z.enum(['DELIVERY', 'PICKUP']),
   paymentType: z.enum(['QR_CODE', 'WALLET']),
@@ -75,6 +101,16 @@ const checkoutSchema = z.object({
   latitude: z.number().optional(),
   longitude: z.number().optional(),
   voucher_code: z.string().optional(),
+  useCurrentAddress: z.boolean().optional(),
+}).refine((data) => {
+  // If using current address, only require basic fields
+  if (data.useCurrentAddress) {
+    return data.fullName && data.email && data.phone && data.address;
+  }
+  // If using new address, require province and district
+  return data.fullName && data.email && data.phone && data.address && data.province && data.district;
+}, {
+  message: "Vui lòng điền đầy đủ thông tin bắt buộc",
 });
 
 // Animation variants
@@ -166,6 +202,15 @@ const CheckoutPage = () => {
     shipping_distance: number;
     shipping_fee: number;
   } | null>(null);
+  
+  // New states for customer data and address handling
+  const [customerData, setCustomerData] = React.useState<CustomerData | null>(null);
+  const [useCurrentAddress, setUseCurrentAddress] = React.useState(true);
+  const [addressSuggestions, setAddressSuggestions] = React.useState<AddressSuggestion[]>([]);
+  const [showAddressSuggestions, setShowAddressSuggestions] = React.useState(false);
+  const [isSearchingAddress, setIsSearchingAddress] = React.useState(false);
+  const [addressSearchQuery, setAddressSearchQuery] = React.useState('');
+  
   const { clearCart, deleteCartAPI } = useCart();
 
   // Delivery fees
@@ -184,6 +229,7 @@ const CheckoutPage = () => {
       deliveryType: 'DELIVERY',
       paymentType: 'QR_CODE',
       specialInstructions: '',
+      useCurrentAddress: true,
     },
   });
 
@@ -297,7 +343,11 @@ const CheckoutPage = () => {
     try {
       const accessToken = localStorage.getItem('accessToken');
       if (!accessToken) return null;
-
+      
+      console.log('Bakery Lat:', bakeryLat);
+      console.log('Bakery Lng:', bakeryLng);
+      console.log('Order Lat:', orderLat);
+      console.log('Order Lng:', orderLng);
       const response = await axios.get(
         `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/shippings?bakeryLat=${bakeryLat}&bakeryLng=${bakeryLng}&orderLat=${orderLat}&orderLng=${orderLng}`,
         {
@@ -359,10 +409,248 @@ const CheckoutPage = () => {
     }
   };
 
-  // Add logging to useEffect for cart items
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Function to fetch customer data
+  const fetchCustomerData = async () => {
+    try {
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) return null;
+
+      const tokenParts = accessToken.split('.');
+      const payload = JSON.parse(atob(tokenParts[1]));
+      const customerId = payload.id;
+
+      const response = await axios.get(
+        `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/customers/${customerId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'accept': '*/*'
+          }
+        }
+      );
+
+      if (response.data.status_code === 200) {
+        const customer = response.data.payload;
+        setCustomerData(customer);
+        
+        // Auto-fill form with customer data if using current address
+        if (useCurrentAddress) {
+          form.setValue('fullName', customer.name || '');
+          form.setValue('email', customer.email || '');
+          form.setValue('phone', customer.phone || '');
+          form.setValue('address', customer.address || '');
+          
+          // Don't parse address when using current address since we have exact coordinates
+          // Only parse if coordinates are missing for some reason
+          if (customer.address && (!customer.latitude || !customer.longitude)) {
+            console.log('Customer coordinates missing, attempting to parse address');
+            await parseAndFillAddress(customer.address);
+          } else if (customer.latitude && customer.longitude) {
+            console.log('Using customer coordinates:', customer.latitude, customer.longitude);
+            // We have exact coordinates, no need to geocode
+          }
+        }
+        
+        return customer;
+      }
+    } catch (error) {
+      console.error('Error fetching customer data:', error);
+    }
+    return null;
+  };
+
+  // Function to parse address and extract province/district
+  const parseAndFillAddress = async (address: string) => {
+    if (!address) return;
+    
+    try {
+      // Try to match with Vietnam provinces data using more flexible matching
+      const addressParts = address.split(',').map(part => part.trim().toLowerCase());
+      
+      // Find matching province with more flexible matching
+      let foundProvince = null;
+      let foundDistrict = null;
+      
+      // Try exact matches first
+      for (const province of vietnamProvinces) {
+        const provinceName = province.name.toLowerCase();
+        
+        // Check if any part of address contains province name
+        const provinceMatch = addressParts.some(part => 
+          part.includes(provinceName) || 
+          provinceName.includes(part) ||
+          part.includes(provinceName.replace('thành phố ', '').replace('tỉnh ', '')) ||
+          part.includes(provinceName.replace('tp. ', '').replace('tp ', ''))
+        );
+        
+        if (provinceMatch) {
+          foundProvince = province;
+          
+          // Find matching district within this province
+          for (const district of province.districts) {
+            const districtName = district.name.toLowerCase();
+            const districtMatch = addressParts.some(part =>
+              part.includes(districtName) ||
+              districtName.includes(part) ||
+              part.includes(districtName.replace('quận ', '').replace('huyện ', '').replace('thị xã ', '').replace('thành phố ', ''))
+            );
+            
+            if (districtMatch) {
+              foundDistrict = district;
+              break;
+            }
+          }
+          break;
+        }
+      }
+      
+      // If no exact match, try partial matching
+      if (!foundProvince) {
+        for (const province of vietnamProvinces) {
+          const provinceName = province.name.toLowerCase();
+          const provinceWords = provinceName.split(' ');
+          
+          const hasProvinceWord = addressParts.some(part => 
+            provinceWords.some(word => 
+              word.length > 2 && (part.includes(word) || word.includes(part))
+            )
+          );
+          
+          if (hasProvinceWord) {
+            foundProvince = province;
+            
+            // Try to find district
+            for (const district of province.districts) {
+              const districtName = district.name.toLowerCase();
+              const districtWords = districtName.split(' ');
+              
+              const hasDistrictWord = addressParts.some(part =>
+                districtWords.some(word =>
+                  word.length > 2 && (part.includes(word) || word.includes(part))
+                )
+              );
+              
+              if (hasDistrictWord) {
+                foundDistrict = district;
+                break;
+              }
+            }
+            break;
+          }
+        }
+      }
+      
+      // Apply the found province and district
+      if (foundProvince) {
+        console.log('Found province:', foundProvince.name);
+        setSelectedProvince(foundProvince.code);
+        setAvailableDistricts(foundProvince.districts);
+        form.setValue('province', foundProvince.name);
+        
+        if (foundDistrict) {
+          console.log('Found district:', foundDistrict.name);
+          form.setValue('district', foundDistrict.name);
+        } else {
+          // If no district found, try to set a default or clear
+          form.setValue('district', '');
+        }
+             } else {
+         console.log('No province found for address:', address);
+         
+         // Special handling for common address patterns
+         if (address.toLowerCase().includes('thống nhất') || address.toLowerCase().includes('tân bình')) {
+           // Likely in Ho Chi Minh City
+           const hcmProvince = vietnamProvinces.find(p => p.name.toLowerCase().includes('hồ chí minh'));
+           if (hcmProvince) {
+             console.log('Setting default to Ho Chi Minh City');
+             setSelectedProvince(hcmProvince.code);
+             setAvailableDistricts(hcmProvince.districts);
+             form.setValue('province', hcmProvince.name);
+             
+             // Try to find Tan Binh district
+             const tanBinhDistrict = hcmProvince.districts.find(d => 
+               d.name.toLowerCase().includes('tân bình')
+             );
+             if (tanBinhDistrict) {
+               form.setValue('district', tanBinhDistrict.name);
+             }
+           }
+         } else {
+           // Try geocoding as fallback
+           const geocodeResult = await geocodeAddress(address);
+           if (geocodeResult) {
+             console.log('Geocoding result:', geocodeResult);
+           }
+         }
+       }
+    } catch (error) {
+      console.error('Error parsing address:', error);
+    }
+  };
+
+  // Function to search addresses using Goong API
+  const searchAddresses = async (query: string) => {
+    if (!query || query.length < 3) {
+      setAddressSuggestions([]);
+      return;
+    }
+
+    setIsSearchingAddress(true);
+    try {
+      const API_KEY_GOONG = '2R2HQynx7ypczZZcxS1w7uuJaxXIGoeXymvGGx0u';
+      const encodedQuery = encodeURIComponent(query);
+      const response = await fetch(
+        `https://rsapi.goong.io/Place/AutoComplete?api_key=${API_KEY_GOONG}&input=${encodedQuery}&location=10.8230989,106.6296638&radius=50000`
+      );
+      
+      const data = await response.json();
+      
+      if (data.predictions) {
+        const suggestions: AddressSuggestion[] = data.predictions.map((prediction: any) => ({
+          place_id: prediction.place_id,
+          formatted_address: prediction.description,
+          geometry: {
+            location: {
+              lat: 0, // Will be filled when selected
+              lng: 0
+            }
+          }
+        }));
+        setAddressSuggestions(suggestions);
+        setShowAddressSuggestions(true);
+      }
+    } catch (error) {
+      console.error('Error searching addresses:', error);
+    } finally {
+      setIsSearchingAddress(false);
+    }
+  };
+
+  // Function to get place details and coordinates
+  const getPlaceDetails = async (placeId: string) => {
+    try {
+      const API_KEY_GOONG = '2R2HQynx7ypczZZcxS1w7uuJaxXIGoeXymvGGx0u';
+      const response = await fetch(
+        `https://rsapi.goong.io/Place/Detail?place_id=${placeId}&api_key=${API_KEY_GOONG}`
+      );
+      
+      const data = await response.json();
+      
+      if (data.result) {
+        return {
+          formatted_address: data.result.formatted_address,
+          location: data.result.geometry.location
+        };
+      }
+    } catch (error) {
+      console.error('Error getting place details:', error);
+    }
+    return null;
+  };
+
+  // Updated useEffect for cart items and customer data
   React.useEffect(() => {
-    const fetchCart = async () => {
+    const fetchData = async () => {
       const accessToken = localStorage.getItem('accessToken');
       console.log('Access Token:', accessToken ? 'Found' : 'Not found');
 
@@ -373,6 +661,7 @@ const CheckoutPage = () => {
       }
 
       try {
+        // Fetch cart data
         console.log('Fetching cart data...');
         const response = await cartService.getCart(accessToken);
         console.log('Cart API Response:', response);
@@ -384,15 +673,19 @@ const CheckoutPage = () => {
         }
 
         setCartItems(response.payload.cartItems as CartItem[]);
+
+        // Fetch customer data
+        await fetchCustomerData();
+        
       } catch (err) {
-        console.error('Error fetching cart:', err);
+        console.error('Error fetching data:', err);
         setError('Failed to fetch cart items');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCart();
+    fetchData();
   }, []);
 
   // Add useEffect to fetch bakery details when bakeryId is available
@@ -549,12 +842,61 @@ const CheckoutPage = () => {
   }, [fetchCustomerVouchers]);
 
   // Add useEffect to fetch vouchers when bakery_id is available
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   React.useEffect(() => {
     if (cartItems.length > 0 && cartItems[0].bakery_id) {
       fetchVouchers(cartItems[0].bakery_id);
     }
   }, [cartItems, fetchVouchers]);
+
+  // Add useEffect to handle address changes and shipping calculation
+  React.useEffect(() => {
+    if (useCurrentAddress && customerData && customerData.address && customerData.latitude && customerData.longitude) {
+      // Calculate shipping for current address
+      if (bakery && bakery.latitude && bakery.longitude) {
+        const calculateShippingForCurrentAddress = async () => {
+          setIsCalculatingShipping(true);
+          try {
+            const shippingData = await fetchShippingInfo(
+              parseFloat(bakery.latitude),
+              parseFloat(bakery.longitude),
+              parseFloat(customerData.latitude),
+              parseFloat(customerData.longitude)
+            );
+            
+            if (shippingData) {
+              setShippingInfo(shippingData);
+            }
+          } catch (error) {
+            console.error('Error calculating shipping for current address:', error);
+          } finally {
+            setIsCalculatingShipping(false);
+          }
+        };
+        
+        calculateShippingForCurrentAddress();
+      }
+    } else if (!useCurrentAddress) {
+      // Clear shipping info when switching to new address
+      setShippingInfo(null);
+    }
+  }, [useCurrentAddress, customerData, bakery]);
+
+  // Add useEffect to debug and verify customer coordinates
+  React.useEffect(() => {
+    if (customerData && useCurrentAddress) {
+      console.log('Customer data loaded:', customerData);
+      console.log('Customer address:', customerData.address);
+      console.log('Customer coordinates:', customerData.latitude, customerData.longitude);
+      
+      // Only parse address if coordinates are missing
+      if (customerData.address && (!customerData.latitude || !customerData.longitude)) {
+        console.log('Customer coordinates missing, attempting to parse address:', customerData.address);
+        parseAndFillAddress(customerData.address);
+      } else {
+        console.log('Using exact customer coordinates - no geocoding needed');
+      }
+    }
+  }, [customerData, useCurrentAddress]);
 
   // Update handleVoucherSelect to handle both types of vouchers
   const handleVoucherSelect = (voucher: any) => {
@@ -803,8 +1145,39 @@ const CheckoutPage = () => {
     setIsProcessing(true);
 
     try {
-      const fullAddress = `${data.address}, ${data.district}, ${data.province}`;
-      const geocodeResult = await geocodeAddress(fullAddress);
+      // Build full address based on whether using current address or not
+      let fullAddress: string;
+      let geocodeResult: any;
+      
+      if (useCurrentAddress && customerData) {
+        // Use customer's saved address and coordinates directly from database
+        fullAddress = customerData.address;
+        
+        // Validate that we have valid coordinates
+        if (customerData.latitude && customerData.longitude) {
+          const lat = parseFloat(customerData.latitude);
+          const lng = parseFloat(customerData.longitude);
+          
+          // Check if coordinates are valid numbers
+          if (!isNaN(lat) && !isNaN(lng)) {
+            console.log('Using exact customer coordinates from database:', lat, lng);
+            geocodeResult = {
+              formatted_address: customerData.address,
+              location: { lat, lng }
+            };
+          } else {
+            console.error('Invalid customer coordinates, falling back to geocoding');
+            geocodeResult = await geocodeAddress(fullAddress);
+          }
+        } else {
+          console.error('Customer coordinates missing, falling back to geocoding');
+          geocodeResult = await geocodeAddress(fullAddress);
+        }
+      } else {
+        // Build address from form fields and geocode
+        fullAddress = `${data.address}, ${data.district}, ${data.province}`;
+        geocodeResult = await geocodeAddress(fullAddress);
+      }
 
       if (geocodeResult) {
         const accessToken = localStorage.getItem('accessToken');
@@ -1093,7 +1466,117 @@ const CheckoutPage = () => {
                   <h2 className="text-xl font-bold">Delivery Information</h2>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Address Selection Option */}
+                {customerData && (
+                  <div className="mb-6">
+                    <Label className="text-base font-semibold mb-4 block">Địa chỉ giao hàng</Label>
+                    <RadioGroup
+                      value={useCurrentAddress ? 'current' : 'new'}
+                      onValueChange={(value) => {
+                        const useCurrent = value === 'current';
+                        setUseCurrentAddress(useCurrent);
+                        
+                        if (useCurrent && customerData) {
+                          // Auto-fill with customer data
+                          form.setValue('fullName', customerData.name || '');
+                          form.setValue('email', customerData.email || '');
+                          form.setValue('phone', customerData.phone || '');
+                          form.setValue('address', customerData.address || '');
+                          
+                          // Don't parse address when switching to current address since we have exact coordinates
+                          console.log('Switching to current address with coordinates:', customerData.latitude, customerData.longitude);
+                        } else {
+                          // Clear form for new address
+                          form.setValue('fullName', '');
+                          form.setValue('email', '');
+                          form.setValue('phone', '');
+                          form.setValue('province', '');
+                          form.setValue('district', '');
+                          form.setValue('address', '');
+                          setSelectedProvince('');
+                          setAvailableDistricts([]);
+                        }
+                      }}
+                      className="flex flex-col md:flex-row gap-4"
+                    >
+                      <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="flex-1"
+                      >
+                        <Label
+                          htmlFor="current"
+                          className={`
+                            flex flex-col p-4 border-2 rounded-lg cursor-pointer h-full transition-all duration-200
+                            ${useCurrentAddress
+                              ? 'border-primary bg-primary/5 dark:bg-primary/10 shadow-md'
+                              : 'border-muted hover:border-primary/50 dark:border-muted-foreground/30 dark:hover:border-primary/50'}
+                          `}
+                        >
+                          <div className="flex items-start mb-1">
+                            <div className="flex items-center justify-center mt-1 mr-3">
+                              <RadioGroupItem value="current" id="current" className="mt-0" />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <div className={`p-1.5 rounded-md ${useCurrentAddress ? 'bg-primary/20 dark:bg-primary/30' : 'bg-muted dark:bg-muted/30'}`}>
+                                  <User className={`h-5 w-5 ${useCurrentAddress ? 'text-primary' : 'text-muted-foreground'}`} />
+                                </div>
+                                <span className={`font-medium ${useCurrentAddress ? 'text-primary' : ''}`}>Địa chỉ hiện tại</span>
+                              </div>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                {customerData.address || 'Chưa có địa chỉ'}
+                              </p>
+                              <Badge variant="outline" className="mt-2 bg-secondary/10">Đã lưu</Badge>
+                            </div>
+                          </div>
+                        </Label>
+                      </motion.div>
+
+                      <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="flex-1"
+                      >
+                        <Label
+                          htmlFor="new"
+                          className={`
+                            flex flex-col p-4 border-2 rounded-lg cursor-pointer h-full transition-all duration-200
+                            ${!useCurrentAddress
+                              ? 'border-primary bg-primary/5 dark:bg-primary/10 shadow-md'
+                              : 'border-muted hover:border-primary/50 dark:border-muted-foreground/30 dark:hover:border-primary/50'}
+                          `}
+                        >
+                          <div className="flex items-start mb-1">
+                            <div className="flex items-center justify-center mt-1 mr-3">
+                              <RadioGroupItem value="new" id="new" className="mt-0" />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <div className={`p-1.5 rounded-md ${!useCurrentAddress ? 'bg-primary/20 dark:bg-primary/30' : 'bg-muted dark:bg-muted/30'}`}>
+                                  <MapPin className={`h-5 w-5 ${!useCurrentAddress ? 'text-primary' : 'text-muted-foreground'}`} />
+                                </div>
+                                <span className={`font-medium ${!useCurrentAddress ? 'text-primary' : ''}`}>Địa chỉ khác</span>
+                              </div>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Nhập địa chỉ giao hàng mới
+                              </p>
+                              <Badge variant="outline" className="mt-2 bg-secondary/10">Tùy chỉnh</Badge>
+                            </div>
+                          </div>
+                        </Label>
+                      </motion.div>
+                    </RadioGroup>
+                  </div>
+                )}
+
+                <Separator className="my-6" />
+
+                {/* Form fields layout - conditional based on address type */}
+                {useCurrentAddress ? (
+                                    // When using current address - only show basic info and address
+                    <>
+                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <FormField
                     control={form.control}
                     name="fullName"
@@ -1101,7 +1584,12 @@ const CheckoutPage = () => {
                       <FormItem>
                         <FormLabel>Họ và Tên</FormLabel>
                         <FormControl>
-                          <Input placeholder="Thanh Tâm" className="h-[3.5rem]" {...field} />
+                            <Input 
+                              placeholder="Tên hiện tại" 
+                              className="h-[3.5rem] bg-primary/5 border-primary/30 text-foreground font-medium"
+                              readOnly={true}
+                              {...field} 
+                            />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -1115,7 +1603,13 @@ const CheckoutPage = () => {
                       <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="your@email.com" className="h-[3.5rem]" {...field} />
+                            <Input 
+                              type="email" 
+                              placeholder="Email hiện tại" 
+                              className="h-[3.5rem] bg-primary/5 border-primary/30 text-foreground font-medium"
+                              readOnly={true}
+                              {...field} 
+                            />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -1129,162 +1623,328 @@ const CheckoutPage = () => {
                       <FormItem>
                         <FormLabel>Số điện thoại</FormLabel>
                         <FormControl>
-                          <Input placeholder="(123) 456-7890" className="h-[3.5rem]" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="province"
-                    render={({ field }) => (
-                      <FormItem className="relative">
-                        <FormLabel className="text-base font-semibold mb-2">Tỉnh/Thành phố</FormLabel>
-                        <Select
-                          onValueChange={handleProvinceChange}
-                          defaultValue={selectedProvince}
-                        >
-                          <FormControl>
-                            <SelectTrigger
-                              className="w-full min-h-[3.5rem] px-4 bg-background border-2 transition-all duration-200 
-                              ease-in-out hover:border-primary focus:border-primary rounded-xl shadow-sm
-                              hover:shadow-md focus:shadow-md"
-                            >
-                              <SelectValue
-                                placeholder="Chọn tỉnh/thành phố"
-                                className="text-base placeholder:text-muted-foreground/70"
-                              />
-                            </SelectTrigger>
+                            <Input 
+                              placeholder="SĐT hiện tại" 
+                              className="h-[3.5rem] bg-primary/5 border-primary/30 text-foreground font-medium"
+                              readOnly={true}
+                              {...field} 
+                            />
                           </FormControl>
-                          <SelectContent
-                            className="max-h-[300px] overflow-y-auto rounded-xl border-2 border-border shadow-2xl bg-popover 
-                            p-2 z-[100] relative"
-                            style={{
-                              position: 'fixed',
-                              backgroundColor: 'hsl(var(--popover))',
-                              backdropFilter: 'none'
-                            }}
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Only address field for current address */}
+                    <FormField
+                      control={form.control}
+                      name="address"
+                      render={({ field }) => (
+                        <FormItem className="md:col-span-3">
+                          <FormLabel className="flex items-center gap-2">
+                            Địa chỉ giao hàng
+                            <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
+                              Đã lưu
+                            </Badge>
+                          </FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="Địa chỉ hiện tại" 
+                              className="h-[3.5rem] bg-primary/5 border-primary/30 text-foreground font-medium" 
+                              readOnly={true}
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                
+                  <div className="mt-4 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                    <div className="flex items-center gap-2 text-sm text-primary">
+                      <User className="h-4 w-4" />
+                      <span className="font-medium">Sử dụng thông tin đã lưu</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Thông tin này được lấy từ tài khoản của bạn. Để thay đổi, vui lòng chọn "Địa chỉ khác".
+                    </p>
+                  </div>
+                    </>
+                ) : (
+                  // When using new address - show all fields including province/district
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="fullName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Họ và Tên</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="Thanh Tâm" 
+                              className="h-[3.5rem]"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="email" 
+                              placeholder="your@email.com" 
+                              className="h-[3.5rem]"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Số điện thoại</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="(123) 456-7890" 
+                              className="h-[3.5rem]"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="province"
+                      render={({ field }) => (
+                        <FormItem className="relative">
+                          <FormLabel className="text-base font-semibold mb-2">Tỉnh/Thành phố</FormLabel>
+                          <Select
+                            onValueChange={handleProvinceChange}
+                            defaultValue={selectedProvince}
                           >
-                            <div className="sticky top-0 bg-popover p-3 border-b mb-2">
-                              <div className="text-sm font-semibold text-popover-foreground flex items-center">
-                                <MapPin className="w-4 h-4 mr-2 text-primary" />
-                                Chọn tỉnh/thành phố
+                            <FormControl>
+                              <SelectTrigger
+                                className="w-full min-h-[3.5rem] px-4 bg-background border-2 transition-all duration-200 
+                                ease-in-out rounded-xl shadow-sm hover:border-primary focus:border-primary hover:shadow-md focus:shadow-md"
+                              >
+                                <SelectValue
+                                  placeholder="Chọn tỉnh/thành phố"
+                                  className="text-base placeholder:text-muted-foreground/70"
+                                />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent
+                              className="max-h-[300px] overflow-y-auto rounded-xl border-2 border-border shadow-2xl bg-popover 
+                              p-2 z-[100] relative"
+                              style={{
+                                position: 'fixed',
+                                backgroundColor: 'hsl(var(--popover))',
+                                backdropFilter: 'none'
+                              }}
+                            >
+                              <div className="sticky top-0 bg-popover p-3 border-b mb-2">
+                                <div className="text-sm font-semibold text-popover-foreground flex items-center">
+                                  <MapPin className="w-4 h-4 mr-2 text-primary" />
+                                  Chọn tỉnh/thành phố
+                                </div>
+                              </div>
+                              {vietnamProvinces.map((province: Province) => (
+                                <SelectItem
+                                  key={province.code}
+                                  value={province.code}
+                                  className="cursor-pointer transition-all duration-150 rounded-lg my-1 px-3 py-2.5
+                                  hover:bg-primary/10 focus:bg-primary/10 data-[state=checked]:bg-primary/20"
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-medium">{province.name}</span>
+                                    <Badge variant="outline" className="ml-2 bg-popover">
+                                      {province.districts.length} quận/huyện
+                                    </Badge>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="district"
+                      render={({ field }) => (
+                        <FormItem className="relative">
+                          <FormLabel className="text-base font-semibold mb-2">Quận/Huyện</FormLabel>
+                          <Select
+                            onValueChange={handleDistrictChange}
+                            defaultValue={field.value}
+                            disabled={!selectedProvince}
+                          >
+                            <FormControl>
+                              <SelectTrigger
+                                className={`w-full min-h-[3.5rem] px-4 bg-background border-2 transition-all duration-200 
+                                ease-in-out rounded-xl shadow-sm ${!selectedProvince
+                                    ? 'opacity-50 cursor-not-allowed border-muted'
+                                    : 'hover:border-primary focus:border-primary hover:shadow-md focus:shadow-md'
+                                  }`}
+                              >
+                                <SelectValue
+                                  placeholder={
+                                    !selectedProvince
+                                      ? "Vui lòng chọn tỉnh/thành phố trước"
+                                      : "Chọn quận/huyện"
+                                  }
+                                  className="text-base placeholder:text-muted-foreground/70"
+                                />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent
+                              className="max-h-[300px] overflow-y-auto rounded-xl border-2 border-border shadow-2xl bg-popover 
+                              p-2 z-[100] relative"
+                              style={{
+                                position: 'fixed',
+                                backgroundColor: 'hsl(var(--popover))',
+                                backdropFilter: 'none'
+                              }}
+                            >
+                              <div className="sticky top-0 bg-popover p-3 border-b mb-2">
+                                <div className="text-sm font-semibold text-popover-foreground flex items-center">
+                                  <MapPin className="w-4 h-4 mr-2 text-primary" />
+                                  Chọn quận/huyện
+                                </div>
+                              </div>
+                              {availableDistricts.map((district) => (
+                                <SelectItem
+                                  key={district.code}
+                                  value={district.code}
+                                  className="cursor-pointer transition-all duration-150 rounded-lg my-1 px-3 py-2.5
+                                  hover:bg-primary/10 focus:bg-primary/10 data-[state=checked]:bg-primary/20"
+                                >
+                                  <div className="flex items-center">
+                                    <span className="font-medium">{district.name}</span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="address"
+                      render={({ field }) => (
+                        <FormItem className="relative">
+                          <FormLabel>Địa chỉ</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Input 
+                                placeholder="Tìm kiếm địa chỉ..." 
+                                className="h-[3.5rem] pr-10" 
+                                {...field} 
+                                onChange={(e) => {
+                                  field.onChange(e);
+                                  setAddressSearchQuery(e.target.value);
+                                  searchAddresses(e.target.value);
+                                  // Wait for the field value to be updated before recalculating
+                                  setTimeout(() => handleAddressChange(), 300);
+                                }}
+                                onBlur={(e) => {
+                                  field.onBlur();
+                                  setTimeout(() => {
+                                    setShowAddressSuggestions(false);
+                                  }, 200);
+                                  handleAddressChange();
+                                }}
+                                onFocus={() => {
+                                  if (addressSuggestions.length > 0) {
+                                    setShowAddressSuggestions(true);
+                                  }
+                                }}
+                              />
+                              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                {isSearchingAddress ? (
+                                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                                ) : (
+                                  <Search className="h-4 w-4 text-muted-foreground" />
+                                )}
                               </div>
                             </div>
-                            {vietnamProvinces.map((province: Province) => (
-                              <SelectItem
-                                key={province.code}
-                                value={province.code}
-                                className="cursor-pointer transition-all duration-150 rounded-lg my-1 px-3 py-2.5
-                                hover:bg-primary/10 focus:bg-primary/10 data-[state=checked]:bg-primary/20"
-                              >
-                                <div className="flex items-center justify-between">
-                                  <span className="font-medium">{province.name}</span>
-                                  <Badge variant="outline" className="ml-2 bg-popover">
-                                    {province.districts.length} quận/huyện
-                                  </Badge>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="district"
-                    render={({ field }) => (
-                      <FormItem className="relative">
-                        <FormLabel className="text-base font-semibold mb-2">Quận/Huyện</FormLabel>
-                        <Select
-                          onValueChange={handleDistrictChange}
-                          defaultValue={field.value}
-                          disabled={!selectedProvince}
-                        >
-                          <FormControl>
-                            <SelectTrigger
-                              className={`w-full min-h-[3.5rem] px-4 bg-background border-2 transition-all duration-200 
-                              ease-in-out rounded-xl shadow-sm ${!selectedProvince
-                                  ? 'opacity-50 cursor-not-allowed border-muted'
-                                  : 'hover:border-primary focus:border-primary hover:shadow-md focus:shadow-md'
-                                }`}
-                            >
-                              <SelectValue
-                                placeholder={
-                                  !selectedProvince
-                                    ? "Vui lòng chọn tỉnh/thành phố trước"
-                                    : "Chọn quận/huyện"
-                                }
-                                className="text-base placeholder:text-muted-foreground/70"
-                              />
-                            </SelectTrigger>
                           </FormControl>
-                          <SelectContent
-                            className="max-h-[300px] overflow-y-auto rounded-xl border-2 border-border shadow-2xl bg-popover 
-                            p-2 z-[100] relative"
-                            style={{
-                              position: 'fixed',
-                              backgroundColor: 'hsl(var(--popover))',
-                              backdropFilter: 'none'
-                            }}
-                          >
-                            <div className="sticky top-0 bg-popover p-3 border-b mb-2">
-                              <div className="text-sm font-semibold text-popover-foreground flex items-center">
-                                <MapPin className="w-4 h-4 mr-2 text-primary" />
-                                Chọn quận/huyện
-                              </div>
-                            </div>
-                            {availableDistricts.map((district) => (
-                              <SelectItem
-                                key={district.code}
-                                value={district.code}
-                                className="cursor-pointer transition-all duration-150 rounded-lg my-1 px-3 py-2.5
-                                hover:bg-primary/10 focus:bg-primary/10 data-[state=checked]:bg-primary/20"
-                              >
-                                <div className="flex items-center">
-                                  <span className="font-medium">{district.name}</span>
+                          
+                          {/* Address Suggestions Dropdown */}
+                          {showAddressSuggestions && addressSuggestions.length > 0 && (
+                            <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                              {addressSuggestions.map((suggestion, index) => (
+                                <div
+                                  key={suggestion.place_id}
+                                  className="px-4 py-3 hover:bg-muted cursor-pointer border-b border-border last:border-b-0 transition-colors"
+                                  onClick={async () => {
+                                    const placeDetails = await getPlaceDetails(suggestion.place_id);
+                                    if (placeDetails) {
+                                      form.setValue('address', placeDetails.formatted_address);
+                                      setAddressSearchQuery(placeDetails.formatted_address);
+                                      setShowAddressSuggestions(false);
+                                      
+                                      // Parse the selected address to fill province and district
+                                      await parseAndFillAddress(placeDetails.formatted_address);
+                                      
+                                      // Calculate shipping with the new coordinates
+                                      if (bakery && bakery.latitude && bakery.longitude) {
+                                        const shippingData = await fetchShippingInfo(
+                                          parseFloat(bakery.latitude),
+                                          parseFloat(bakery.longitude),
+                                          placeDetails.location.lat,
+                                          placeDetails.location.lng
+                                        );
+                                        
+                                        if (shippingData) {
+                                          setShippingInfo(shippingData);
+                                        }
+                                      }
+                                    }
+                                  }}
+                                >
+                                  <div className="flex items-start gap-2">
+                                    <MapPin className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-medium text-foreground truncate">
+                                        {suggestion.formatted_address}
+                                      </p>
+                                    </div>
+                                  </div>
                                 </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="address"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Địa chỉ</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="Số nhà, tên đường" 
-                            className="h-[3.5rem]" 
-                            {...field} 
-                            onChange={(e) => {
-                              field.onChange(e);
-                              // Wait for the field value to be updated before recalculating
-                              setTimeout(() => handleAddressChange(), 300);
-                            }}
-                            onBlur={(e) => {
-                              field.onBlur();
-                              handleAddressChange();
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                              ))}
+                            </div>
+                          )}
+                          
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
 
                 <Separator className="my-6" />
 
@@ -1506,7 +2166,10 @@ const CheckoutPage = () => {
                     type="submit"
                     size="lg"
                     className="w-full md:w-auto"
-                    disabled={isProcessing || !form.formState.isValid}
+                    disabled={isProcessing}
+onClick={() => {
+                      // No special handling needed since validation is now conditional
+                    }}
                   >
                     {isProcessing ? (
                       <>

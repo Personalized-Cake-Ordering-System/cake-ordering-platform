@@ -26,6 +26,7 @@ export interface CheckoutFormValues {
     latitude?: number;
     longitude?: number;
     voucher_code?: string;
+    useCurrentAddress?: boolean;
 }
 
 export type CakeConfig = {
