@@ -1,87 +1,87 @@
-"use client" ;
+"use client";
 
-import { Button } from '@/components/ui/button' ;
-import { useCart } from '@/app/store/useCart' ;
-import { CakeConfig } from '@/types/cake' ;
-import { AnimatePresence, motion } from 'framer-motion' ;
-import { ArrowLeft, Check, Download } from 'lucide-react' ;
-import { useRouter, useSearchParams } from 'next/navigation' ;
-import Image from 'next/image' ;
-import React, { useEffect, useState, useRef } from 'react' ;
-import { useCakeConfigStore } from '@/components/shared/client/stores/cake-config' ;
-import { toast } from 'react-hot-toast' ;
-import html2canvas from 'html2canvas' ;
+import { Button } from '@/components/ui/button';
+import { useCart } from '@/app/store/useCart';
+import { CakeConfig } from '@/types/cake';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ArrowLeft, Check, Download, Sparkles, Heart, Star, Zap } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Image from 'next/image';
+import React, { useEffect, useState, useRef } from 'react';
+import { useCakeConfigStore } from '@/components/shared/client/stores/cake-config';
+import { toast } from 'react-hot-toast';
+import html2canvas from 'html2canvas';
 import BakerySwitchModal from '@/components/shared/bakery-switch-modal';
 
 // API response types
 interface ApiError {
-    code: string ;
-    message: string ;
-    details?: any ;
+    code: string;
+    message: string;
+    details?: any;
 }
 
 interface ApiResponse<T> {
-    status_code: number ;
-    errors: ApiError[] ;
+    status_code: number;
+    errors: ApiError[];
     meta_data: {
-        total_items_count: number ;
-        page_size: number ;
-        total_pages_count: number ;
-        page_index: number ;
-        has_next: boolean ;
-        has_previous: boolean ;
-    } ;
-    payload: T[] ;
+        total_items_count: number;
+        page_size: number;
+        total_pages_count: number;
+        page_index: number;
+        has_next: boolean;
+        has_previous: boolean;
+    };
+    payload: T[];
 }
 
 interface ApiImage {
-    file_name: string ;
-    file_url: string ;
-    id: string ;
-    created_at: string ;
-    created_by: string ;
-    updated_at: string | null ;
-    updated_by: string | null ;
-    is_deleted: boolean ;
+    file_name: string;
+    file_url: string;
+    id: string;
+    created_at: string;
+    created_by: string;
+    updated_at: string | null;
+    updated_by: string | null;
+    is_deleted: boolean;
 }
 
 interface ApiItem {
-    id: string ;
-    name: string ;
-    price: number ;
-    color: string ;
-    is_default: boolean ;
-    description: string ;
-    image_id: string | null ;
-    image: ApiImage | null ;
-    type: string ;
-    bakery_id: string ;
-    bakery: null ;
-    created_at: string ;
-    created_by: string ;
-    updated_at: string | null ;
-    updated_by: string | null ;
-    is_deleted: boolean ;
+    id: string;
+    name: string;
+    price: number;
+    color: string;
+    is_default: boolean;
+    description: string;
+    image_id: string | null;
+    image: ApiImage | null;
+    type: string;
+    bakery_id: string;
+    bakery: null;
+    created_at: string;
+    created_by: string;
+    updated_at: string | null;
+    updated_by: string | null;
+    is_deleted: boolean;
 }
 
 interface ApiOptionGroup {
-    type: string ;
-    items: ApiItem[] ;
+    type: string;
+    items: ApiItem[];
 }
 
 // Define type for the selected part
-type SelectedPart = 'cake' | 'decoration' | 'message' | 'extras' | null ;
+type SelectedPart = 'cake' | 'decoration' | 'message' | 'extras' | null;
 
 // Type for step status tracking
 type StepStatus = {
-    cake: boolean ;
-    decoration: boolean ;
-    message: boolean ;
-    extras: boolean ;
-} ;
+    cake: boolean;
+    decoration: boolean;
+    message: boolean;
+    extras: boolean;
+};
 
 // Type for board shape
-type BoardShape = 'round' | 'square' ;
+type BoardShape = 'round' | 'square';
 
 // Get initial cake configuration
 const getInitialCakeConfig = (): CakeConfig => {
@@ -105,16 +105,16 @@ const getInitialCakeConfig = (): CakeConfig => {
             uploadedImage: null,
             imageUrl: null,
             pipingColor: 'white'
-        } ;
+        };
     }
 
     // Try to get saved config from localStorage
-    const savedConfig = localStorage.getItem('cakeConfig') ;
+    const savedConfig = localStorage.getItem('cakeConfig');
     if (savedConfig) {
         try {
-            return JSON.parse(savedConfig) ;
+            return JSON.parse(savedConfig);
         } catch (error) {
-            console.error('Error parsing saved cake config:', error) ;
+            console.error('Error parsing saved cake config:', error);
         }
     }
 
@@ -129,7 +129,7 @@ const getInitialCakeConfig = (): CakeConfig => {
         topping: null,
         message: '',
         candles: null,
-        board: '', 
+        board: '',
         goo: null,
         extras: [],
         messageType: 'none',
@@ -137,8 +137,8 @@ const getInitialCakeConfig = (): CakeConfig => {
         uploadedImage: null,
         imageUrl: null,
         pipingColor: 'white'
-    } ;
-} ;
+    };
+};
 
 // Animation variants for selected items
 const selectedVariants = {
@@ -156,33 +156,111 @@ const selectedVariants = {
             duration: 0.2
         }
     }
-} ;
+};
+
+// Enhanced animation variants
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.1,
+            delayChildren: 0.2
+        }
+    }
+};
+
+const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+        y: 0,
+        opacity: 1,
+        transition: {
+            type: "spring",
+            stiffness: 300,
+            damping: 24
+        }
+    }
+};
+
+const floatingVariants = {
+    animate: {
+        y: [0, -10, 0],
+        rotate: [0, 5, -5, 0],
+        transition: {
+            duration: 4,
+            repeat: Infinity,
+            ease: "easeInOut"
+        }
+    }
+};
+
+const pulseVariants = {
+    animate: {
+        scale: [1, 1.05, 1],
+        transition: {
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut"
+        }
+    }
+};
+
+// Enhanced color mapping with more realistic colors
+const getRealisticColor = (colorName: string | null): string => {
+    if (!colorName) return '#F8F9FA';
+
+    const colorMap: Record<string, string> = {
+        'white': '#FFFFFF',
+        'cream': '#FFF8DC',
+        'vanilla': '#F3E5AB',
+        'chocolate': '#8B4513',
+        'strawberry': '#FFB6C1',
+        'pink': '#FFC0CB',
+        'green': '#90EE90',
+        'blue': '#87CEEB',
+        'yellow': '#FFFF99',
+        'orange': '#FFB347',
+        'red': '#FF6B6B',
+        'purple': '#DDA0DD',
+        'brown': '#A0522D',
+        'caramel': '#D2691E',
+        'mint': '#98FB98',
+        'lemon': '#FFFACD'
+    };
+
+    const normalizedColor = colorName.toLowerCase().trim();
+    return colorMap[normalizedColor] || '#F8F9FA';
+};
 
 const CakeCustomizer = ({ storeId }: { storeId: string }) => {
-    const { addToCart, items, bakerySwitchModal } = useCart() ;
-    const router = useRouter() ;
-    const searchParams = useSearchParams() ;
-    const editId = searchParams.get('editId') ;
-    const { config, setConfig } = useCakeConfigStore() ;
-    const cakePreviewRef = useRef<HTMLDivElement>(null) ;
-    
+    const { addToCart, items, bakerySwitchModal } = useCart();
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const editId = searchParams.get('editId');
+    const { config, setConfig } = useCakeConfigStore();
+    const cakePreviewRef = useRef<HTMLDivElement>(null);
+
     // Add state for pending cart item
     const [pendingCartItem, setPendingCartItem] = useState<any>(null);
 
     // UI state
-    const [selectedPart, setSelectedPart] = useState<SelectedPart>(null) ;
-    const [showJson, setShowJson] = useState(false) ;
-    const [isZoomed, setIsZoomed] = useState(false) ;
+    const [selectedPart, setSelectedPart] = useState<SelectedPart>(null);
+    const [showJson, setShowJson] = useState(false);
+    const [isZoomed, setIsZoomed] = useState(false);
+
+    // Preview state for decorations
+    const [previewDecoration, setPreviewDecoration] = useState<string | null>(null);
 
     // API data state
-    const [decorationOptions, setDecorationOptions] = useState<ApiOptionGroup[]>([]) ;
-    const [partOptions, setPartOptions] = useState<ApiOptionGroup[]>([]) ;
-    const [messageOptions, setMessageOptions] = useState<ApiOptionGroup[]>([]) ;
-    const [extraOptions, setExtraOptions] = useState<ApiOptionGroup[]>([]) ;
-    
+    const [decorationOptions, setDecorationOptions] = useState<ApiOptionGroup[]>([]);
+    const [partOptions, setPartOptions] = useState<ApiOptionGroup[]>([]);
+    const [messageOptions, setMessageOptions] = useState<ApiOptionGroup[]>([]);
+    const [extraOptions, setExtraOptions] = useState<ApiOptionGroup[]>([]);
+
     // Status and error handling
-    const [error, setError] = useState<ApiError | null>(null) ;
-    const [isLoading, setIsLoading] = useState(false) ;
+    const [error, setError] = useState<ApiError | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
 
     // Tracking completion status of steps
     const [completedSteps, setCompletedSteps] = useState<StepStatus>({
@@ -190,10 +268,10 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
         decoration: false,
         message: false,
         extras: false
-    }) ;
+    });
 
     // Current active step
-    const [currentStep, setCurrentStep] = useState<'cake' | 'decoration' | 'message' | 'extras'>('cake') ;
+    const [currentStep, setCurrentStep] = useState<'cake' | 'decoration' | 'message' | 'extras'>('cake');
 
     // Load data when the component mounts
     useEffect(() => {
@@ -203,20 +281,20 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
             fetchMessageOptions(),
             fetchExtraOptions()
         ]).catch(error => {
-            console.error('Error initializing cake customizer:', error) ;
-            toast.error('Failed to load cake options. Please try again.') ;
-        }) ;
-    }, [storeId]) ;
+            console.error('Error initializing cake customizer:', error);
+            toast.error('Failed to load cake options. Please try again.');
+        });
+    }, [storeId]);
 
     // Update the initial state to load existing item if editing
     useEffect(() => {
         if (editId) {
-            const itemToEdit = items.find(item => item.id === editId) ;
+            const itemToEdit = items.find(item => item.id === editId);
             if (itemToEdit) {
-                setConfig(itemToEdit.config) ;
+                setConfig(itemToEdit.config);
             }
         }
-    }, [editId, items, setConfig]) ;
+    }, [editId, items, setConfig]);
 
     // Reset the cake configuration to defaults
     const handleResetConfig = () => {
@@ -230,7 +308,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
             topping: null,
             message: '',
             candles: null,
-            board: '', 
+            board: '',
             goo: null,
             extras: [],
             messageType: 'none',
@@ -238,314 +316,327 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
             uploadedImage: null,
             imageUrl: null,
             pipingColor: 'white'
-        } ;
-        setConfig(defaultConfig) ;
+        };
+        setConfig(defaultConfig);
         setCompletedSteps({
             cake: false,
             decoration: false,
             message: false,
             extras: false
-        }) ;
-        setCurrentStep('cake') ;
-        setSelectedPart(null) ;
-    } ;
+        });
+        setCurrentStep('cake');
+        setSelectedPart(null);
+    };
 
     // API fetch functions
     const fetchDecorationOptions = async () => {
         try {
-            setIsLoading(true) ;
-            setError(null) ;
-            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/decoration_options?bakeryId=${storeId}`) ;
+            setIsLoading(true);
+            setError(null);
+            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/decoration_options?bakeryId=${storeId}`);
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`) ;
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-            const data: ApiResponse<ApiOptionGroup> = await response.json() ;
+            const data: ApiResponse<ApiOptionGroup> = await response.json();
             if (data.errors && data.errors.length > 0) {
-                throw new Error(data.errors[0].message) ;
+                throw new Error(data.errors[0].message);
             }
-            setDecorationOptions(data.payload) ;
-            return data.payload ;
+            setDecorationOptions(data.payload);
+            return data.payload;
         } catch (error) {
-            console.error('Error fetching decoration options:', error) ;
+            console.error('Error fetching decoration options:', error);
             setError({
                 code: 'FETCH_ERROR',
                 message: error instanceof Error ? error.message : 'Failed to fetch decoration options'
-            }) ;
-            return [] ;
+            });
+            return [];
         } finally {
-            setIsLoading(false) ;
+            setIsLoading(false);
         }
-    } ;
+    };
 
     const fetchPartOptions = async () => {
         try {
-            setIsLoading(true) ;
-            setError(null) ;
-            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/part_options?bakeryId=${storeId}`) ;
+            setIsLoading(true);
+            setError(null);
+            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/part_options?bakeryId=${storeId}`);
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`) ;
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-            const data: ApiResponse<ApiOptionGroup> = await response.json() ;
+            const data: ApiResponse<ApiOptionGroup> = await response.json();
             if (data.errors && data.errors.length > 0) {
-                throw new Error(data.errors[0].message) ;
+                throw new Error(data.errors[0].message);
             }
-            setPartOptions(data.payload) ;
+            setPartOptions(data.payload);
 
             // Set default size if not already set
             if (!config.size && data.payload.length > 0) {
-                const sizeGroup = data.payload.find(group => group.type === 'Size') ;
+                const sizeGroup = data.payload.find(group => group.type === 'Size');
                 if (sizeGroup && sizeGroup.items.length > 0) {
-                    const defaultSize = sizeGroup.items[0] ;
+                    const defaultSize = sizeGroup.items[0];
                     setConfig(prev => ({
                         ...prev,
                         size: defaultSize.name,
                         price: defaultSize.price
-                    })) ;
+                    }));
                 }
             }
-            return data.payload ;
+            return data.payload;
         } catch (error) {
-            console.error('Error fetching part options:', error) ;
+            console.error('Error fetching part options:', error);
             setError({
                 code: 'FETCH_ERROR',
                 message: error instanceof Error ? error.message : 'Failed to fetch part options'
-            }) ;
-            return [] ;
+            });
+            return [];
         } finally {
-            setIsLoading(false) ;
+            setIsLoading(false);
         }
-    } ;
+    };
 
     const fetchMessageOptions = async () => {
         try {
-            setIsLoading(true) ;
-            setError(null) ;
-            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/message_options?bakeryId=${storeId}`) ;
+            setIsLoading(true);
+            setError(null);
+            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/message_options?bakeryId=${storeId}`);
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`) ;
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-            const data: ApiResponse<ApiOptionGroup> = await response.json() ;
+            const data: ApiResponse<ApiOptionGroup> = await response.json();
             if (data.errors && data.errors.length > 0) {
-                throw new Error(data.errors[0].message) ;
+                throw new Error(data.errors[0].message);
             }
-            setMessageOptions(data.payload) ;
-            return data.payload ;
+            setMessageOptions(data.payload);
+            return data.payload;
         } catch (error) {
-            console.error('Error fetching message options:', error) ;
+            console.error('Error fetching message options:', error);
             setError({
                 code: 'FETCH_ERROR',
                 message: error instanceof Error ? error.message : 'Failed to fetch message options'
-            }) ;
-            return [] ;
+            });
+            return [];
         } finally {
-            setIsLoading(false) ;
+            setIsLoading(false);
         }
-    } ;
+    };
 
     const fetchExtraOptions = async () => {
         try {
-            setIsLoading(true) ;
-            setError(null) ;
-            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/extra_options?bakeryId=${storeId}`) ;
+            setIsLoading(true);
+            setError(null);
+            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/extra_options?bakeryId=${storeId}`);
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`) ;
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-            const data: ApiResponse<ApiOptionGroup> = await response.json() ;
+            const data: ApiResponse<ApiOptionGroup> = await response.json();
             if (data.errors && data.errors.length > 0) {
-                throw new Error(data.errors[0].message) ;
+                throw new Error(data.errors[0].message);
             }
-            setExtraOptions(data.payload) ;
-            return data.payload ;
+            setExtraOptions(data.payload);
+            return data.payload;
         } catch (error) {
-            console.error('Error fetching extra options:', error) ;
+            console.error('Error fetching extra options:', error);
             setError({
                 code: 'FETCH_ERROR',
                 message: error instanceof Error ? error.message : 'Failed to fetch extra options'
-            }) ;
-            return [] ;
+            });
+            return [];
         } finally {
-            setIsLoading(false) ;
+            setIsLoading(false);
         }
-    } ;
+    };
 
     // Handle part selection
     const handlePartSelect = (part: SelectedPart) => {
-        setError(null) ;
+        setError(null);
 
         // Determine which steps are available based on completion status
-        const canSelectCake = true ; // Always available
-        const canSelectDecoration = completedSteps.cake ;
-        const canSelectMessage = completedSteps.decoration ;
-        const canSelectExtras = completedSteps.message ;
+        const canSelectCake = true; // Always available
+        const canSelectDecoration = completedSteps.cake;
+        const canSelectMessage = completedSteps.decoration;
+        const canSelectExtras = completedSteps.message;
 
         // Only allow selecting steps that are available
         if (part === 'cake') {
-            setSelectedPart(part) ;
+            setSelectedPart(part);
             if (partOptions.length === 0) {
-                fetchPartOptions() ;
+                fetchPartOptions();
             }
         } else if (part === 'decoration' && canSelectDecoration) {
-            setSelectedPart(part) ;
+            setSelectedPart(part);
             if (decorationOptions.length === 0) {
-                fetchDecorationOptions() ;
+                fetchDecorationOptions();
             }
         } else if (part === 'message' && canSelectMessage) {
-            setSelectedPart(part) ;
+            setSelectedPart(part);
             if (messageOptions.length === 0) {
-                fetchMessageOptions() ;
+                fetchMessageOptions();
             }
         } else if (part === 'extras' && canSelectExtras) {
-            setSelectedPart(part) ;
+            setSelectedPart(part);
             if (extraOptions.length === 0) {
-                fetchExtraOptions() ;
+                fetchExtraOptions();
             }
         } else if (part !== null) {
             // Show error message if trying to select a locked step
-            toast.error('Please complete the previous steps first') ;
+            toast.error('Please complete the previous steps first');
         }
 
         // Update current step based on selection
         if (part === 'cake' && !completedSteps.cake) {
-            setCurrentStep('cake') ;
+            setCurrentStep('cake');
         } else if (part === 'decoration' && !completedSteps.decoration) {
-            setCurrentStep('decoration') ;
+            setCurrentStep('decoration');
         } else if (part === 'message' && !completedSteps.message) {
-            setCurrentStep('message') ;
+            setCurrentStep('message');
         } else if (part === 'extras' && !completedSteps.extras) {
-            setCurrentStep('extras') ;
+            setCurrentStep('extras');
         }
-    } ;
+    };
 
     // Handle option selection for size
     const handleSizeSelect = (option: ApiItem) => {
         // Find current size option to calculate price difference
-        const currentSizeId = config.size ;
+        const currentSizeId = config.size;
         const currentSize = partOptions.find(group => group.type === 'Size')?.items
-            .find(item => item.name === currentSizeId) ;
-        
+            .find(item => item.name === currentSizeId);
+
         // Calculate price difference and update config
-        const currentPrice = currentSize?.price || 0 ;
-        const priceDifference = option.price - currentPrice ;
-        
+        const currentPrice = currentSize?.price || 0;
+        const priceDifference = option.price - currentPrice;
+
         setConfig(prev => ({
             ...prev,
             size: option.name,
             price: prev.price + priceDifference
-        })) ;
-    } ;
+        }));
+    };
 
     // Handle option selection for sponge
     const handleSpongeSelect = (option: ApiItem) => {
         // Find current sponge to calculate price difference
-        const currentSpongeId = config.sponge ;
+        const currentSpongeId = config.sponge;
         const currentSponge = partOptions.find(group => group.type === 'Sponge')?.items
-            .find(item => item.id === currentSpongeId) ;
-        
+            .find(item => item.id === currentSpongeId);
+
         // Calculate price difference
-        const currentPrice = currentSponge?.price || 0 ;
-        const priceDifference = option.price - currentPrice ;
-        
+        const currentPrice = currentSponge?.price || 0;
+        const priceDifference = option.price - currentPrice;
+
         setConfig(prev => ({
             ...prev,
             sponge: option.id,
             price: prev.price + priceDifference
-        })) ;
-    } ;
+        }));
+    };
 
     // Handle option selection for filling
     const handleFillingSelect = (option: ApiItem) => {
         // Find current filling to calculate price difference
-        const currentFillingId = config.filling ;
+        const currentFillingId = config.filling;
         const currentFilling = partOptions.find(group => group.type === 'Filling')?.items
-            .find(item => item.id === currentFillingId) ;
-        
+            .find(item => item.id === currentFillingId);
+
         // Calculate price difference
-        const currentPrice = currentFilling?.price || 0 ;
-        const priceDifference = option.price - currentPrice ;
-        
+        const currentPrice = currentFilling?.price || 0;
+        const priceDifference = option.price - currentPrice;
+
         setConfig(prev => ({
             ...prev,
             filling: option.id,
             price: prev.price + priceDifference
-        })) ;
-    } ;
+        }));
+    };
 
     // Handle option selection for icing
     const handleIcingSelect = (option: ApiItem) => {
         // Find current icing to calculate price difference
-        const currentIcingId = config.icing ;
+        const currentIcingId = config.icing;
         const currentIcing = partOptions.find(group => group.type === 'Icing')?.items
-            .find(item => item.id === currentIcingId) ;
-        
+            .find(item => item.id === currentIcingId);
+
         // Calculate price difference
-        const currentPrice = currentIcing?.price || 0 ;
-        const priceDifference = option.price - currentPrice ;
-        
+        const currentPrice = currentIcing?.price || 0;
+        const priceDifference = option.price - currentPrice;
+
         setConfig(prev => ({
             ...prev,
             icing: option.id,
             price: prev.price + priceDifference
-        })) ;
-    } ;
+        }));
+    };
 
     // Handle option selection for outer icing (decoration)
     const handleDecorationSelect = (option: ApiItem) => {
         // Find current outer icing to calculate price difference
-        const currentIcingId = config.outerIcing ;
+        const currentIcingId = config.outerIcing;
         const currentIcing = decorationOptions.flatMap(group => group.items)
-            .find(item => item.id === currentIcingId) ;
-        
+            .find(item => item.id === currentIcingId);
+
         // Calculate price difference
-        const currentPrice = currentIcing?.price || 0 ;
-        const priceDifference = option.price - currentPrice ;
-        
+        const currentPrice = currentIcing?.price || 0;
+        const priceDifference = option.price - currentPrice;
+
         setConfig(prev => ({
             ...prev,
             outerIcing: option.id,
             price: prev.price + priceDifference
-        })) ;
-    } ;
+        }));
+
+        // Clear preview when selecting
+        setPreviewDecoration(null);
+    };
+
+    // Handle decoration preview on hover/click
+    const handleDecorationPreview = (optionId: string) => {
+        setPreviewDecoration(optionId);
+    };
+
+    // Clear decoration preview
+    const clearDecorationPreview = () => {
+        setPreviewDecoration(null);
+    };
 
     // Handle option selection for goo
     const handleGooSelect = (option: ApiItem) => {
         // Find current goo to calculate price difference
-        const currentGooId = config.goo ;
+        const currentGooId = config.goo;
         const currentGoo = partOptions.find(group => group.type === 'Goo')?.items
-            .find(item => item.id === currentGooId) ;
-        
+            .find(item => item.id === currentGooId);
+
         // Calculate price difference
-        const currentPrice = currentGoo?.price || 0 ;
-        const priceDifference = option.price - currentPrice ;
-        
+        const currentPrice = currentGoo?.price || 0;
+        const priceDifference = option.price - currentPrice;
+
         setConfig(prev => ({
             ...prev,
             goo: option.id,
             price: prev.price + priceDifference
-        })) ;
-    } ;
+        }));
+    };
 
     // Handle option selection for message type
     const handleMessageTypeSelect = (messageType: 'none' | 'piped' | 'edible') => {
         // Find current message type to calculate price difference
-        const currentMessageType = config.messageType ;
-        const currentMessageOption = messageOptions.find(group => group.type === 'MESSAGE_TYPE')?.items.find(item => 
+        const currentMessageType = config.messageType;
+        const currentMessageOption = messageOptions.find(group => group.type === 'MESSAGE_TYPE')?.items.find(item =>
             (currentMessageType === 'none' && item.name === 'NONE') ||
             (currentMessageType === 'piped' && item.name === 'PIPED MESSAGE') ||
             (currentMessageType === 'edible' && item.name === 'EDIBLE IMAGE')
-        ) ;
-        
+        );
+
         // Find new message type to calculate price
-        const newMessageOption = messageOptions.find(group => group.type === 'MESSAGE_TYPE')?.items.find(item => 
+        const newMessageOption = messageOptions.find(group => group.type === 'MESSAGE_TYPE')?.items.find(item =>
             (messageType === 'none' && item.name === 'NONE') ||
             (messageType === 'piped' && item.name === 'PIPED MESSAGE') ||
             (messageType === 'edible' && item.name === 'EDIBLE IMAGE')
-        ) ;
-        
+        );
+
         // Calculate price difference
-        const currentPrice = currentMessageOption?.price || 0 ;
-        const newPrice = newMessageOption?.price || 0 ;
-        const priceDifference = newPrice - currentPrice ;
-        
+        const currentPrice = currentMessageOption?.price || 0;
+        const newPrice = newMessageOption?.price || 0;
+        const priceDifference = newPrice - currentPrice;
+
         setConfig(prev => ({
             ...prev,
             messageType,
@@ -553,75 +644,75 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
             message: messageType === 'none' ? '' : prev.message,
             uploadedImage: messageType === 'edible' ? prev.uploadedImage : null,
             price: prev.price + priceDifference
-        })) ;
-    } ;
+        }));
+    };
 
     // Handle message text change
     const handleMessageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setConfig(prev => ({
             ...prev,
             message: e.target.value.slice(0, 30)
-        })) ;
-    } ;
+        }));
+    };
 
     // Handle plaque color selection for piped message
     const handlePlaqueColorSelect = (option: ApiItem) => {
         setConfig(prev => ({
             ...prev,
             plaqueColor: option.id
-        })) ;
-    } ;
+        }));
+    };
 
     // Handle piping color selection for piped message
     const handlePipingColorSelect = (option: ApiItem) => {
         setConfig(prev => ({
             ...prev,
             pipingColor: option.id
-        })) ;
-    } ;
+        }));
+    };
 
     // Handle image upload for edible image
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0] ;
+        const file = e.target.files?.[0];
         if (file) {
-            const reader = new FileReader() ;
+            const reader = new FileReader();
             reader.onload = (e) => {
                 setConfig(prev => ({
                     ...prev,
                     uploadedImage: e.target?.result as string
-                })) ;
-            } ;
-            reader.readAsDataURL(file) ;
+                }));
+            };
+            reader.readAsDataURL(file);
         }
-    } ;
+    };
 
     // Handle removing uploaded image
     const handleImageRemove = () => {
         setConfig(prev => ({
             ...prev,
             uploadedImage: null
-        })) ;
-    } ;
+        }));
+    };
 
     // Handle selecting extras (candles, board, etc.)
     const handleExtraSelect = (option: ApiItem) => {
-        const extras = Array.isArray(config.extras) ? [...config.extras] : [] ;
-        const isAlreadySelected = extras.includes(option.id) ;
-        
+        const extras = Array.isArray(config.extras) ? [...config.extras] : [];
+        const isAlreadySelected = extras.includes(option.id);
+
         // Check if there's an existing option of same type to replace
         const existingOptionOfSameType = extras.find(id => {
             const existingOption = extraOptions.flatMap(group => group.items)
-                .find(item => item.id === id) ;
-            return existingOption?.type === option.type && id !== option.id ;
-        }) ;
-        
-        let priceDifference = 0 ;
-        
+                .find(item => item.id === id);
+            return existingOption?.type === option.type && id !== option.id;
+        });
+
+        let priceDifference = 0;
+
         if (isAlreadySelected) {
             // Remove if already selected
-            const newExtras = extras.filter(id => id !== option.id) ;
-            priceDifference = -option.price ;
-            
+            const newExtras = extras.filter(id => id !== option.id);
+            priceDifference = -option.price;
+
             setConfig(prev => ({
                 ...prev,
                 extras: newExtras,
@@ -629,26 +720,26 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                 // If removing a board or candles, update those fields too
                 ...(option.type === 'CakeBoard' ? { board: '' } : {}),
                 ...(option.type === 'Candles' ? { candles: null } : {})
-            })) ;
+            }));
         } else {
             // If replacing an existing option of same type
-            let newExtras = [...extras] ;
-            
+            let newExtras = [...extras];
+
             if (existingOptionOfSameType) {
                 const existingOption = extraOptions.flatMap(group => group.items)
-                    .find(item => item.id === existingOptionOfSameType) ;
-                
+                    .find(item => item.id === existingOptionOfSameType);
+
                 // Remove existing and its price
-                newExtras = newExtras.filter(id => id !== existingOptionOfSameType) ;
-                priceDifference = option.price - (existingOption?.price || 0) ;
+                newExtras = newExtras.filter(id => id !== existingOptionOfSameType);
+                priceDifference = option.price - (existingOption?.price || 0);
             } else {
                 // Just add the new option's price
-                priceDifference = option.price ;
+                priceDifference = option.price;
             }
-            
+
             // Add the new option
-            newExtras.push(option.id) ;
-            
+            newExtras.push(option.id);
+
             setConfig(prev => ({
                 ...prev,
                 extras: newExtras,
@@ -656,55 +747,55 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                 // Update board or candles field if applicable
                 ...(option.type === 'CakeBoard' ? { board: option.id } : {}),
                 ...(option.type === 'Candles' ? { candles: option.id } : {})
-            })) ;
+            }));
         }
-    } ;
+    };
 
     // Complete the current step and move to the next
     const handleStepComplete = () => {
         // Validation checks for each step
         if (currentStep === 'cake') {
             if (!config.size || !config.sponge || !config.filling || !config.icing) {
-                toast.error('Please select size, sponge, filling, and icing options') ;
-                return ;
+                toast.error('Please select size, sponge, filling, and icing options');
+                return;
             }
-            setCompletedSteps(prev => ({ ...prev, cake: true })) ;
-            setCurrentStep('decoration') ;
-            setSelectedPart('decoration') ;
-        } 
+            setCompletedSteps(prev => ({ ...prev, cake: true }));
+            setCurrentStep('decoration');
+            setSelectedPart('decoration');
+        }
         else if (currentStep === 'decoration') {
             if (!config.outerIcing) {
-                toast.error('Please select a decoration option') ;
-                return ;
+                toast.error('Please select a decoration option');
+                return;
             }
-            setCompletedSteps(prev => ({ ...prev, decoration: true })) ;
-            setCurrentStep('message') ;
-            setSelectedPart('message') ;
+            setCompletedSteps(prev => ({ ...prev, decoration: true }));
+            setCurrentStep('message');
+            setSelectedPart('message');
         }
         else if (currentStep === 'message') {
             // Message step is optional, always allow completion
-            setCompletedSteps(prev => ({ ...prev, message: true })) ;
-            setCurrentStep('extras') ;
-            setSelectedPart('extras') ;
+            setCompletedSteps(prev => ({ ...prev, message: true }));
+            setCurrentStep('extras');
+            setSelectedPart('extras');
         }
         else if (currentStep === 'extras') {
             // Extras are optional, always allow completion
-            setCompletedSteps(prev => ({ ...prev, extras: true })) ;
-            setSelectedPart(null) ;
-            toast.success('Cake customization complete! You can now add it to cart.') ;
+            setCompletedSteps(prev => ({ ...prev, extras: true }));
+            setSelectedPart(null);
+            toast.success('Cake customization complete! You can now add it to cart.');
         }
-    } ;
+    };
 
     // Save the current design to localStorage
     const handleSaveDesign = () => {
         try {
-            localStorage.setItem('cakeConfig', JSON.stringify(config)) ;
-            toast.success('Design saved successfully!') ;
+            localStorage.setItem('cakeConfig', JSON.stringify(config));
+            toast.success('Design saved successfully!');
         } catch (error) {
-            console.error('Error saving design:', error) ;
-            toast.error('Failed to save design') ;
+            console.error('Error saving design:', error);
+            toast.error('Failed to save design');
         }
-    } ;
+    };
 
     // Add the customized cake to cart
     const handleOrderCake = async () => {
@@ -722,18 +813,18 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
             // Check if we already have items from a different bakery
             const cartState = useCart.getState();
             const { openBakerySwitchModal, currentBakeryId, items } = cartState;
-            
+
             console.log('Current cart state:', { items: items.length, currentBakeryId, storeId });
-            
+
             // Check if cart is truly empty
             const isCartEmpty = items.length === 0;
-            
+
             // Check if this is a different bakery than what's already in cart
             if (!isCartEmpty && currentBakeryId && currentBakeryId !== storeId) {
                 // Get bakery names for the modal
                 const currentBakeryName = items[0]?.config?.name?.split(' ')?.[0] || "hiện tại";
                 const newBakeryName = "mới";
-                
+
                 // Open the bakery switch modal
                 openBakerySwitchModal(
                     currentBakeryName,
@@ -744,19 +835,19 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                         await createCustomCakeAndAddToCart();
                     }
                 );
-                
+
                 return;
             }
-            
+
             // If no bakery conflict, proceed with creating the cake
             await createCustomCakeAndAddToCart();
-            
+
         } catch (error) {
             console.error('Error in handleOrderCake:', error);
             toast.error('Failed to order cake. Please try again.');
         }
     };
-    
+
     // Function to create custom cake and add to cart
     const createCustomCakeAndAddToCart = async () => {
         try {
@@ -765,26 +856,26 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
 
             // First, clear cart if needed - get currentBakeryId from the store
             const { changeBakery, currentBakeryId, closeBakerySwitchModal } = useCart.getState();
-            
+
             console.log('Creating custom cake, current bakeryId:', currentBakeryId, 'storeId:', storeId);
-            
+
             // If bakery ID is different, we need to clear the cart first
             if (currentBakeryId && currentBakeryId !== storeId) {
                 console.log('Different bakery detected, clearing cart first');
-                
+
                 try {
                     // Use the async changeBakery function to clear cart and set new bakeryId
                     // This will also delete the API cart
                     const changeBakeryResult = await changeBakery(storeId, true);
-                    
+
                     if (!changeBakeryResult) {
                         toast.error('Failed to change bakery. Please try again.');
                         closeBakerySwitchModal();
                         return;
                     }
-                    
+
                     console.log('Successfully changed bakery to:', storeId);
-                    
+
                 } catch (error) {
                     console.error('Error changing bakery:', error);
                     toast.error('Failed to clear existing cart items');
@@ -792,7 +883,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                     return;
                 }
             }
-            
+
             // Make sure to close the modal regardless of what happens next
             closeBakerySwitchModal();
 
@@ -838,12 +929,12 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
 
             // Get the selected plaque color option
             const selectedPlaqueColor = plaqueColorGroup?.items.find(item =>
-                item.name.toLowerCase().includes(config.plaqueColor.toLowerCase())
+                item.id === config.plaqueColor
             );
 
             // Get the selected piping color option
             const selectedPipingColor = pipingColorGroup?.items.find(item =>
-                item.name.toLowerCase().includes(config.pipingColor.toLowerCase())
+                item.id === config.pipingColor
             );
 
             // Collect all selected message option IDs
@@ -853,11 +944,17 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                 config.messageType === 'piped' ? selectedPipingColor?.id : null
             ].filter(Boolean) as string[];
 
-            console.log('Selected message option IDs:', messageOptionIds);
+            console.log('Message Type Config:', config.messageType);
+            console.log('Selected Message Type:', selectedMessageType);
+            console.log('Selected Plaque Color:', selectedPlaqueColor);
+            console.log('Selected Piping Color:', selectedPipingColor);
+            console.log('Config Plaque Color ID:', config.plaqueColor);
+            console.log('Config Piping Color ID:', config.pipingColor);
+            console.log('Final Message Option IDs:', messageOptionIds);
 
             // Ensure we have valid GUID IDs for all selections
             const defaultGuid = '3fa85f64-5717-4562-b3fc-2c963f66afa6';
-            
+
             // Helper to ensure we have valid GUIDs
             const getValidGuid = (id: string | undefined): string => {
                 if (!id) return defaultGuid;
@@ -912,7 +1009,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                 ],
                 decoration_selections: [
                     {
-                        decoration_type: "OUTER_ICING",
+                        decoration_type: decorationOptions.find(group => group.items.some(item => item.id === config.outerIcing))?.type || "OUTER_ICING",
                         decoration_option_id: getValidGuid(decorationOptions.find(group => group.items.some(item => item.id === config.outerIcing))?.items.find(item => item.id === config.outerIcing)?.id)
                     }
                 ],
@@ -943,7 +1040,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
 
             const responseText = await response.text();
             console.log('API raw response:', responseText);
-            
+
             let data;
             try {
                 data = JSON.parse(responseText);
@@ -956,8 +1053,8 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
 
             if (!response.ok) {
                 console.error('API request failed:', response.status, response.statusText);
-                const errorMessage = data?.errors && Array.isArray(data.errors) && data.errors.length > 0 
-                    ? `Error: ${data.errors.join(', ')}` 
+                const errorMessage = data?.errors && Array.isArray(data.errors) && data.errors.length > 0
+                    ? `Error: ${data.errors.join(', ')}`
                     : 'Failed to create custom cake';
                 toast.error(errorMessage);
                 return;
@@ -971,16 +1068,16 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                     'accept': '*/*'
                 }
             });
-            
+
             if (!updatedCartResponse.ok) {
                 console.error('Error fetching current cart:', updatedCartResponse.status, updatedCartResponse.statusText);
                 toast.error('Failed to fetch current cart');
                 return;
             }
-            
+
             const updatedCartData = await updatedCartResponse.json();
             let currentCartItems = [];
-            
+
             if (updatedCartData.status_code === 200 && updatedCartData.payload && updatedCartData.payload.cartItems) {
                 currentCartItems = updatedCartData.payload.cartItems;
                 console.log('Found existing cart items:', currentCartItems.length);
@@ -1064,14 +1161,14 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
 
             // Add the item to the cart state
             addToCart(cartItem);
-            
+
             toast.success('Cake added to cart successfully!');
             console.log('Order process completed successfully');
             router.push('/cart');
         } catch (error) {
             console.error('Error creating custom cake:', error);
             toast.error('Failed to create custom cake');
-            
+
             // Make sure modal is closed even on error
             const { closeBakerySwitchModal } = useCart.getState();
             closeBakerySwitchModal();
@@ -1080,33 +1177,33 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
 
     // Helper function to get a selected option
     const getSelectedOption = (type: string, id: string | null): ApiItem | undefined => {
-        if (!id) return undefined ;
-        
+        if (!id) return undefined;
+
         if (type === 'Sponge' || type === 'Filling' || type === 'Size' || type === 'Goo' || type === 'Icing') {
             return partOptions.find(group => group.type === type)?.items
-                .find(item => item.id === id) ;
+                .find(item => item.id === id);
         }
-        
+
         if (type === 'OuterIcing') {
             return decorationOptions.flatMap(group => group.items)
-                .find(item => item.id === id) ;
+                .find(item => item.id === id);
         }
-        
+
         if (type === 'Candles' || type === 'CakeBoard') {
             return extraOptions.find(group => group.type === type)?.items
-                .find(item => item.id === id) ;
+                .find(item => item.id === id);
         }
-        
-        return undefined ;
-    } ;
+
+        return undefined;
+    };
 
     // Format color from API to Tailwind class
     const convertColorToTailwind = (color: string): string => {
-        if (!color) return 'bg-gray-200' ;
-        
+        if (!color) return 'bg-gray-200';
+
         // Remove any 'bg-' prefix if exists
-        const normalizedColor = color.toLowerCase().trim().replace('bg-', '') ;
-        
+        const normalizedColor = color.toLowerCase().trim().replace('bg-', '');
+
         // Map API color names to Tailwind classes
         const colorMap: Record<string, string> = {
             'white': 'bg-white',
@@ -1121,44 +1218,684 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
             'purple': 'bg-purple-500',
             'pink': 'bg-pink-500',
             'brown': 'bg-amber-800'
-        } ;
-        
-        return colorMap[normalizedColor] || `bg-${normalizedColor}-500` ;
-    } ;
+        };
+
+        return colorMap[normalizedColor] || `bg-${normalizedColor}-500`;
+    };
+
+    // Enhanced realistic 3D cake rendering with improved visual effects
+    const renderRealistic3DCake = (config: CakeConfig, selectedOptions: any) => {
+        const { selectedSponge, selectedFilling, selectedIcing, selectedGoo, selectedCandles, selectedBoard } = selectedOptions;
+
+        // Use preview decoration if available, otherwise use selected decoration
+        const outerIcingId = previewDecoration || config.outerIcing;
+        const selectedOuterIcing = getSelectedOption('OuterIcing', outerIcingId || null);
+
+        // Get realistic colors with enhanced vibrancy
+        const spongeColor = getRealisticColor(selectedSponge?.color);
+        const fillingColor = getRealisticColor(selectedFilling?.color);
+        const icingColor = getRealisticColor(selectedIcing?.color);
+        const outerIcingColor = getRealisticColor(selectedOuterIcing?.color || null);
+        const gooColor = selectedGoo ? getRealisticColor(selectedGoo.color) : null;
+
+        return (
+            <motion.div
+                className="relative w-full h-full flex items-center justify-center bg-gradient-to-br from-pink-50/50 via-purple-50/50 to-blue-50/50 rounded-3xl"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+            >
+                {/* Enhanced magical background effects */}
+                <div className="absolute inset-0 overflow-hidden rounded-3xl">
+                    {/* Floating sparkles with improved animation */}
+                    {Array.from({ length: 20 }).map((_, i) => (
+                        <motion.div
+                            key={i}
+                            className="absolute rounded-full"
+                            style={{
+                                left: `${Math.random() * 100}%`,
+                                top: `${Math.random() * 100}%`,
+                                width: `${Math.random() * 8 + 4}px`,
+                                height: `${Math.random() * 8 + 4}px`,
+                                background: i % 3 === 0
+                                    ? `linear-gradient(45deg, #fbbf24, #f59e0b)`
+                                    : i % 3 === 1
+                                        ? `linear-gradient(45deg, #ec4899, #be185d)`
+                                        : `linear-gradient(45deg, #8b5cf6, #7c3aed)`,
+                                filter: `drop-shadow(0 0 ${Math.random() * 10 + 5}px rgba(236, 72, 153, 0.3))`
+                            }}
+                            animate={{
+                                scale: [0, 1.5, 0],
+                                rotate: [0, 180, 360],
+                                opacity: [0, 0.8, 0],
+                                y: [0, -20, 0],
+                            }}
+                            transition={{
+                                duration: 4 + Math.random() * 2,
+                                repeat: Infinity,
+                                delay: i * 0.2,
+                                ease: "easeInOut"
+                            }}
+                        />
+                    ))}
+
+                    {/* Enhanced floating geometric shapes */}
+                    {Array.from({ length: 12 }).map((_, i) => (
+                        <motion.div
+                            key={`shape-${i}`}
+                            className="absolute"
+                            style={{
+                                left: `${Math.random() * 100}%`,
+                                top: `${Math.random() * 100}%`,
+                                width: `${Math.random() * 12 + 8}px`,
+                                height: `${Math.random() * 12 + 8}px`,
+                                background: i % 4 === 0
+                                    ? 'linear-gradient(135deg, rgba(236, 72, 153, 0.4), rgba(219, 39, 119, 0.6))'
+                                    : i % 4 === 1
+                                        ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.4), rgba(124, 58, 237, 0.6))'
+                                        : i % 4 === 2
+                                            ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.4), rgba(37, 99, 235, 0.6))'
+                                            : 'linear-gradient(135deg, rgba(251, 191, 36, 0.4), rgba(245, 158, 11, 0.6))',
+                                borderRadius: i % 3 === 0 ? '50%' : i % 3 === 1 ? '25%' : '0%',
+                                transform: `rotate(${Math.random() * 360}deg)`,
+                                filter: `blur(${Math.random() * 2}px) drop-shadow(0 0 8px rgba(236, 72, 153, 0.2))`
+                            }}
+                            animate={{
+                                y: [0, -30, 0],
+                                x: [0, 15, 0],
+                                rotate: [0, 360, 720],
+                                opacity: [0.2, 0.8, 0.2],
+                                scale: [1, 1.3, 1],
+                            }}
+                            transition={{
+                                duration: 8 + Math.random() * 4,
+                                repeat: Infinity,
+                                delay: i * 0.6,
+                                ease: "easeInOut"
+                            }}
+                        />
+                    ))}
+                </div>
+
+                {/* Enhanced cake board with 3D effect */}
+                {selectedBoard && (
+                    <motion.div
+                        className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 w-[120%]"
+                        variants={itemVariants}
+                    >
+                        <div className="relative">
+                            <div
+                                className={`h-8 ${selectedBoard.name.toLowerCase().includes('square') ? 'rounded-2xl' : 'rounded-full'} 
+                                    transition-all duration-500 shadow-2xl`}
+                                style={{
+                                    background: `linear-gradient(135deg, ${getRealisticColor(selectedBoard.color)}, ${getRealisticColor(selectedBoard.color)}cc, ${getRealisticColor(selectedBoard.color)}dd)`,
+                                    boxShadow: `0 12px 32px rgba(0, 0, 0, 0.2), 
+                                               inset 0 2px 0 rgba(255, 255, 255, 0.9),
+                                               inset 0 -2px 0 rgba(0, 0, 0, 0.1),
+                                               0 0 20px rgba(236, 72, 153, 0.1)`
+                                }}
+                            >
+                                <div className={`absolute inset-0 ${selectedBoard.name.toLowerCase().includes('square') ? 'rounded-2xl' : 'rounded-full'}
+                                    bg-gradient-to-r from-white/70 via-transparent to-white/70 opacity-60`} />
+                                <div className={`absolute inset-x-0 top-0 h-3 ${selectedBoard.name.toLowerCase().includes('square') ? 'rounded-t-2xl' : 'rounded-full'}
+                                    bg-gradient-to-b from-white/40 to-transparent`} />
+                                <div className={`absolute inset-0 ${selectedBoard.name.toLowerCase().includes('square') ? 'rounded-2xl' : 'rounded-full'}
+                                    bg-gradient-to-b from-transparent via-transparent to-black/5`} />
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+
+                {/* Enhanced 3-tier realistic cake structure */}
+                <motion.div
+                    className="relative w-80 h-80"
+                    variants={floatingVariants}
+                    animate="animate"
+                >
+                    {/* Bottom tier (largest) */}
+                    <motion.div
+                        className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-full h-32"
+                        variants={itemVariants}
+                        style={{ animationDelay: '0.1s' }}
+                    >
+                        <div className="relative w-full h-full">
+                            {/* Sponge layers visible on the side */}
+                            <div className="absolute left-0 w-8 h-full flex flex-col">
+                                {Array.from({ length: 6 }).map((_, i) => (
+                                    <React.Fragment key={i}>
+                                        <div
+                                            className="flex-1 border-b border-amber-200"
+                                            style={{ backgroundColor: spongeColor }}
+                                        />
+                                        {gooColor && i < 5 && (
+                                            <div
+                                                className="h-1"
+                                                style={{ backgroundColor: gooColor }}
+                                            />
+                                        )}
+                                    </React.Fragment>
+                                ))}
+                            </div>
+
+                            {/* Main cake body with icing */}
+                            <div
+                                className="absolute inset-0 rounded-full"
+                                style={{
+                                    backgroundColor: outerIcingColor,
+                                    boxShadow: 'inset 0 4px 8px rgba(0, 0, 0, 0.1), 0 4px 15px rgba(0, 0, 0, 0.2)'
+                                }}
+                            >
+                                <div className="absolute inset-0 rounded-full bg-gradient-to-b from-white/30 to-transparent" />
+                                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-white/20 via-transparent to-black/10" />
+                            </div>
+
+                            {/* Filling preview */}
+                            <div
+                                className="absolute left-1/2 transform -translate-x-1/2 top-2 bottom-2 w-3 rounded-full"
+                                style={{ backgroundColor: fillingColor }}
+                            />
+                        </div>
+                    </motion.div>
+
+                    {/* Middle tier */}
+                    <motion.div
+                        className="absolute bottom-24 left-1/2 transform -translate-x-1/2 w-[85%] h-28"
+                        variants={itemVariants}
+                        style={{ animationDelay: '0.2s' }}
+                    >
+                        <div className="relative w-full h-full">
+                            <div className="absolute left-0 w-6 h-full flex flex-col">
+                                {Array.from({ length: 5 }).map((_, i) => (
+                                    <React.Fragment key={i}>
+                                        <div
+                                            className="flex-1 border-b border-amber-200"
+                                            style={{ backgroundColor: spongeColor }}
+                                        />
+                                        {gooColor && i < 4 && (
+                                            <div
+                                                className="h-1"
+                                                style={{ backgroundColor: gooColor }}
+                                            />
+                                        )}
+                                    </React.Fragment>
+                                ))}
+                            </div>
+
+                            <div
+                                className="absolute inset-0 rounded-full"
+                                style={{
+                                    backgroundColor: outerIcingColor,
+                                    boxShadow: 'inset 0 3px 6px rgba(0, 0, 0, 0.1), 0 3px 12px rgba(0, 0, 0, 0.15)'
+                                }}
+                            >
+                                <div className="absolute inset-0 rounded-full bg-gradient-to-b from-white/30 to-transparent" />
+                                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-white/20 via-transparent to-black/10" />
+                            </div>
+
+                            <div
+                                className="absolute left-1/2 transform -translate-x-1/2 top-2 bottom-2 w-2 rounded-full"
+                                style={{ backgroundColor: fillingColor }}
+                            />
+                        </div>
+                    </motion.div>
+
+                    {/* Top tier (smallest) */}
+                    <motion.div
+                        className="absolute bottom-44 left-1/2 transform -translate-x-1/2 w-[70%] h-24"
+                        variants={itemVariants}
+                        style={{ animationDelay: '0.3s' }}
+                    >
+                        <div className="relative w-full h-full">
+                            <div className="absolute left-0 w-5 h-full flex flex-col">
+                                {Array.from({ length: 4 }).map((_, i) => (
+                                    <React.Fragment key={i}>
+                                        <div
+                                            className="flex-1 border-b border-amber-200"
+                                            style={{ backgroundColor: spongeColor }}
+                                        />
+                                        {gooColor && i < 3 && (
+                                            <div
+                                                className="h-1"
+                                                style={{ backgroundColor: gooColor }}
+                                            />
+                                        )}
+                                    </React.Fragment>
+                                ))}
+                            </div>
+
+                            <div
+                                className="absolute inset-0 rounded-full"
+                                style={{
+                                    backgroundColor: outerIcingColor,
+                                    boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.1)'
+                                }}
+                            >
+                                <div className="absolute inset-0 rounded-full bg-gradient-to-b from-white/30 to-transparent" />
+                                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-white/20 via-transparent to-black/10" />
+                            </div>
+
+                            <div
+                                className="absolute left-1/2 transform -translate-x-1/2 top-1 bottom-1 w-1 rounded-full"
+                                style={{ backgroundColor: fillingColor }}
+                            />
+                        </div>
+                    </motion.div>
+
+                    {/* Enhanced realistic drip effects */}
+                    {gooColor && (
+                        <motion.div
+                            className="absolute inset-0"
+                            variants={itemVariants}
+                            style={{ animationDelay: '0.4s' }}
+                        >
+                            {/* Drips on bottom tier */}
+                            {Array.from({ length: 8 }).map((_, i) => (
+                                <motion.div
+                                    key={`drip-bottom-${i}`}
+                                    className="absolute w-3 h-8 rounded-b-full"
+                                    style={{
+                                        backgroundColor: gooColor,
+                                        left: `${15 + i * 10}%`,
+                                        top: '60%',
+                                        clipPath: 'polygon(40% 0%, 60% 0%, 100% 100%, 0% 100%)'
+                                    }}
+                                    initial={{ scaleY: 0, opacity: 0 }}
+                                    animate={{ scaleY: 1, opacity: 1 }}
+                                    transition={{ delay: 0.5 + i * 0.1, duration: 0.8 }}
+                                />
+                            ))}
+
+                            {/* Drips on middle tier */}
+                            {Array.from({ length: 6 }).map((_, i) => (
+                                <motion.div
+                                    key={`drip-middle-${i}`}
+                                    className="absolute w-2 h-6 rounded-b-full"
+                                    style={{
+                                        backgroundColor: gooColor,
+                                        left: `${20 + i * 12}%`,
+                                        top: '35%',
+                                        clipPath: 'polygon(40% 0%, 60% 0%, 100% 100%, 0% 100%)'
+                                    }}
+                                    initial={{ scaleY: 0, opacity: 0 }}
+                                    animate={{ scaleY: 1, opacity: 1 }}
+                                    transition={{ delay: 0.7 + i * 0.1, duration: 0.6 }}
+                                />
+                            ))}
+                        </motion.div>
+                    )}
+
+                    {/* Decoration Effects Based on Type */}
+                    {selectedOuterIcing && (
+                        <motion.div
+                            className="absolute inset-0"
+                            variants={itemVariants}
+                            style={{ animationDelay: '0.5s' }}
+                        >
+                            {/* Sprinkles - HẠT RẮC */}
+                            {selectedOuterIcing.type === 'Sprinkles' && (
+                                <div className="absolute inset-0">
+                                    {Array.from({ length: 25 }).map((_, i) => (
+                                        <motion.div
+                                            key={`sprinkle-${i}`}
+                                            className="absolute w-1.5 h-4 rounded-full shadow-sm"
+                                            style={{
+                                                backgroundColor: getRealisticColor(selectedOuterIcing.color),
+                                                left: `${Math.random() * 75 + 12.5}%`,
+                                                top: `${Math.random() * 55 + 22.5}%`,
+                                                transform: `rotate(${Math.random() * 360}deg)`,
+                                                boxShadow: `0 2px 4px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.3)`
+                                            }}
+                                            initial={{ scale: 0, opacity: 0, rotate: 0 }}
+                                            animate={{
+                                                scale: [0, 1.2, 1],
+                                                opacity: [0, 1, 0.9],
+                                                rotate: Math.random() * 360
+                                            }}
+                                            transition={{ delay: 0.8 + i * 0.04, duration: 0.4 }}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Drip Effect - SỐT CHẢY TRÀN */}
+                            {selectedOuterIcing.type === 'Drip' && (
+                                <div className="absolute inset-0">
+                                    {Array.from({ length: 16 }).map((_, i) => (
+                                        <motion.div
+                                            key={`decoration-drip-${i}`}
+                                            className="absolute rounded-b-full shadow-md"
+                                            style={{
+                                                background: `linear-gradient(to bottom, ${getRealisticColor(selectedOuterIcing.color)}, ${getRealisticColor(selectedOuterIcing.color)}dd)`,
+                                                width: `${Math.random() * 6 + 3}px`,
+                                                height: `${Math.random() * 20 + 15}px`,
+                                                left: `${8 + i * 5.5}%`,
+                                                top: `${35 + Math.random() * 25}%`,
+                                                clipPath: 'polygon(25% 0%, 75% 0%, 90% 100%, 10% 100%)',
+                                                boxShadow: `2px 2px 6px rgba(0,0,0,0.3), inset 1px 1px 2px rgba(255,255,255,0.2)`
+                                            }}
+                                            initial={{ scaleY: 0, opacity: 0, y: -10 }}
+                                            animate={{ scaleY: 1, opacity: 0.9, y: 0 }}
+                                            transition={{ delay: 0.6 + i * 0.08, duration: 1, ease: "easeOut" }}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Short Skirt - VÁY BÁNH THẤP */}
+                            {selectedOuterIcing.type === 'ShortSkirt' && (
+                                <motion.div
+                                    className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-[110%] h-12"
+                                    style={{
+                                        background: `linear-gradient(to bottom, ${getRealisticColor(selectedOuterIcing.color)}, ${getRealisticColor(selectedOuterIcing.color)}dd, ${getRealisticColor(selectedOuterIcing.color)}bb)`,
+                                        borderRadius: '0 0 50% 50%',
+                                        boxShadow: 'inset 0 3px 6px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1)'
+                                    }}
+                                    initial={{ scaleY: 0, opacity: 0 }}
+                                    animate={{ scaleY: 1, opacity: 0.9 }}
+                                    transition={{ delay: 0.6, duration: 0.7, ease: "easeOut" }}
+                                >
+                                    {/* Enhanced ruffle layers */}
+                                    <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-transparent" style={{ borderRadius: '0 0 50% 50%' }} />
+                                    <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-[95%] h-3 bg-white/20" style={{ borderRadius: '0 0 40% 40%' }} />
+                                    {/* Decorative edge pattern */}
+                                    {Array.from({ length: 6 }).map((_, i) => (
+                                        <div
+                                            key={`ruffle-${i}`}
+                                            className="absolute bottom-0 w-2 h-1 bg-white/15"
+                                            style={{
+                                                left: `${16 + i * 14}%`,
+                                                borderRadius: '50% 50% 0 0'
+                                            }}
+                                        />
+                                    ))}
+                                </motion.div>
+                            )}
+
+                            {/* Tall Skirt - VÁY BÁNH CAO */}
+                            {selectedOuterIcing.type === 'TallSkirt' && (
+                                <motion.div
+                                    className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-[120%] h-20"
+                                    style={{
+                                        background: `linear-gradient(to bottom, ${getRealisticColor(selectedOuterIcing.color)}, ${getRealisticColor(selectedOuterIcing.color)}ee, ${getRealisticColor(selectedOuterIcing.color)}cc, ${getRealisticColor(selectedOuterIcing.color)}aa)`,
+                                        borderRadius: '0 0 60% 60%',
+                                        boxShadow: 'inset 0 4px 8px rgba(0, 0, 0, 0.2), 0 6px 16px rgba(0, 0, 0, 0.15)'
+                                    }}
+                                    initial={{ scaleY: 0, opacity: 0 }}
+                                    animate={{ scaleY: 1, opacity: 0.95 }}
+                                    transition={{ delay: 0.6, duration: 0.8, ease: "easeOut" }}
+                                >
+                                    {/* Multiple layered ruffle effects */}
+                                    <div className="absolute inset-0 bg-gradient-to-b from-white/50 to-transparent" style={{ borderRadius: '0 0 60% 60%' }} />
+                                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-[95%] h-6 bg-white/25" style={{ borderRadius: '0 0 50% 50%' }} />
+                                    <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-[90%] h-3 bg-white/15" style={{ borderRadius: '0 0 40% 40%' }} />
+                                    {/* Decorative tiered edge pattern */}
+                                    {Array.from({ length: 8 }).map((_, i) => (
+                                        <div
+                                            key={`tall-ruffle-${i}`}
+                                            className="absolute bottom-0 w-2 bg-white/20"
+                                            style={{
+                                                left: `${12 + i * 9.5}%`,
+                                                height: `${Math.random() * 3 + 2}px`,
+                                                borderRadius: '50% 50% 0 0'
+                                            }}
+                                        />
+                                    ))}
+                                    {/* Additional mid-layer ruffles */}
+                                    {Array.from({ length: 6 }).map((_, i) => (
+                                        <div
+                                            key={`tall-mid-ruffle-${i}`}
+                                            className="absolute bottom-2 w-1.5 h-1.5 bg-white/12"
+                                            style={{
+                                                left: `${15 + i * 12}%`,
+                                                borderRadius: '50% 50% 0 0'
+                                            }}
+                                        />
+                                    ))}
+                                </motion.div>
+                            )}
+
+                            {/* Bling - ĐỒ TRANG TRÍ LẤP LÁNH */}
+                            {selectedOuterIcing.type === 'Bling' && (
+                                <div className="absolute inset-0">
+                                    {Array.from({ length: 12 }).map((_, i) => (
+                                        <motion.div
+                                            key={`bling-${i}`}
+                                            className="absolute rounded-full"
+                                            style={{
+                                                background: `radial-gradient(circle, ${getRealisticColor(selectedOuterIcing.color)}, ${getRealisticColor(selectedOuterIcing.color)}88, transparent)`,
+                                                width: `${Math.random() * 8 + 6}px`,
+                                                height: `${Math.random() * 8 + 6}px`,
+                                                left: `${Math.random() * 65 + 17.5}%`,
+                                                top: `${Math.random() * 45 + 27.5}%`,
+                                                boxShadow: `0 0 15px ${getRealisticColor(selectedOuterIcing.color)}88, 0 0 25px ${getRealisticColor(selectedOuterIcing.color)}44, inset 0 0 5px rgba(255,255,255,0.5)`
+                                            }}
+                                            initial={{ scale: 0, opacity: 0, rotate: 0 }}
+                                            animate={{
+                                                scale: [0, 1.4, 1, 1.2, 1],
+                                                opacity: [0, 1, 0.7, 1, 0.8],
+                                                rotate: [0, 360, 720],
+                                                filter: ["brightness(1)", "brightness(1.5)", "brightness(1)", "brightness(1.3)", "brightness(1)"]
+                                            }}
+                                            transition={{
+                                                delay: 0.8 + i * 0.15,
+                                                duration: 2,
+                                                repeat: Infinity,
+                                                repeatDelay: 1.5,
+                                                ease: "easeInOut"
+                                            }}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* General Decoration and Outer Icing Effects - Chocolate Drops Style */}
+                            {(selectedOuterIcing.type === 'Decoration' || selectedOuterIcing.type === 'OuterIcing') && (
+                                <div className="absolute inset-0">
+                                    {/* Chocolate drop decorations like the image */}
+                                    {Array.from({ length: 18 }).map((_, i) => (
+                                        <motion.div
+                                            key={`choco-drop-${i}`}
+                                            className="absolute shadow-lg"
+                                            style={{
+                                                width: `${Math.random() * 8 + 12}px`,
+                                                height: `${Math.random() * 12 + 16}px`,
+                                                background: `linear-gradient(135deg, ${getRealisticColor(selectedOuterIcing.color)}, ${getRealisticColor(selectedOuterIcing.color)}dd, ${getRealisticColor(selectedOuterIcing.color)}bb)`,
+                                                left: `${Math.random() * 70 + 15}%`,
+                                                top: `${Math.random() * 50 + 25}%`,
+                                                borderRadius: '50% 50% 50% 0',
+                                                transform: `rotate(${Math.random() * 360}deg)`,
+                                                boxShadow: `2px 3px 6px rgba(0,0,0,0.3), inset 1px 1px 2px rgba(255,255,255,0.2)`
+                                            }}
+                                            initial={{ scale: 0, opacity: 0, rotate: 0 }}
+                                            animate={{
+                                                scale: [0, 1.1, 1],
+                                                opacity: [0, 1, 0.9],
+                                                rotate: Math.random() * 360
+                                            }}
+                                            transition={{ delay: 0.7 + i * 0.05, duration: 0.5 }}
+                                        />
+                                    ))}
+                                    {/* Base pattern overlay for texture */}
+                                    <div
+                                        className="absolute inset-0 rounded-full opacity-20"
+                                        style={{
+                                            background: `radial-gradient(circle at 30% 30%, ${getRealisticColor(selectedOuterIcing.color)}44, transparent 60%)`
+                                        }}
+                                    />
+                                </div>
+                            )}
+                        </motion.div>
+                    )}
+
+                    {/* Enhanced realistic candles */}
+                    {selectedCandles && (
+                        <motion.div
+                            className="absolute -top-12 left-1/2 transform -translate-x-1/2 w-full flex justify-center"
+                            variants={itemVariants}
+                            style={{ animationDelay: '0.5s' }}
+                        >
+                            {Array.from({ length: 5 }).map((_, i) => (
+                                <motion.div
+                                    key={`candle-${i}`}
+                                    className="mx-2 flex flex-col items-center"
+                                    initial={{ y: 20, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    transition={{ delay: 0.6 + i * 0.1, type: "spring" }}
+                                >
+                                    {/* Enhanced flame with realistic animation */}
+                                    <motion.div
+                                        className="relative w-3 h-5 mb-1"
+                                        animate={{
+                                            scale: [1, 1.2, 1.1, 1],
+                                            rotate: [-2, 3, -1, 2, -2],
+                                        }}
+                                        transition={{
+                                            duration: 2,
+                                            repeat: Infinity,
+                                            ease: "easeInOut"
+                                        }}
+                                    >
+                                        {/* Outer flame glow */}
+                                        <div className="absolute inset-0 bg-orange-400 rounded-full blur-sm opacity-60" />
+                                        {/* Inner flame */}
+                                        <div className="absolute inset-1 bg-gradient-to-t from-red-500 via-orange-400 to-yellow-300 rounded-full" />
+                                        {/* Flame core */}
+                                        <div className="absolute inset-2 bg-gradient-to-t from-orange-300 to-yellow-200 rounded-full" />
+                                    </motion.div>
+
+                                    {/* Candle wick */}
+                                    <div className="w-0.5 h-2 bg-gray-800 rounded-full" />
+
+                                    {/* Enhanced candle body */}
+                                    <motion.div
+                                        className="w-2 h-16 rounded-full shadow-lg"
+                                        style={{
+                                            background: `linear-gradient(135deg, ${getRealisticColor(selectedCandles.color)}, ${getRealisticColor(selectedCandles.color)}dd)`
+                                        }}
+                                        whileHover={{ scale: 1.05 }}
+                                    >
+                                        {/* Candle highlight */}
+                                        <div className="w-full h-full rounded-full bg-gradient-to-r from-white/30 via-transparent to-transparent" />
+                                    </motion.div>
+                                </motion.div>
+                            ))}
+                        </motion.div>
+                    )}
+
+                    {/* Enhanced message display */}
+                    {(config.message || config.messageType !== 'none') && (
+                        <motion.div
+                            className="absolute -top-8 left-1/2 transform -translate-x-1/2 w-32 h-8"
+                            variants={itemVariants}
+                            style={{ animationDelay: '0.6s' }}
+                        >
+                            <div
+                                className="w-full h-full rounded-lg flex items-center justify-center text-xs font-medium shadow-lg border"
+                                style={{
+                                    backgroundColor: (() => {
+                                        if (config.messageType === 'piped') {
+                                            const plaqueColorOption = messageOptions.find(group => group.type === 'PLAQUE_COLOUR')?.items
+                                                .find(item => item.id === config.plaqueColor);
+                                            return plaqueColorOption ? getRealisticColor(plaqueColorOption.color) : '#FFFFFF';
+                                        }
+                                        return '#FFFFFF';
+                                    })(),
+                                    color: (() => {
+                                        if (config.messageType === 'piped') {
+                                            const pipingColorOption = messageOptions.find(group => group.type === 'PIPING_COLOUR')?.items
+                                                .find(item => item.id === config.pipingColor);
+                                            return pipingColorOption ? getRealisticColor(pipingColorOption.color) : '#EC4899';
+                                        }
+                                        return '#EC4899';
+                                    })(),
+                                    borderColor: (() => {
+                                        if (config.messageType === 'piped') {
+                                            const pipingColorOption = messageOptions.find(group => group.type === 'PIPING_COLOUR')?.items
+                                                .find(item => item.id === config.pipingColor);
+                                            return pipingColorOption ? getRealisticColor(pipingColorOption.color) : '#EC4899';
+                                        }
+                                        return 'transparent';
+                                    })(),
+                                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
+                                }}
+                            >
+                                {config.messageType === 'edible' && config.uploadedImage ? (
+                                    <Image
+                                        src={config.uploadedImage}
+                                        alt="Uploaded design"
+                                        width={120}
+                                        height={30}
+                                        className="rounded-lg object-cover w-full h-full"
+                                    />
+                                ) : (
+                                    <span className="truncate px-2">{config.message || "Message..."}</span>
+                                )}
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {/* Size indicator with enhanced styling */}
+                    <motion.div
+                        className="absolute -bottom-12 -right-8 bg-gradient-to-r from-pink-500 to-purple-500 text-white px-4 py-2 rounded-full font-bold text-lg shadow-lg"
+                        variants={pulseVariants}
+                        animate="animate"
+                    >
+                        {config.size}
+                    </motion.div>
+                </motion.div>
+            </motion.div>
+        );
+    };
 
     // Render the cake visualization based on selected options
     const renderCake = () => {
         // Get selected options
-        const selectedSize = config.size ;
-        const selectedSponge = getSelectedOption('Sponge', config.sponge) ;
-        const selectedFilling = getSelectedOption('Filling', config.filling) ;
-        const selectedIcing = getSelectedOption('Icing', config.icing) ;
-        const selectedOuterIcing = getSelectedOption('OuterIcing', config.outerIcing) ;
-        const selectedGoo = getSelectedOption('Goo', config.goo) ;
-        const selectedCandles = getSelectedOption('Candles', config.candles) ;
-        const selectedBoard = getSelectedOption('CakeBoard', config.board) ;
-        
+        const selectedSize = config.size;
+        const selectedSponge = getSelectedOption('Sponge', config.sponge);
+        const selectedFilling = getSelectedOption('Filling', config.filling);
+        const selectedIcing = getSelectedOption('Icing', config.icing);
+
+        // Use preview decoration if available, otherwise use selected decoration
+        const outerIcingId = previewDecoration || config.outerIcing;
+        const selectedOuterIcing = getSelectedOption('OuterIcing', outerIcingId || null);
+
+        const selectedGoo = getSelectedOption('Goo', config.goo);
+        const selectedCandles = getSelectedOption('Candles', config.candles);
+        const selectedBoard = getSelectedOption('CakeBoard', config.board);
+
         // Get colors for visualization
-        const spongeColor = selectedSponge ? convertColorToTailwind(selectedSponge.color) : 'bg-amber-50' ;
-        const fillingColor = selectedFilling ? convertColorToTailwind(selectedFilling.color) : 'bg-white' ;
-        const icingColor = selectedIcing ? convertColorToTailwind(selectedIcing.color) : 'bg-pink-200' ;
-        const gooColor = selectedGoo ? convertColorToTailwind(selectedGoo.color) : null ;
-        
+        const spongeColor = selectedSponge ? convertColorToTailwind(selectedSponge.color) : 'bg-amber-50';
+        const fillingColor = selectedFilling ? convertColorToTailwind(selectedFilling.color) : 'bg-white';
+        const icingColor = selectedIcing ? convertColorToTailwind(selectedIcing.color) : 'bg-pink-200';
+        const gooColor = selectedGoo ? convertColorToTailwind(selectedGoo.color) : null;
+
         // Handle special preview for message section
         if (selectedPart === 'message') {
-            const messageColor = config.messageType === 'piped'
-                ? convertColorToTailwind(config.plaqueColor)
-                : 'bg-white' ;
-            
-            const textColor = config.messageType === 'piped'
-                ? convertColorToTailwind(config.pipingColor)
-                : 'text-pink-600' ;
-            
+            // Get the actual color options for realistic color display
+            const plaqueColorOption = messageOptions.find(group => group.type === 'PLAQUE_COLOUR')?.items
+                .find(item => item.id === config.plaqueColor);
+            const pipingColorOption = messageOptions.find(group => group.type === 'PIPING_COLOUR')?.items
+                .find(item => item.id === config.pipingColor);
+
+            const messageBackgroundColor = config.messageType === 'piped' && plaqueColorOption
+                ? getRealisticColor(plaqueColorOption.color)
+                : '#FFFFFF';
+
+            const messageTextColor = config.messageType === 'piped' && pipingColorOption
+                ? getRealisticColor(pipingColorOption.color)
+                : '#EC4899';
+
             return (
                 <div className="relative w-full aspect-square flex items-center justify-center">
                     <div className="relative w-[80%] aspect-square rounded-full">
                         <div className={`absolute inset-0 rounded-full ${icingColor} shadow-lg`}>
-                            <div className={`absolute inset-[15%] rounded-full flex items-center justify-center ${messageColor}`}>
+                            <div
+                                className="absolute inset-[15%] rounded-full flex items-center justify-center border-2"
+                                style={{
+                                    backgroundColor: messageBackgroundColor,
+                                    borderColor: config.messageType === 'piped' ? messageTextColor : 'transparent'
+                                }}
+                            >
                                 {config.messageType === 'edible' && config.uploadedImage ? (
                                     <Image
                                         src={config.uploadedImage}
@@ -1168,7 +1905,10 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                         height={200}
                                     />
                                 ) : (
-                                    <div className={`text-center ${textColor} italic p-8`}>
+                                    <div
+                                        className="text-center italic p-8 font-medium"
+                                        style={{ color: messageTextColor }}
+                                    >
                                         {config.message || "Thông điệp của bạn..."}
                                     </div>
                                 )}
@@ -1180,11 +1920,16 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                     </div>
                     {renderCakeControls()}
                 </div>
-            ) ;
+            );
         }
-        
+
         return (
-            <div className={`transition-transform duration-300 ${isZoomed ? 'scale-150' : 'scale-100'}`}>
+            <motion.div
+                className={`transition-transform duration-300 ${isZoomed ? 'scale-150' : 'scale-100'}`}
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+            >
                 <div className="relative flex justify-center items-center">
                     <div className="relative w-full max-w-md aspect-square">
                         {/* Cake Board */}
@@ -1194,14 +1939,15 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                     {/* Main board with gradient */}
                                     <div
                                         className={`h-4 ${selectedBoard.name.toLowerCase().includes('square') ? 'rounded-2xl' : 'rounded-full'} 
-                                            bg-gradient-to-b from-white to-gray-50 transition-all duration-300`}
+                                             transition-all duration-300`}
                                         style={{
+                                            background: `linear-gradient(to bottom, ${getRealisticColor(selectedBoard.color)}, ${getRealisticColor(selectedBoard.color)}dd)`,
                                             boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1)'
                                         }}
                                     >
                                         {/* Add subtle sheen effect */}
                                         <div className={`absolute inset-0 ${selectedBoard.name.toLowerCase().includes('square') ? 'rounded-2xl' : 'rounded-full'}
-                                            bg-gradient-to-r from-white/40 via-transparent to-white/40 transition-all duration-300`} />
+                                             bg-gradient-to-r from-white/40 via-transparent to-white/40 transition-all duration-300`} />
                                     </div>
                                 </div>
                             </div>
@@ -1214,7 +1960,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                 {Array(5).fill(0).map((_, i) => (
                                     <React.Fragment key={i}>
                                         <div className={`flex-1 ${spongeColor}`} />
-                                        {gooColor && <div className={`h-1 ${gooColor}`} />}
+                                        {selectedGoo && <div className={`h-1 ${convertColorToTailwind(selectedGoo.color)}`} />}
                                     </React.Fragment>
                                 ))}
                             </div>
@@ -1272,10 +2018,34 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                         {/* Message */}
                         {(config.message || config.messageType !== 'none') && (
                             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                                <div className={`w-32 h-32 rounded-full flex justify-center items-center text-sm p-4 text-center shadow-sm
-                                    ${config.messageType === 'piped'
-                                        ? `${convertColorToTailwind(config.plaqueColor)} text-${convertColorToTailwind(config.pipingColor).replace('bg-', '')}`
-                                        : 'bg-white/90 text-pink-400'}`}
+                                <div
+                                    className="w-32 h-32 rounded-full flex justify-center items-center text-sm p-4 text-center shadow-sm border-2"
+                                    style={{
+                                        backgroundColor: (() => {
+                                            if (config.messageType === 'piped') {
+                                                const plaqueColorOption = messageOptions.find(group => group.type === 'PLAQUE_COLOUR')?.items
+                                                    .find(item => item.id === config.plaqueColor);
+                                                return plaqueColorOption ? getRealisticColor(plaqueColorOption.color) : '#FFFFFF';
+                                            }
+                                            return 'rgba(255, 255, 255, 0.9)';
+                                        })(),
+                                        color: (() => {
+                                            if (config.messageType === 'piped') {
+                                                const pipingColorOption = messageOptions.find(group => group.type === 'PIPING_COLOUR')?.items
+                                                    .find(item => item.id === config.pipingColor);
+                                                return pipingColorOption ? getRealisticColor(pipingColorOption.color) : '#EC4899';
+                                            }
+                                            return '#F472B6';
+                                        })(),
+                                        borderColor: (() => {
+                                            if (config.messageType === 'piped') {
+                                                const pipingColorOption = messageOptions.find(group => group.type === 'PIPING_COLOUR')?.items
+                                                    .find(item => item.id === config.pipingColor);
+                                                return pipingColorOption ? getRealisticColor(pipingColorOption.color) : '#EC4899';
+                                            }
+                                            return 'transparent';
+                                        })()
+                                    }}
                                 >
                                     {config.messageType === 'edible' && config.uploadedImage ? (
                                         <Image
@@ -1292,6 +2062,150 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                             </div>
                         )}
 
+                        {/* Decoration Effects Based on Type */}
+                        {selectedOuterIcing && (
+                            <div className="absolute inset-0">
+                                {/* Sprinkles - HẠT RẮC */}
+                                {selectedOuterIcing.type === 'Sprinkles' && (
+                                    <div className="absolute inset-0">
+                                        {Array.from({ length: 20 }).map((_, i) => (
+                                            <div
+                                                key={`simple-sprinkle-${i}`}
+                                                className="absolute w-1.5 h-3 rounded-full shadow-sm opacity-90"
+                                                style={{
+                                                    backgroundColor: getRealisticColor(selectedOuterIcing.color),
+                                                    left: `${Math.random() * 65 + 17.5}%`,
+                                                    top: `${Math.random() * 45 + 27.5}%`,
+                                                    transform: `rotate(${Math.random() * 360}deg)`,
+                                                    boxShadow: `1px 1px 3px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.4)`
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Drip Effect - SỐT CHẢY TRÀN */}
+                                {selectedOuterIcing.type === 'Drip' && (
+                                    <div className="absolute inset-0">
+                                        {Array.from({ length: 12 }).map((_, i) => (
+                                            <div
+                                                key={`simple-drip-${i}`}
+                                                className="absolute rounded-b-full shadow-md opacity-85"
+                                                style={{
+                                                    background: `linear-gradient(to bottom, ${getRealisticColor(selectedOuterIcing.color)}, ${getRealisticColor(selectedOuterIcing.color)}cc)`,
+                                                    width: `${Math.random() * 3 + 3}px`,
+                                                    height: `${Math.random() * 15 + 12}px`,
+                                                    left: `${12 + i * 6.5}%`,
+                                                    top: `${30 + Math.random() * 15}%`,
+                                                    clipPath: 'polygon(30% 0%, 70% 0%, 85% 100%, 15% 100%)',
+                                                    boxShadow: '1px 2px 4px rgba(0,0,0,0.4)'
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Short Skirt - VÁY BÁNH THẤP */}
+                                {selectedOuterIcing.type === 'ShortSkirt' && (
+                                    <div
+                                        className="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-[108%] h-10"
+                                        style={{
+                                            background: `linear-gradient(to bottom, ${getRealisticColor(selectedOuterIcing.color)}, ${getRealisticColor(selectedOuterIcing.color)}dd, ${getRealisticColor(selectedOuterIcing.color)}bb)`,
+                                            borderRadius: '0 0 50% 50%',
+                                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.12), inset 0 2px 4px rgba(0, 0, 0, 0.08)'
+                                        }}
+                                    >
+                                        {/* Ruffle layers for simple view */}
+                                        <div
+                                            className="absolute inset-0 bg-gradient-to-b from-white/35 to-transparent"
+                                            style={{ borderRadius: '0 0 50% 50%' }}
+                                        />
+                                        <div
+                                            className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-[92%] h-2 bg-white/18"
+                                            style={{ borderRadius: '0 0 40% 40%' }}
+                                        />
+                                    </div>
+                                )}
+
+                                {/* Tall Skirt - VÁY BÁNH CAO */}
+                                {selectedOuterIcing.type === 'TallSkirt' && (
+                                    <div
+                                        className="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-[115%] h-16"
+                                        style={{
+                                            background: `linear-gradient(to bottom, ${getRealisticColor(selectedOuterIcing.color)}, ${getRealisticColor(selectedOuterIcing.color)}ee, ${getRealisticColor(selectedOuterIcing.color)}cc, ${getRealisticColor(selectedOuterIcing.color)}aa)`,
+                                            borderRadius: '0 0 60% 60%',
+                                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15), inset 0 3px 6px rgba(0, 0, 0, 0.12)'
+                                        }}
+                                    >
+                                        {/* Multiple ruffle layers for simple view */}
+                                        <div
+                                            className="absolute inset-0 bg-gradient-to-b from-white/45 to-transparent"
+                                            style={{ borderRadius: '0 0 60% 60%' }}
+                                        />
+                                        <div
+                                            className="absolute bottom-3 left-1/2 transform -translate-x-1/2 w-[95%] h-4 bg-white/22"
+                                            style={{ borderRadius: '0 0 50% 50%' }}
+                                        />
+                                        <div
+                                            className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-[90%] h-2 bg-white/12"
+                                            style={{ borderRadius: '0 0 40% 40%' }}
+                                        />
+                                    </div>
+                                )}
+
+                                {/* Bling - ĐỒ TRANG TRÍ LẤP LÁNH */}
+                                {selectedOuterIcing.type === 'Bling' && (
+                                    <div className="absolute inset-0">
+                                        {Array.from({ length: 10 }).map((_, i) => (
+                                            <div
+                                                key={`simple-bling-${i}`}
+                                                className="absolute rounded-full animate-pulse"
+                                                style={{
+                                                    background: `radial-gradient(circle, ${getRealisticColor(selectedOuterIcing.color)}, ${getRealisticColor(selectedOuterIcing.color)}99, transparent)`,
+                                                    width: `${Math.random() * 6 + 8}px`,
+                                                    height: `${Math.random() * 6 + 8}px`,
+                                                    left: `${Math.random() * 55 + 22.5}%`,
+                                                    top: `${Math.random() * 35 + 32.5}%`,
+                                                    boxShadow: `0 0 12px ${getRealisticColor(selectedOuterIcing.color)}aa, 0 0 20px ${getRealisticColor(selectedOuterIcing.color)}66, inset 0 0 4px rgba(255,255,255,0.6)`,
+                                                    animation: `pulse 1.5s ease-in-out infinite alternate`
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* General Decoration and Outer Icing Effects - Chocolate Drops Style */}
+                                {(selectedOuterIcing.type === 'Decoration' || selectedOuterIcing.type === 'OuterIcing') && (
+                                    <div className="absolute inset-0">
+                                        {/* Chocolate drop decorations like the image */}
+                                        {Array.from({ length: 14 }).map((_, i) => (
+                                            <div
+                                                key={`simple-choco-drop-${i}`}
+                                                className="absolute shadow-md opacity-90"
+                                                style={{
+                                                    width: `${Math.random() * 6 + 8}px`,
+                                                    height: `${Math.random() * 8 + 10}px`,
+                                                    background: `linear-gradient(135deg, ${getRealisticColor(selectedOuterIcing.color)}, ${getRealisticColor(selectedOuterIcing.color)}dd, ${getRealisticColor(selectedOuterIcing.color)}aa)`,
+                                                    left: `${Math.random() * 65 + 17.5}%`,
+                                                    top: `${Math.random() * 45 + 27.5}%`,
+                                                    borderRadius: '50% 50% 50% 0',
+                                                    transform: `rotate(${Math.random() * 360}deg)`,
+                                                    boxShadow: `1px 2px 4px rgba(0,0,0,0.25), inset 1px 1px 1px rgba(255,255,255,0.2)`
+                                                }}
+                                            />
+                                        ))}
+                                        {/* Subtle base texture */}
+                                        <div
+                                            className="absolute inset-0 rounded-full opacity-15"
+                                            style={{
+                                                background: `radial-gradient(circle at 40% 40%, ${getRealisticColor(selectedOuterIcing.color)}66, transparent 50%)`
+                                            }}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         {/* Size indicator */}
                         <div className="absolute bottom-4 right-4 text-2xl font-bold">
                             {selectedSize}
@@ -1300,9 +2214,9 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                         {renderCakeControls()}
                     </div>
                 </div>
-            </div>
-        ) ;
-    } ;
+            </motion.div>
+        );
+    };
 
     // Render cake control buttons
     const renderCakeControls = () => {
@@ -1351,12 +2265,12 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                     </svg>
                 </motion.button>
             </motion.div>
-        ) ;
-    } ;
+        );
+    };
 
     // Render the appropriate customization panel based on selected part
     const renderCustomizationPanel = () => {
-        if (!selectedPart) return null ;
+        if (!selectedPart) return null;
 
         if (error) {
             return (
@@ -1365,15 +2279,15 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                     <p className="text-red-500 text-center">{error.message}</p>
                     <Button
                         onClick={() => {
-                            setError(null) ;
-                            handlePartSelect(selectedPart) ;
+                            setError(null);
+                            handlePartSelect(selectedPart);
                         }}
                         variant="outline"
                     >
                         Thử lại
                     </Button>
                 </div>
-            ) ;
+            );
         }
 
         if (isLoading) {
@@ -1382,7 +2296,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500"></div>
                     <p className="text-gray-500">Đang tải tùy chọn...</p>
                 </div>
-            ) ;
+            );
         }
 
         const renderCompleteButton = () => (
@@ -1394,7 +2308,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
             >
                 HOÀN THÀNH BƯỚC NÀY
             </motion.button>
-        ) ;
+        );
 
         switch (selectedPart) {
             case 'cake':
@@ -1446,7 +2360,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                         {/* Sponge options */}
                         <div className="mb-8">
                             <h3 className="font-bold mb-4 text-2xl text-pink-500">
-                                BÁNH BỘT
+                                TẦNG BÁNH
                             </h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {partOptions.find(group => group.type === 'Sponge')?.items.map((option) => (
@@ -1558,7 +2472,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                         {/* Icing options */}
                         <div className="mb-8">
                             <h3 className="font-bold mb-4 text-2xl text-pink-500">
-                                KEM BÁNH
+                                LỚP PHỦ
                             </h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {partOptions.find(group => group.type === 'Icing')?.items.map((option) => (
@@ -1614,7 +2528,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                         {/* Goo options */}
                         <div className="mb-8">
                             <h3 className="font-bold mb-4 text-2xl text-pink-500">
-                                NƯỚC SỐT
+                                KEM NHÂN
                             </h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {partOptions.find(group => group.type === 'Goo')?.items.map((option) => (
@@ -1668,7 +2582,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                         </div>
                         {renderCompleteButton()}
                     </div>
-                ) ;
+                );
 
             case 'decoration':
                 return (
@@ -1676,16 +2590,17 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                         <h3 className="font-bold mb-6 text-2xl bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
                             TRANG TRÍ
                         </h3>
-                        
+
                         {decorationOptions.map(group => (
                             <div key={group.type} className="mb-8">
                                 <h4 className="font-semibold text-xl text-gray-800 mb-4 capitalize">
-                                    {group.type === 'OuterIcing' ? 'LỚP KEM BÊN NGOÀI' : 
-                                     group.type === 'Drip' ? 'KEM CHẢY' :
-                                     group.type === 'Sprinkles' ? 'SPRINKLES' :
-                                     group.type === 'Bling' ? 'TRANG TRÍ ÁNH KIM' :
-                                     group.type === 'TallSkirt' ? 'BÌA CAO' :
-                                     group.type === 'ShortSkirt' ? 'BÌA THẤP' : group.type}
+                                    {group.type === 'OuterIcing' ? '🧁 PHỦ KEM NGOÀI' :
+                                        group.type === 'Decoration' ? '✨ TRANG TRÍ' :
+                                            group.type === 'Drip' ? '💧 SỐT CHẢY TRÀN' :
+                                                group.type === 'Sprinkles' ? '🌟 HẠT RẮC' :
+                                                    group.type === 'Bling' ? '💎 ĐỒ TRANG TRÍ LẤP LÁNH' :
+                                                        group.type === 'TallSkirt' ? '👗 VÁY BÁNH CAO' :
+                                                            group.type === 'ShortSkirt' ? '🎀 VÁY BÁNH THẤP' : `🎨 ${group.type}`}
                                 </h4>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     {group.items.map(option => (
@@ -1696,10 +2611,14 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                             whileHover={{ scale: 1.02 }}
                                             whileTap={{ scale: 0.98 }}
                                             onClick={() => handleDecorationSelect(option)}
+                                            onMouseEnter={() => handleDecorationPreview(option.id)}
+                                            onMouseLeave={clearDecorationPreview}
                                             className={`relative flex flex-col p-4 rounded-xl border-2
                                                 ${config.outerIcing === option.id
                                                     ? 'border-pink-500 bg-gradient-to-br from-pink-50 to-purple-50'
-                                                    : 'border-gray-200 hover:border-pink-300'}
+                                                    : previewDecoration === option.id
+                                                        ? 'border-blue-400 bg-gradient-to-br from-blue-50 to-indigo-50'
+                                                        : 'border-gray-200 hover:border-pink-300'}
                                                 transition-all duration-300`}
                                         >
                                             <div className="w-full mb-3">
@@ -1718,9 +2637,9 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                                         <div className="absolute inset-0 flex items-center justify-center">
                                                             <span className="text-4xl opacity-50">
                                                                 {group.type === 'Drip' ? '💧' :
-                                                                 group.type === 'Sprinkles' ? '✨' :
-                                                                 group.type === 'TallSkirt' ? '👗' :
-                                                                 group.type === 'Bling' ? '💎' : '🎨'}
+                                                                    group.type === 'Sprinkles' ? '✨' :
+                                                                        group.type === 'TallSkirt' ? '👗' :
+                                                                            group.type === 'Bling' ? '💎' : '🎨'}
                                                             </span>
                                                         </div>
                                                     </div>
@@ -1747,13 +2666,20 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                 </div>
                             </div>
                         ))}
-                        
+
                         <div className="mt-6 text-center text-sm text-gray-500">
-                            Chọn kiểu trang trí cho bánh của bạn
+                            {previewDecoration ? (
+                                <div className="flex items-center justify-center gap-2 text-blue-600 font-medium">
+                                    <span className="animate-pulse">👁️</span>
+                                    Đang xem trước trang trí - Di chuột ra để thoát
+                                </div>
+                            ) : (
+                                'Di chuột vào tùy chọn để xem trước trên bánh'
+                            )}
                         </div>
                         {renderCompleteButton()}
                     </div>
-                ) ;
+                );
 
             case 'message':
                 // Define message type options
@@ -1761,7 +2687,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                     { id: 'none', name: 'KHÔNG', icon: '✖️' },
                     { id: 'piped', name: 'CHỮ VIẾT TAY', icon: '✍️' },
                     { id: 'edible', name: 'HÌNH ẢNH ĂN ĐƯỢC', icon: '🖼️' }
-                ] ;
+                ];
 
                 return (
                     <div className="space-y-6">
@@ -1834,8 +2760,8 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                                         />
                                                         <button
                                                             onClick={(e) => {
-                                                                e.preventDefault() ;
-                                                                handleImageRemove() ;
+                                                                e.preventDefault();
+                                                                handleImageRemove();
                                                             }}
                                                             className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
                                                         >
@@ -1875,7 +2801,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                         {messageOptions.find(group => group.type === 'PLAQUE_COLOUR') && (
                                             <div className="space-y-2">
                                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                    Màu nền
+                                                    Màu Thông Điệp
                                                 </label>
                                                 <div className="grid grid-cols-2 gap-3">
                                                     {messageOptions.find(group => group.type === 'PLAQUE_COLOUR')?.items.map(option => (
@@ -1892,8 +2818,11 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                                                     : 'border-gray-200 hover:border-pink-300'}
                                                                 transition-all duration-300`}
                                                         >
-                                                            <div className={`w-8 h-8 rounded-lg ${convertColorToTailwind(option.color)}`} />
-                                                            <span className="text-sm">{option.name}</span>
+                                                            <div
+                                                                className="w-8 h-8 rounded-lg border border-gray-300 shadow-sm"
+                                                                style={{ backgroundColor: getRealisticColor(option.color) }}
+                                                            />
+                                                            <span className="text-sm font-medium">{option.color}</span>
                                                             {config.plaqueColor === option.id && (
                                                                 <motion.div
                                                                     initial={{ scale: 0 }}
@@ -1913,7 +2842,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                         {messageOptions.find(group => group.type === 'PIPING_COLOUR') && (
                                             <div className="space-y-2">
                                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                    Màu chữ
+                                                    Màu Viền
                                                 </label>
                                                 <div className="grid grid-cols-2 gap-3">
                                                     {messageOptions.find(group => group.type === 'PIPING_COLOUR')?.items.map(option => (
@@ -1930,8 +2859,11 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                                                     : 'border-gray-200 hover:border-pink-300'}
                                                                 transition-all duration-300`}
                                                         >
-                                                            <div className={`w-8 h-8 rounded-lg ${convertColorToTailwind(option.color)}`} />
-                                                            <span className="text-sm">{option.name}</span>
+                                                            <div
+                                                                className="w-8 h-8 rounded-lg border border-gray-300 shadow-sm"
+                                                                style={{ backgroundColor: getRealisticColor(option.color) }}
+                                                            />
+                                                            <span className="text-sm font-medium">{option.color}</span>
                                                             {config.pipingColor === option.id && (
                                                                 <motion.div
                                                                     initial={{ scale: 0 }}
@@ -1952,7 +2884,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                         )}
                         {renderCompleteButton()}
                     </div>
-                ) ;
+                );
 
             case 'extras':
                 return (
@@ -1966,8 +2898,8 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                 <div key={group.type} className="space-y-4">
                                     <h4 className="font-semibold text-xl text-gray-800 pl-2 border-l-4 border-pink-500">
                                         {group.type === 'Candles' ? 'NẾN TRANG TRÍ 🕯️' :
-                                         group.type === 'CakeBoard' ? 'ĐẾ BÁNH 🎂' :
-                                         group.type === 'Topper' ? 'TOPPER 🧁' : group.type}
+                                            group.type === 'CakeBoard' ? 'ĐẾ BÁNH 🎂' :
+                                                group.type === 'Topper' ? 'TOPPER 🧁' : group.type}
                                     </h4>
                                     <div className="grid grid-cols-1 gap-4">
                                         {group.items.map(option => (
@@ -1976,20 +2908,19 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                                 variants={selectedVariants}
                                                 animate={
                                                     (group.type === 'Candles' && config.candles === option.id) ||
-                                                    (group.type === 'CakeBoard' && config.board === option.id) ||
-                                                    (Array.isArray(config.extras) && config.extras.includes(option.id))
+                                                        (group.type === 'CakeBoard' && config.board === option.id) ||
+                                                        (Array.isArray(config.extras) && config.extras.includes(option.id))
                                                         ? "selected" : "unselected"
                                                 }
                                                 whileHover={{ scale: 1.02 }}
                                                 whileTap={{ scale: 0.98 }}
                                                 onClick={() => handleExtraSelect(option)}
                                                 className={`relative flex items-center p-6 rounded-xl border-2 w-full
-                                                    ${
-                                                        (group.type === 'Candles' && config.candles === option.id) ||
+                                                    ${(group.type === 'Candles' && config.candles === option.id) ||
                                                         (group.type === 'CakeBoard' && config.board === option.id) ||
                                                         (Array.isArray(config.extras) && config.extras.includes(option.id))
-                                                            ? 'border-pink-500 bg-gradient-to-br from-pink-50 to-purple-50'
-                                                            : 'border-gray-200 hover:border-pink-300'
+                                                        ? 'border-pink-500 bg-gradient-to-br from-pink-50 to-purple-50'
+                                                        : 'border-gray-200 hover:border-pink-300'
                                                     }
                                                     transition-all duration-300`}
                                             >
@@ -2009,8 +2940,8 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                                         ) : (
                                                             <div className="w-full h-full flex items-center justify-center text-4xl">
                                                                 {group.type === 'Candles' ? '🕯️' :
-                                                                 group.type === 'CakeBoard' ? '🎂' :
-                                                                 group.type === 'Topper' ? '🧁' : '🍰'}
+                                                                    group.type === 'CakeBoard' ? '🎂' :
+                                                                        group.type === 'Topper' ? '🧁' : '🍰'}
                                                             </div>
                                                         )}
                                                     </div>
@@ -2025,16 +2956,16 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                                     </div>
                                                 </div>
                                                 {((group.type === 'Candles' && config.candles === option.id) ||
-                                                  (group.type === 'CakeBoard' && config.board === option.id) ||
-                                                  (Array.isArray(config.extras) && config.extras.includes(option.id))) && (
-                                                    <motion.div
-                                                        initial={{ scale: 0 }}
-                                                        animate={{ scale: 1 }}
-                                                        className="absolute -top-2 -right-2 bg-pink-500 text-white rounded-full p-2"
-                                                    >
-                                                        <Check className="w-5 h-5" />
-                                                    </motion.div>
-                                                )}
+                                                    (group.type === 'CakeBoard' && config.board === option.id) ||
+                                                    (Array.isArray(config.extras) && config.extras.includes(option.id))) && (
+                                                        <motion.div
+                                                            initial={{ scale: 0 }}
+                                                            animate={{ scale: 1 }}
+                                                            className="absolute -top-2 -right-2 bg-pink-500 text-white rounded-full p-2"
+                                                        >
+                                                            <Check className="w-5 h-5" />
+                                                        </motion.div>
+                                                    )}
                                             </motion.button>
                                         ))}
                                     </div>
@@ -2046,61 +2977,317 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                         </div>
                         {renderCompleteButton()}
                     </div>
-                ) ;
+                );
 
             default:
-                return null ;
+                return null;
         }
-    } ;
+    };
 
     return (
         <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50"
+            className="min-h-screen relative overflow-hidden"
         >
-            {/* Add global styles */}
+            {/* Enhanced animated background with premium aesthetics */}
+            <div className="fixed inset-0 -z-10">
+                {/* Primary gradient background with more vibrant colors */}
+                <div className="absolute inset-0 bg-gradient-to-br from-pink-50 via-purple-50 via-blue-50 to-indigo-50" />
+
+                {/* Secondary gradient overlay for depth */}
+                <div className="absolute inset-0 bg-gradient-to-tr from-rose-100/30 via-transparent to-violet-100/30" />
+
+                {/* Enhanced animated mesh gradient overlay */}
+                <motion.div
+                    className="absolute inset-0 opacity-40"
+                    animate={{
+                        background: [
+                            "radial-gradient(circle at 20% 50%, rgba(236, 72, 153, 0.4) 0%, transparent 60%), radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.4) 0%, transparent 60%), radial-gradient(circle at 40% 80%, rgba(59, 130, 246, 0.4) 0%, transparent 60%)",
+                            "radial-gradient(circle at 60% 20%, rgba(236, 72, 153, 0.4) 0%, transparent 60%), radial-gradient(circle at 20% 80%, rgba(139, 92, 246, 0.4) 0%, transparent 60%), radial-gradient(circle at 80% 60%, rgba(59, 130, 246, 0.4) 0%, transparent 60%)",
+                            "radial-gradient(circle at 80% 80%, rgba(236, 72, 153, 0.4) 0%, transparent 60%), radial-gradient(circle at 40% 40%, rgba(139, 92, 246, 0.4) 0%, transparent 60%), radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.4) 0%, transparent 60%)"
+                        ]
+                    }}
+                    transition={{
+                        duration: 12,
+                        repeat: Infinity,
+                        repeatType: "reverse",
+                        ease: "easeInOut"
+                    }}
+                />
+
+                {/* Enhanced floating orbs with better aesthetics */}
+                {Array.from({ length: 8 }).map((_, i) => (
+                    <motion.div
+                        key={`orb-${i}`}
+                        className="absolute rounded-full blur-2xl opacity-25"
+                        style={{
+                            left: `${Math.random() * 100}%`,
+                            top: `${Math.random() * 100}%`,
+                            width: `${Math.random() * 200 + 100}px`,
+                            height: `${Math.random() * 200 + 100}px`,
+                            background: i % 4 === 0
+                                ? 'linear-gradient(135deg, rgba(236, 72, 153, 0.6), rgba(219, 39, 119, 0.4))'
+                                : i % 4 === 1
+                                    ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.6), rgba(124, 58, 237, 0.4))'
+                                    : i % 4 === 2
+                                        ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.6), rgba(37, 99, 235, 0.4))'
+                                        : 'linear-gradient(135deg, rgba(251, 191, 36, 0.6), rgba(245, 158, 11, 0.4))',
+                        }}
+                        animate={{
+                            x: [0, 150, -75, 0],
+                            y: [0, -120, 60, 0],
+                            scale: [1, 1.4, 0.7, 1],
+                            rotate: [0, 180, 360],
+                        }}
+                        transition={{
+                            duration: 25 + i * 3,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                            delay: i * 1.5
+                        }}
+                    />
+                ))}
+
+                {/* Enhanced grid pattern overlay with subtle animation */}
+                <motion.div
+                    className="absolute inset-0 opacity-8"
+                    style={{
+                        backgroundImage: `
+                            linear-gradient(rgba(236, 72, 153, 0.15) 1px, transparent 1px),
+                            linear-gradient(90deg, rgba(139, 92, 246, 0.15) 1px, transparent 1px)
+                        `,
+                        backgroundSize: '60px 60px'
+                    }}
+                    animate={{
+                        backgroundPosition: ['0px 0px', '60px 60px', '0px 0px']
+                    }}
+                    transition={{
+                        duration: 20,
+                        repeat: Infinity,
+                        ease: "linear"
+                    }}
+                />
+
+                {/* Additional decorative elements */}
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/5 to-transparent" />
+            </div>
+
+            {/* Enhanced global styles */}
             <style jsx global>{`
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Dancing+Script:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
+                
                 .custom-scrollbar {
-                    scrollbar-width: thin ;
-                    scrollbar-color: rgba(236, 72, 153, 0.3) transparent ;
+                    scrollbar-width: thin;
+                    scrollbar-color: rgba(236, 72, 153, 0.4) rgba(255, 255, 255, 0.1);
                 }
 
                 .custom-scrollbar::-webkit-scrollbar {
-                    width: 6px ;
+                    width: 8px;
                 }
 
                 .custom-scrollbar::-webkit-scrollbar-track {
-                    background: transparent ;
+                    background: rgba(255, 255, 255, 0.1);
+                    border-radius: 4px;
                 }
 
                 .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background-color: rgba(236, 72, 153, 0.3) ;
-                    border-radius: 3px ;
+                    background: linear-gradient(135deg, rgba(236, 72, 153, 0.6), rgba(139, 92, 246, 0.6));
+                    border-radius: 4px;
+                    border: 1px solid rgba(255, 255, 255, 0.2);
                 }
 
                 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background-color: rgba(236, 72, 153, 0.5) ;
+                    background: linear-gradient(135deg, rgba(236, 72, 153, 0.8), rgba(139, 92, 246, 0.8));
+                    box-shadow: 0 0 10px rgba(236, 72, 153, 0.3);
                 }
 
                 @keyframes float {
-                    0% { transform: translateY(0px) ; }
-                    50% { transform: translateY(-10px) ; }
-                    100% { transform: translateY(0px) ; }
+                    0% { transform: translateY(0px); }
+                    50% { transform: translateY(-10px); }
+                    100% { transform: translateY(0px); }
+                }
+
+                @keyframes sparkle {
+                    0%, 100% { opacity: 0; transform: scale(0); }
+                    50% { opacity: 1; transform: scale(1); }
+                }
+
+                @keyframes shimmer {
+                    0% { transform: translateX(-100%); }
+                    100% { transform: translateX(100%); }
                 }
 
                 .float-animation {
-                    animation: float 3s ease-in-out infinite ;
+                    animation: float 3s ease-in-out infinite;
+                }
+
+                .sparkle-animation {
+                    animation: sparkle 2s ease-in-out infinite;
+                }
+
+                .shimmer-effect {
+                    position: relative;
+                    overflow: hidden;
+                }
+
+                .shimmer-effect::before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: linear-gradient(
+                        90deg,
+                        transparent,
+                        rgba(255, 255, 255, 0.4),
+                        transparent
+                    );
+                    transform: translateX(-100%);
+                    animation: shimmer 2s infinite;
+                }
+
+                .glass-morphism {
+                    background: rgba(255, 255, 255, 0.25);
+                    backdrop-filter: blur(10px);
+                    border: 1px solid rgba(255, 255, 255, 0.18);
+                }
+
+                .glass-morphism-dark {
+                    background: rgba(0, 0, 0, 0.1);
+                    backdrop-filter: blur(10px);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                }
+
+                .text-gradient {
+                    background: linear-gradient(135deg, #ec4899, #8b5cf6, #3b82f6);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    background-clip: text;
+                }
+
+                .text-gradient-gold {
+                    background: linear-gradient(135deg, #fbbf24, #f59e0b, #d97706);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    background-clip: text;
+                }
+
+                .button-glow {
+                    box-shadow: 0 0 20px rgba(236, 72, 153, 0.3);
+                    transition: all 0.3s ease;
+                }
+
+                .button-glow:hover {
+                    box-shadow: 0 0 30px rgba(236, 72, 153, 0.5);
+                    transform: translateY(-2px);
+                }
+
+                .card-hover {
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                }
+
+                .card-hover:hover {
+                    transform: translateY(-8px) scale(1.02);
+                    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+                }
+
+                .neon-border {
+                    border: 2px solid transparent;
+                    background: linear-gradient(white, white) padding-box,
+                                linear-gradient(135deg, #ec4899, #8b5cf6, #3b82f6) border-box;
+                }
+
+                .neon-glow {
+                    filter: drop-shadow(0 0 10px rgba(236, 72, 153, 0.5));
+                }
+
+                body {
+                    font-family: 'Poppins', 'Inter', sans-serif;
+                    background: #f8fafc;
+                }
+
+                .font-dancing {
+                    font-family: 'Dancing Script', cursive;
+                }
+
+                .font-poppins {
+                    font-family: 'Poppins', sans-serif;
+                }
+
+                /* Enhanced button styles */
+                .btn-primary {
+                    background: linear-gradient(135deg, #ec4899, #8b5cf6);
+                    border: none;
+                    color: white;
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                    box-shadow: 0 4px 15px rgba(236, 72, 153, 0.3);
+                }
+
+                .btn-primary:hover {
+                    background: linear-gradient(135deg, #be185d, #7c3aed);
+                    transform: translateY(-2px);
+                    box-shadow: 0 8px 25px rgba(236, 72, 153, 0.4);
+                }
+
+                /* Enhanced card styles */
+                .card-modern {
+                    background: rgba(255, 255, 255, 0.95);
+                    backdrop-filter: blur(20px);
+                    border: 1px solid rgba(255, 255, 255, 0.2);
+                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+                }
+
+                .card-modern:hover {
+                    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+                    transform: translateY(-4px);
+                }
+
+                /* Enhanced gradient text */
+                .text-gradient-premium {
+                    background: linear-gradient(135deg, #ec4899, #8b5cf6, #3b82f6, #10b981);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    background-clip: text;
+                    background-size: 300% 300%;
+                    animation: gradientShift 3s ease infinite;
+                }
+
+                @keyframes gradientShift {
+                    0%, 100% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                }
+
+                /* Enhanced glassmorphism */
+                .glass-premium {
+                    background: rgba(255, 255, 255, 0.15);
+                    backdrop-filter: blur(25px);
+                    border: 1px solid rgba(255, 255, 255, 0.25);
+                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+                }
+
+                /* Neon glow effects */
+                .neon-pink {
+                    box-shadow: 0 0 20px rgba(236, 72, 153, 0.5),
+                               0 0 40px rgba(236, 72, 153, 0.3),
+                               0 0 60px rgba(236, 72, 153, 0.1);
+                }
+
+                .neon-purple {
+                    box-shadow: 0 0 20px rgba(139, 92, 246, 0.5),
+                               0 0 40px rgba(139, 92, 246, 0.3),
+                               0 0 60px rgba(139, 92, 246, 0.1);
                 }
             `}</style>
-            
+
             <motion.div
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.2 }}
-                className="flex flex-col md:flex-row w-full max-w-7xl mx-auto gap-8 p-6"
+                className="flex flex-col md:flex-row w-full max-w-7xl mx-auto gap-8 p-6 relative z-10"
             >
-                {/* Left side - Cake Preview */}
+                {/* Left side - Enhanced Cake Preview */}
                 <motion.div
                     layout
                     className="flex-1 sticky top-6 h-fit"
@@ -2108,54 +3295,190 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                     <motion.div
                         whileHover={{ scale: 1.02 }}
                         transition={{ type: "spring", stiffness: 300 }}
-                        className="relative aspect-square w-full max-w-2xl mx-auto bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl p-8 border border-pink-100"
+                        className="relative aspect-square w-full max-w-2xl mx-auto glass-premium rounded-3xl shadow-2xl p-8 neon-pink card-modern"
                     >
-                        <div className="absolute inset-0 bg-gradient-to-br from-pink-100/20 to-purple-100/20 rounded-3xl" />
+                        {/* Enhanced background with animated elements */}
+                        <div className="absolute inset-0 rounded-3xl overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-br from-pink-100/30 via-purple-100/30 to-blue-100/30" />
+
+                            {/* Animated sparkles in background */}
+                            {Array.from({ length: 15 }).map((_, i) => (
+                                <motion.div
+                                    key={`bg-sparkle-${i}`}
+                                    className="absolute w-1 h-1 bg-gradient-to-r from-yellow-400 to-pink-400 rounded-full"
+                                    style={{
+                                        left: `${Math.random() * 100}%`,
+                                        top: `${Math.random() * 100}%`,
+                                    }}
+                                    animate={{
+                                        scale: [0, 1, 0],
+                                        opacity: [0, 1, 0],
+                                        rotate: [0, 180, 360],
+                                    }}
+                                    transition={{
+                                        duration: 3,
+                                        repeat: Infinity,
+                                        delay: i * 0.2,
+                                        ease: "easeInOut"
+                                    }}
+                                />
+                            ))}
+
+                            {/* Shimmer effect overlay */}
+                            <div className="absolute inset-0 shimmer-effect" />
+                        </div>
+
+                        {/* Floating decorative elements around cake */}
+                        <div className="absolute inset-0 pointer-events-none">
+                            {[Sparkles, Heart, Star, Zap].map((Icon, i) => (
+                                <motion.div
+                                    key={`floating-icon-${i}`}
+                                    className="absolute text-pink-400/30"
+                                    style={{
+                                        left: `${20 + i * 20}%`,
+                                        top: `${10 + i * 15}%`,
+                                    }}
+                                    animate={{
+                                        y: [0, -20, 0],
+                                        rotate: [0, 360],
+                                        scale: [1, 1.2, 1],
+                                    }}
+                                    transition={{
+                                        duration: 4 + i,
+                                        repeat: Infinity,
+                                        ease: "easeInOut",
+                                        delay: i * 0.5
+                                    }}
+                                >
+                                    <Icon size={24} />
+                                </motion.div>
+                            ))}
+                        </div>
+
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key={selectedPart || 'default'}
-                                initial={{ opacity: 0, scale: 0.8 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.8 }}
-                                transition={{ duration: 0.3 }}
+                                initial={{ opacity: 0, scale: 0.8, rotateY: -90 }}
+                                animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+                                exit={{ opacity: 0, scale: 0.8, rotateY: 90 }}
+                                transition={{
+                                    duration: 0.6,
+                                    type: "spring",
+                                    stiffness: 200,
+                                    damping: 20
+                                }}
                                 ref={cakePreviewRef}
+                                className="relative z-10"
                             >
-                                {/* Cake visualization goes here */}
+                                {/* Enhanced cake visualization */}
                                 {renderCake()}
                             </motion.div>
                         </AnimatePresence>
+
+                        {/* Enhanced floating action buttons */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="absolute bottom-6 left-0 right-0 flex justify-center items-center gap-4"
+                        >
+                            <motion.button
+                                whileHover={{ scale: 1.1, rotate: 5 }}
+                                whileTap={{ scale: 0.9 }}
+                                onClick={() => setIsZoomed(!isZoomed)}
+                                className="p-4 glass-morphism rounded-full shadow-lg button-glow neon-glow transition-all group"
+                            >
+                                <motion.div
+                                    animate={{ rotate: isZoomed ? 180 : 0 }}
+                                    transition={{ duration: 0.3 }}
+                                >
+                                    {isZoomed ? (
+                                        <svg className="w-6 h-6 text-pink-600 group-hover:text-purple-600 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10h-6" />
+                                        </svg>
+                                    ) : (
+                                        <svg className="w-6 h-6 text-pink-600 group-hover:text-purple-600 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" />
+                                        </svg>
+                                    )}
+                                </motion.div>
+                            </motion.button>
+
+                            <motion.button
+                                whileHover={{ scale: 1.1, rotate: -5 }}
+                                whileTap={{ scale: 0.9 }}
+                                onClick={handleSaveDesign}
+                                className="p-4 glass-morphism rounded-full shadow-lg button-glow neon-glow transition-all group"
+                            >
+                                <svg className="w-6 h-6 text-pink-600 group-hover:text-purple-600 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
+                                    <path d="M17 21v-8H7v8M7 3v5h8" />
+                                </svg>
+                            </motion.button>
+
+                            <motion.button
+                                whileHover={{ scale: 1.1, rotate: 5 }}
+                                whileTap={{ scale: 0.9 }}
+                                onClick={() => {
+                                    if (cakePreviewRef.current) {
+                                        html2canvas(cakePreviewRef.current).then(canvas => {
+                                            const link = document.createElement('a');
+                                            link.download = 'my-custom-cake.png';
+                                            link.href = canvas.toDataURL();
+                                            link.click();
+                                        });
+                                    }
+                                }}
+                                className="p-4 glass-morphism rounded-full shadow-lg button-glow neon-glow transition-all group"
+                            >
+                                <Download className="w-6 h-6 text-pink-600 group-hover:text-purple-600 transition-colors" />
+                            </motion.button>
+                        </motion.div>
                     </motion.div>
                 </motion.div>
 
-                {/* Right side - Configuration Panel */}
+                {/* Right side - Enhanced Configuration Panel */}
                 <motion.div
                     initial={{ x: 20, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     transition={{ delay: 0.3 }}
-                    className="w-full md:w-[400px]"
+                    className="w-full md:w-[420px]"
                 >
-                    <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-pink-100">
+                    <div className="glass-premium rounded-3xl shadow-2xl neon-purple card-modern">
+                        {/* Enhanced header */}
                         <motion.div
-                            whileHover={{ scale: 1.02 }}
-                            className="p-8 border-b border-pink-100"
+                            whileHover={{ scale: 1.01 }}
+                            className="p-8 border-b border-white/30 relative overflow-hidden"
                         >
-                            <div className="flex justify-between items-center">
-                                <motion.h1
+                            {/* Header background animation */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-blue-500/10" />
+                            <motion.div
+                                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+                                animate={{ x: ['-100%', '100%'] }}
+                                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                            />
+
+                            <div className="flex justify-between items-center relative z-10">
+                                <motion.div
                                     initial={{ y: -20 }}
                                     animate={{ y: 0 }}
-                                    className="text-4xl font-bold bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 bg-clip-text text-transparent"
+                                    className="space-y-2"
                                 >
-                                    BÁNH CUSTOM
-                                </motion.h1>
+                                    <h1 className="text-5xl font-bold text-gradient-premium font-dancing">
+                                        ✨ BÁNH CUSTOM ✨
+                                    </h1>
+                                    <p className="text-sm text-gray-700 font-medium font-poppins">
+                                        Tạo chiếc bánh trong mơ của bạn
+                                    </p>
+                                </motion.div>
                                 <motion.button
-                                    whileHover={{ scale: 1.1 }}
+                                    whileHover={{ scale: 1.1, rotate: 180 }}
                                     whileTap={{ scale: 0.9 }}
                                     onClick={handleResetConfig}
-                                    className="p-2 rounded-full hover:bg-pink-50 transition-all"
+                                    className="p-3 glass-morphism-dark rounded-full hover:bg-pink-50/20 transition-all neon-glow"
                                     title="Reset Design"
                                 >
                                     <svg
-                                        className="w-5 h-5 text-pink-600"
+                                        className="w-6 h-6 text-pink-600"
                                         fill="none"
                                         stroke="currentColor"
                                         viewBox="0 0 24 24"
@@ -2169,43 +3492,108 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                     </svg>
                                 </motion.button>
                             </div>
+
+                            {/* Enhanced price display */}
                             <motion.div
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
-                                className="text-3xl font-bold text-pink-600 mt-2 flex items-center"
+                                className="mt-4 relative"
                             >
-                                {config.price.toLocaleString()} VND
-                                <motion.button 
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    className="ml-2 text-sm bg-pink-100 hover:bg-pink-200 text-pink-700 px-2 py-1 rounded-full transition-colors"
-                                    onClick={() => setShowJson(!showJson)}
-                                >
-                                    {showJson ? 'Ẩn chi tiết' : 'Xem chi tiết'}
-                                </motion.button>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-4">
+                                        <motion.div
+                                            animate={{ rotate: [0, 360] }}
+                                            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                                            className="w-10 h-10 rounded-full bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 flex items-center justify-center shadow-lg neon-glow"
+                                        >
+                                            <span className="text-lg">💰</span>
+                                        </motion.div>
+                                        <div>
+                                            <motion.div
+                                                key={config.price}
+                                                initial={{ scale: 1.2, opacity: 0 }}
+                                                animate={{ scale: 1, opacity: 1 }}
+                                                className="text-4xl font-bold text-gradient-gold font-poppins"
+                                            >
+                                                {config.price.toLocaleString()} VND
+                                            </motion.div>
+                                            <div className="text-sm text-gray-600 font-medium">Giá tổng cộng</div>
+                                        </div>
+                                    </div>
+                                    <motion.button
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        className="px-4 py-2 text-sm glass-morphism-dark hover:bg-pink-50/20 text-pink-700 rounded-full transition-all neon-glow"
+                                        onClick={() => setShowJson(!showJson)}
+                                    >
+                                        {showJson ? '🙈 Ẩn chi tiết' : '👁️ Xem chi tiết'}
+                                    </motion.button>
+                                </div>
                             </motion.div>
-                            
-                            {/* Price summary section */}
+
+                            {/* Enhanced price breakdown */}
                             <AnimatePresence>
                                 {showJson && (
                                     <motion.div
                                         initial={{ height: 0, opacity: 0 }}
                                         animate={{ height: 'auto', opacity: 1 }}
                                         exit={{ height: 0, opacity: 0 }}
-                                        className="overflow-hidden"
+                                        className="overflow-hidden mt-4"
                                     >
-                                        <div className="mt-4 bg-pink-50 rounded-lg p-4 text-sm">
-                                            <h3 className="font-bold text-pink-700 mb-2">Chi tiết giá:</h3>
-                                            <ul className="space-y-1">
-                                                {/* Price details will be rendered here */}
-                                                {/* We'll implement this in the next edits */}
-                                            </ul>
+                                        <div className="glass-premium rounded-xl p-6 text-sm space-y-3 border border-white/20">
+                                            <h3 className="font-bold text-pink-700 mb-4 flex items-center text-lg font-poppins">
+                                                📊 Chi tiết giá:
+                                            </h3>
+                                            <div className="space-y-3 text-gray-700 font-poppins">
+                                                {config.size && (
+                                                    <div className="flex justify-between items-center p-2 rounded-lg bg-white/20">
+                                                        <span className="font-medium">🍰 Kích thước ({config.size})</span>
+                                                        <span className="font-bold text-pink-600">{partOptions.find(g => g.type === 'Size')?.items.find(i => i.name === config.size)?.price.toLocaleString() || 0} VND</span>
+                                                    </div>
+                                                )}
+                                                {config.sponge && (
+                                                    <div className="flex justify-between items-center p-2 rounded-lg bg-white/20">
+                                                        <span className="font-medium">🧽 Bánh bột</span>
+                                                        <span className="font-bold text-pink-600">{getSelectedOption('Sponge', config.sponge)?.price.toLocaleString() || 0} VND</span>
+                                                    </div>
+                                                )}
+                                                {config.filling && (
+                                                    <div className="flex justify-between items-center p-2 rounded-lg bg-white/20">
+                                                        <span className="font-medium">🥧 Nhân bánh</span>
+                                                        <span className="font-bold text-pink-600">{getSelectedOption('Filling', config.filling)?.price.toLocaleString() || 0} VND</span>
+                                                    </div>
+                                                )}
+                                                {config.icing && (
+                                                    <div className="flex justify-between items-center p-2 rounded-lg bg-white/20">
+                                                        <span className="font-medium">🧁 Kem bánh</span>
+                                                        <span className="font-bold text-pink-600">{getSelectedOption('Icing', config.icing)?.price.toLocaleString() || 0} VND</span>
+                                                    </div>
+                                                )}
+                                                {config.outerIcing && (
+                                                    <div className="flex justify-between items-center p-2 rounded-lg bg-white/20">
+                                                        <span className="font-medium">✨ Trang trí</span>
+                                                        <span className="font-bold text-pink-600">{getSelectedOption('OuterIcing', config.outerIcing)?.price.toLocaleString() || 0} VND</span>
+                                                    </div>
+                                                )}
+                                                {Array.isArray(config.extras) && config.extras.length > 0 && (
+                                                    <div className="flex justify-between items-center p-2 rounded-lg bg-white/20">
+                                                        <span className="font-medium">🎁 Phụ kiện ({config.extras.length})</span>
+                                                        <span className="font-bold text-pink-600">
+                                                            {config.extras.reduce((total, extraId) => {
+                                                                const extra = extraOptions.flatMap(g => g.items).find(i => i.id === extraId);
+                                                                return total + (extra?.price || 0);
+                                                            }, 0).toLocaleString()} VND
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
                         </motion.div>
 
+                        {/* Enhanced scrollable content */}
                         <div className="max-h-[60vh] overflow-y-auto custom-scrollbar">
                             <div className="p-6">
                                 <AnimatePresence mode="wait">
@@ -2215,6 +3603,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0, y: -20 }}
                                             className="space-y-4"
+                                            variants={containerVariants}
                                         >
                                             <MenuItem
                                                 icon="🍰"
@@ -2261,19 +3650,19 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                             animate={{ opacity: 1, x: 0 }}
                                             exit={{ opacity: 0, x: -20 }}
                                         >
-                                            <div className="flex items-center gap-2 mb-6">
+                                            <div className="flex items-center gap-3 mb-6">
                                                 <motion.button
-                                                    whileHover={{ scale: 1.1 }}
+                                                    whileHover={{ scale: 1.1, x: -5 }}
                                                     whileTap={{ scale: 0.9 }}
                                                     onClick={() => setSelectedPart(null)}
-                                                    className="p-2 hover:bg-pink-50 rounded-full transition-colors"
+                                                    className="p-3 glass-morphism-dark hover:bg-pink-50/20 rounded-full transition-all neon-glow"
                                                 >
                                                     <ArrowLeft className="w-6 h-6 text-pink-600" />
                                                 </motion.button>
-                                                <h2 className="text-2xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
-                                                    {selectedPart === 'cake' ? 'BÁNH' : 
-                                                     selectedPart === 'decoration' ? 'TRANG TRÍ' :
-                                                     selectedPart === 'message' ? 'THÔNG ĐIỆP' : 'THÊM PHẦN'}
+                                                <h2 className="text-2xl font-bold text-gradient font-dancing">
+                                                    {selectedPart === 'cake' ? '🍰 BÁNH' :
+                                                        selectedPart === 'decoration' ? '🧁 TRANG TRÍ' :
+                                                            selectedPart === 'message' ? '✍️ THÔNG ĐIỆP' : '🍪 THÊM PHẦN'}
                                                 </h2>
                                             </div>
                                             {renderCustomizationPanel()}
@@ -2283,35 +3672,50 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                             </div>
                         </div>
 
+                        {/* Enhanced action buttons */}
                         <motion.div
-                            whileHover={{ scale: 1.02 }}
-                            className="p-6 border-t border-pink-100 flex gap-4"
+                            whileHover={{ scale: 1.01 }}
+                            className="p-6 border-t border-white/20 flex gap-4 relative overflow-hidden"
                         >
+                            {/* Button background animation */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-pink-500/5 via-purple-500/5 to-blue-500/5" />
+
                             <motion.button
-                                whileHover={{ scale: 1.05 }}
+                                whileHover={{ scale: 1.05, y: -2 }}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={handleSaveDesign}
-                                className="flex-1 bg-white border-2 border-pink-600 text-pink-600 py-4 text-lg font-bold rounded-xl hover:bg-pink-50 transition-all shadow-lg hover:shadow-xl"
+                                className="flex-1 glass-premium border-2 border-pink-500/50 text-pink-600 py-5 text-lg font-bold rounded-xl hover:bg-pink-50/20 transition-all shadow-lg hover:shadow-xl neon-pink relative overflow-hidden group font-poppins"
                             >
-                                LƯU THIẾT KẾ
+                                <span className="relative z-10 flex items-center justify-center gap-3">
+                                    <span className="text-xl">💾</span>
+                                    LƯU THIẾT KẾ
+                                </span>
+                                <div className="absolute inset-0 bg-gradient-to-r from-pink-500/15 to-purple-500/15 opacity-0 group-hover:opacity-100 transition-opacity" />
                             </motion.button>
+
                             <motion.button
-                                whileHover={{ scale: 1.05 }}
+                                whileHover={{ scale: 1.05, y: -2 }}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={handleOrderCake}
                                 disabled={!completedSteps.cake || !completedSteps.decoration || !completedSteps.message || !completedSteps.extras}
-                                className={`flex-1 bg-gradient-to-r from-pink-600 to-purple-600 text-white py-4 text-lg font-bold rounded-xl transition-all shadow-lg hover:shadow-xl
+                                className={`flex-1 py-5 text-lg font-bold rounded-xl transition-all shadow-lg hover:shadow-xl relative overflow-hidden group font-poppins
                                     ${(!completedSteps.cake || !completedSteps.decoration || !completedSteps.message || !completedSteps.extras)
-                                        ? 'opacity-50 cursor-not-allowed from-gray-400 to-gray-500 hover:from-gray-400 hover:to-gray-500'
-                                        : 'hover:from-pink-700 hover:to-purple-700'}`}
+                                        ? 'opacity-50 cursor-not-allowed bg-gray-400 text-gray-600'
+                                        : 'btn-primary neon-purple'}`}
                             >
-                                THÊM VÀO GIỎ HÀNG
+                                <span className="relative z-10 flex items-center justify-center gap-3">
+                                    <span className="text-xl">🛒</span>
+                                    THÊM VÀO GIỎ HÀNG
+                                </span>
+                                {(completedSteps.cake && completedSteps.decoration && completedSteps.message && completedSteps.extras) && (
+                                    <div className="absolute inset-0 bg-gradient-to-r from-white/15 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                )}
                             </motion.button>
                         </motion.div>
                     </div>
                 </motion.div>
             </motion.div>
-            
+
             {/* Add the BakerySwitchModal */}
             <BakerySwitchModal
                 isOpen={bakerySwitchModal.isOpen}
@@ -2321,10 +3725,10 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                 onCancel={bakerySwitchModal.onCancel}
             />
         </motion.div>
-    ) ;
-} ;
+    );
+};
 
-// MenuItem component for the main menu
+// Enhanced MenuItem component for the main menu
 const MenuItem = ({
     icon,
     title,
@@ -2334,66 +3738,116 @@ const MenuItem = ({
     disabled,
     completed
 }: {
-    icon: string ;
-    title: string ;
-    subtitle: string ;
-    onClick: () => void ;
-    gradient: string ;
-    disabled: boolean ;
-    completed: boolean ;
+    icon: string;
+    title: string;
+    subtitle: string;
+    onClick: () => void;
+    gradient: string;
+    disabled: boolean;
+    completed: boolean;
 }) => {
     return (
         <motion.button
-            whileHover={{ scale: 1.02, backgroundColor: 'rgb(249, 250, 251)' }}
-            whileTap={{ scale: 0.98 }}
+            whileHover={{
+                scale: 1.03,
+                y: -6,
+                boxShadow: "0 15px 35px rgba(0, 0, 0, 0.2)"
+            }}
+            whileTap={{ scale: 0.97 }}
             onClick={onClick}
-            className={`w-full flex items-center gap-4 p-4 rounded-xl transition-all border border-pink-100
-                ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-lg'}
-                ${completed ? 'bg-green-50' : ''}`}
+            variants={itemVariants}
+            className={`w-full flex items-center gap-6 p-8 rounded-2xl transition-all glass-premium relative overflow-hidden group
+                ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-lg card-modern'}
+                ${completed ? 'neon-pink border-2 border-pink-500/30' : 'border border-white/20'}`}
         >
-            <motion.span
-                whileHover={{ rotate: [0, -10, 10, -10, 0] }}
-                transition={{ duration: 0.5 }}
-                className="text-3xl"
+            {/* Background animation */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+                initial={{ x: '-100%' }}
+                whileHover={{ x: '100%' }}
+                transition={{ duration: 0.6 }}
+            />
+
+            <motion.div
+                whileHover={{
+                    rotate: [0, -15, 15, -10, 10, 0],
+                    scale: [1, 1.3, 1]
+                }}
+                transition={{ duration: 0.6 }}
+                className="text-5xl relative z-10 filter drop-shadow-lg"
             >
                 {icon}
-            </motion.span>
-            <div className="flex-1 text-left">
+            </motion.div>
+
+            <div className="flex-1 text-left relative z-10">
                 <motion.div
-                    className={`font-bold text-lg bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}
+                    className={`font-bold text-2xl bg-gradient-to-r ${gradient} bg-clip-text text-transparent font-dancing`}
                 >
                     {title}
                 </motion.div>
                 <motion.div
-                    initial={{ opacity: 0.5 }}
+                    initial={{ opacity: 0.7 }}
                     animate={{ opacity: 1 }}
-                    className="text-sm text-gray-600"
+                    className="text-base text-gray-700 mt-2 font-medium font-poppins"
                 >
                     {subtitle}
                 </motion.div>
             </div>
+
             {completed ? (
                 <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center"
+                    initial={{ scale: 0, rotate: -180 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    whileHover={{ scale: 1.2, rotate: 360 }}
+                    className="w-12 h-12 bg-gradient-to-r from-green-400 to-emerald-500 text-white rounded-full flex items-center justify-center shadow-lg neon-glow relative z-10"
                 >
-                    ✓
+                    <Check className="w-6 h-6" />
                 </motion.div>
             ) : (
-                <motion.svg
-                    whileHover={{ x: 5 }}
-                    className={`w-6 h-6 ${disabled ? 'text-gray-400' : 'text-pink-400'}`}
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
+                <motion.div
+                    whileHover={{ x: 10, scale: 1.3 }}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center relative z-10 ${disabled ? 'text-gray-400 bg-gray-100/50' : 'text-pink-500 bg-gradient-to-r from-pink-100/70 to-purple-100/70 shadow-lg'
+                        }`}
                 >
-                    <path d="M9 18l6-6-6-6" />
-                </motion.svg>
+                    <svg
+                        className="w-6 h-6"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                    >
+                        <path d="M9 18l6-6-6-6" />
+                    </svg>
+                </motion.div>
+            )}
+
+            {/* Sparkle effects for completed items */}
+            {completed && (
+                <div className="absolute inset-0 pointer-events-none">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                        <motion.div
+                            key={i}
+                            className="absolute w-1 h-1 bg-yellow-400 rounded-full"
+                            style={{
+                                left: `${20 + i * 30}%`,
+                                top: `${20 + i * 20}%`,
+                            }}
+                            animate={{
+                                scale: [0, 1, 0],
+                                opacity: [0, 1, 0],
+                            }}
+                            transition={{
+                                duration: 2,
+                                repeat: Infinity,
+                                delay: i * 0.5,
+                            }}
+                        />
+                    ))}
+                </div>
             )}
         </motion.button>
-    ) ;
-} ;
+    );
+};
 
-export default CakeCustomizer ;
+export default CakeCustomizer;
