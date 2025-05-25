@@ -1,4 +1,3 @@
-
 'use client'
 import { useCart } from '@/app/store/useCart';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -1120,11 +1119,16 @@ const CheckoutPage = () => {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent
-                            className="max-h-[300px] overflow-y-auto rounded-xl border-2 shadow-lg bg-background/95 
-                            backdrop-blur-lg p-2"
+                            className="max-h-[300px] overflow-y-auto rounded-xl border-2 border-border shadow-2xl bg-popover 
+                            p-2 z-[100] relative"
+                            style={{
+                              position: 'fixed',
+                              backgroundColor: 'hsl(var(--popover))',
+                              backdropFilter: 'none'
+                            }}
                           >
-                            <div className="sticky top-0 bg-background/95 backdrop-blur-lg p-3 border-b mb-2">
-                              <div className="text-sm font-semibold text-foreground flex items-center">
+                            <div className="sticky top-0 bg-popover p-3 border-b mb-2">
+                              <div className="text-sm font-semibold text-popover-foreground flex items-center">
                                 <MapPin className="w-4 h-4 mr-2 text-primary" />
                                 Chọn tỉnh/thành phố
                               </div>
@@ -1138,7 +1142,7 @@ const CheckoutPage = () => {
                               >
                                 <div className="flex items-center justify-between">
                                   <span className="font-medium">{province.name}</span>
-                                  <Badge variant="outline" className="ml-2 bg-background/50">
+                                  <Badge variant="outline" className="ml-2 bg-popover">
                                     {province.districts.length} quận/huyện
                                   </Badge>
                                 </div>
@@ -1181,11 +1185,16 @@ const CheckoutPage = () => {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent
-                            className="max-h-[300px] overflow-y-auto rounded-xl border-2 shadow-lg bg-background/95 
-                            backdrop-blur-lg p-2"
+                            className="max-h-[300px] overflow-y-auto rounded-xl border-2 border-border shadow-2xl bg-popover 
+                            p-2 z-[100] relative"
+                            style={{
+                              position: 'fixed',
+                              backgroundColor: 'hsl(var(--popover))',
+                              backdropFilter: 'none'
+                            }}
                           >
-                            <div className="sticky top-0 bg-background/95 backdrop-blur-lg p-3 border-b mb-2">
-                              <div className="text-sm font-semibold text-foreground flex items-center">
+                            <div className="sticky top-0 bg-popover p-3 border-b mb-2">
+                              <div className="text-sm font-semibold text-popover-foreground flex items-center">
                                 <MapPin className="w-4 h-4 mr-2 text-primary" />
                                 Chọn quận/huyện
                               </div>
