@@ -7,7 +7,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft, Check, Download, Sparkles, Heart, Star, Zap } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useCakeConfigStore } from '@/components/shared/client/stores/cake-config';
 import { toast } from 'react-hot-toast';
 import html2canvas from 'html2canvas';
@@ -329,7 +329,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
     };
 
     // API fetch functions
-    const fetchDecorationOptions = async () => {
+    const fetchDecorationOptions = useCallback(async () => {
         try {
             setIsLoading(true);
             setError(null);
@@ -353,9 +353,9 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [storeId]);
 
-    const fetchPartOptions = async () => {
+    const fetchPartOptions = useCallback(async () => {
         try {
             setIsLoading(true);
             setError(null);
@@ -392,9 +392,9 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [storeId, config.size]);
 
-    const fetchMessageOptions = async () => {
+    const fetchMessageOptions = useCallback(async () => {
         try {
             setIsLoading(true);
             setError(null);
@@ -418,7 +418,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [storeId]);
 
     const fetchExtraOptions = async () => {
         try {

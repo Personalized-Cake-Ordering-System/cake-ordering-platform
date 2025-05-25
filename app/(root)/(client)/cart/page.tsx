@@ -145,7 +145,7 @@ const CartPage = () => {
   }
 
   // Update the fetchCart function to include syncing
-  const fetchCart = async () => {
+  const fetchCart = React.useCallback(async () => {
     const accessToken = localStorage.getItem('accessToken');
     if (!accessToken) {
       setError('Please login to view your cart');
@@ -184,11 +184,11 @@ const CartPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   React.useEffect(() => {
     fetchCart();
-  }, []);
+  }, [fetchCart]);
 
   // Add useEffect to check localStorage for bakery change notification
   React.useEffect(() => {

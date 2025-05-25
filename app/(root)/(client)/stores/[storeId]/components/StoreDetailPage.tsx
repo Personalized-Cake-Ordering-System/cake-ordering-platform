@@ -1,6 +1,6 @@
 "use client" ;
 
-import { useState, useEffect, useMemo } from 'react' ;
+import { useState, useEffect, useMemo, useCallback } from 'react' ;
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs' ;
 import { MapPin, Phone, Mail, Calendar, Store, Image as ImageIcon, Heart, ShoppingCart, Minus, Plus, ChevronLeft, ChevronRight, Star, AlertTriangle, Flag, X, Upload, FileText, AlertCircle } from 'lucide-react' ;
 import StoreHeader from './StoreHeader' ;
@@ -320,7 +320,7 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
   }, [bakery?.id, pagination.currentPage, pagination.pageSize, sortBy, filterBy]);
 
   // Extract fetchReviews function outside useEffect for reuse
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     try {
       setIsReviewsLoading(true) ;
       const response = await axios.get<ReviewApiResponse>(
@@ -412,13 +412,13 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
     } finally {
       setIsReviewsLoading(false) ;
     }
-  } ;
+  }, [bakery.id, reviewPagination.currentPage, reviewPagination.pageSize]) ;
 
   useEffect(() => {
     if (bakery?.id) {
       fetchReviews() ;
     }
-  }, [bakery?.id, reviewPagination.currentPage, reviewPagination.pageSize]) ;
+  }, [bakery?.id, fetchReviews]) ;
 
   const handleWishlistToggle = (cake: AvailableCake) => {
     const isInWishlist = items.some(item => item.id === cake.id) ;

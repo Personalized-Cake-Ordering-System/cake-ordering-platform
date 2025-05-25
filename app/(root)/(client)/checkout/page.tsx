@@ -1668,7 +1668,7 @@ const CheckoutPage = () => {
                       <span className="font-medium">Sử dụng thông tin đã lưu</span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Thông tin này được lấy từ tài khoản của bạn. Để thay đổi, vui lòng chọn "Địa chỉ khác".
+                      Thông tin này được lấy từ tài khoản của bạn. Để thay đổi, vui lòng chọn &quot;Địa chỉ khác&quot;.
                     </p>
                   </div>
                     </>
