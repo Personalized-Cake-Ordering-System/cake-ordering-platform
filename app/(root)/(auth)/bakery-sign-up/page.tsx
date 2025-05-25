@@ -28,6 +28,20 @@ import {
 } from "@/components/ui/dialog" ;
 import { CheckCircle } from "lucide-react" ;
 
+// Define GeocodingResponse type
+type GeocodingResponse = {
+  results: Array<{
+    formatted_address: string;
+    geometry: {
+      location: {
+        lat: number;
+        lng: number;
+      }
+    }
+  }>;
+  status: string;
+};
+
 // Define the bakery registration schema
 const bakerySchema = z.object({
   bakery_name: z.string().min(3, "Tên cửa hàng phải có ít nhất 3 ký tự"),
@@ -255,6 +269,32 @@ const BakerySignUpPage = () => {
 
   const timeOptions = generateTimeOptions() ;
 
+  // Geocode address function
+  const geocodeAddress = async (address: string) => {
+    try {
+      const API_KEY_GOONG = '2R2HQynx7ypczZZcxS1w7uuJaxXIGoeXymvGGx0u';
+      const encodedAddress = encodeURIComponent(address);
+      const response = await fetch(
+        `https://rsapi.goong.io/geocode?address=${encodedAddress}&api_key=${API_KEY_GOONG}`
+      );
+      const data: GeocodingResponse = await response.json();
+
+      if (data.status === 'OK' && data.results.length > 0) {
+        const result = data.results[0];
+        const location = result.geometry.location;
+        
+        return {
+          formatted_address: result.formatted_address,
+          location: location
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error('Geocoding error:', error);
+      return null;
+    }
+  };
+
   // Handle shop image upload
   const handleShopImageUpload = async (file: File) => {
     try {
@@ -473,13 +513,31 @@ const BakerySignUpPage = () => {
         return ;
       }
 
-      // Generate random latitude and longitude (for demonstration)
-      const randomLatitude = (Math.random() * (23 - 8) + 8).toFixed(6) ;
-      const randomLongitude = (Math.random() * (109 - 102) + 102).toFixed(6) ;
+      // Geocode the bakery address to get real coordinates
+      const geocodingToastId = toast.loading("Đang xác định vị trí cửa hàng...", {
+        position: "top-center",
+        autoClose: false,
+        hideProgressBar: false,
+        closeOnClick: false,
+        pauseOnHover: false,
+        draggable: false,
+      });
+      const geocodeResult = await geocodeAddress(data.address);
+      toast.dismiss(geocodingToastId);
+      
+      if (!geocodeResult) {
+        toast.error("Không thể xác định tọa độ từ địa chỉ. Vui lòng kiểm tra lại địa chỉ.") ;
+        setIsLoading(false) ;
+        return ;
+      }
 
-      // Set generated coordinates to form data
-      setValue('latitude', randomLatitude) ;
-      setValue('longitude', randomLongitude) ;
+      // Use real coordinates from geocoding
+      const latitude = geocodeResult.location.lat.toString();
+      const longitude = geocodeResult.location.lng.toString();
+
+      // Set geocoded coordinates to form data
+      setValue('latitude', latitude) ;
+      setValue('longitude', longitude) ;
 
       // Format time values by adding seconds for API compatibility
       const formattedOpenTime = data.open_time  ;
@@ -488,14 +546,14 @@ const BakerySignUpPage = () => {
       // Now use the updated data object for submission
       const dataWithCoords = { 
         ...data, 
-        latitude: randomLatitude, 
-        longitude: randomLongitude,
+        latitude: latitude, 
+        longitude: longitude,
         open_time: formattedOpenTime,
         close_time: formattedCloseTime
       } ;
 
       // Submit bakery registration
-      const toastId = toast.loading("Đang đăng ký cửa hàng...") ;
+      const toastId = toast.loading("Đang xử lý thông tin và đăng ký cửa hàng...") ;
       
       const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/bakeries', {
         method: 'POST',
