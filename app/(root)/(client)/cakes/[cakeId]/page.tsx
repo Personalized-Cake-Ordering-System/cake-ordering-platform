@@ -129,7 +129,7 @@ const CakeDetail = () => {
   // Add cart state
   const { addToCart, openBakerySwitchModal, bakerySwitchModal } = useCart();
   const [quantity, setQuantity] = useState(1);
-  
+
   // Add new state for handling modal state locally
   const [pendingCartItem, setPendingCartItem] = useState<any>(null);
 
@@ -293,7 +293,7 @@ const CakeDetail = () => {
           size: cakeData.available_cake_size || "6",
           sponge: "",
           filling: "",
-          outerIcing: "",
+          outerIcing: [""],
           icing: "",
           topping: null,
           candles: null,
@@ -312,32 +312,32 @@ const CakeDetail = () => {
         },
         price: (cakeData?.available_cake_price || 0) * quantity
       };
-      
+
       // Check if the bakeryId is valid
       if (!cartItem.bakeryId) {
         toast.error('This item cannot be added to cart: missing bakery information');
         return;
       }
-      
+
       // Get cart state
       const cartState = useCart.getState();
       const { items, currentBakeryId, addToCart, openBakerySwitchModal } = cartState;
-      
+
       // Debug what's happening with the cart state
       console.log('Current cart state:', { items: items.length, currentBakeryId });
-      
+
       // Check if cart is truly empty - both no items and no bakery ID
       const isCartEmpty = items.length === 0;
-      
+
       // Check if this is a different bakery than what's already in cart
       if (!isCartEmpty && currentBakeryId && currentBakeryId !== cartItem.bakeryId) {
         // Save the pending cart item for later use after confirmation
         setPendingCartItem(cartItem);
-        
+
         // Get bakery names to display in the modal
         const currentBakeryName = "hiện tại";
         const newBakeryName = cakeData.available_cake_name.split(' ')[0] || "mới";
-        
+
         // Open the bakery switch modal
         openBakerySwitchModal(
           currentBakeryName,
@@ -347,81 +347,81 @@ const CakeDetail = () => {
             handleConfirmBakerySwitch(cartItem);
           }
         );
-        
+
         return;
       }
-      
+
       // If no bakery conflict or empty cart, proceed with adding to cart
       const added = addToCart(cartItem);
-      
+
       if (!added) {
         toast.error('Could not add item to cart. Please try again.');
         return;
       }
-      
+
       // Process with API request to add to cart
       await processApiCartUpdate(cartItem);
-      
+
     } catch (error) {
       console.error('Error adding to cart:', error);
       toast.error('Failed to add to cart');
     }
   };
-  
+
   // Function to handle confirmed bakery switch
   const handleConfirmBakerySwitch = async (cartItem: any) => {
     try {
       // Get cart store actions
       const { changeBakery, addToCart, closeBakerySwitchModal } = useCart.getState();
-      
+
       console.log('Switching bakery to:', cartItem.bakeryId);
-      
+
       // Clear cart and set new bakery - now awaited
       const changeBakeryResult = await changeBakery(cartItem.bakeryId, true);
-      
+
       if (!changeBakeryResult) {
         toast.error('Failed to change bakery. Please try again.');
         closeBakerySwitchModal();
         return;
       }
-      
+
       console.log('Successfully changed bakery, now adding item');
-      
+
       // Add the new item
       const added = addToCart(cartItem);
-      
+
       if (!added) {
         toast.error('Failed to add item after bakery switch');
         closeBakerySwitchModal();
         return;
       }
-      
+
       // Make sure to close the modal regardless of what happens with the API update
       closeBakerySwitchModal();
-      
+
       // Process with API request to add to cart
       await processApiCartUpdate(cartItem);
-      
+
       // Save notification about bakery change for cart page
       localStorage.setItem('bakeryChangeNotice', JSON.stringify({
         bakeryName: cartItem.config.name.split(' ')[0] || 'new bakery'
       }));
-      
+
     } catch (error) {
       console.error('Error handling bakery switch:', error);
       toast.error('Failed to switch bakery');
-      
+
       // Make sure modal is closed even on error
       const { closeBakerySwitchModal } = useCart.getState();
       closeBakerySwitchModal();
     }
   };
-  
+
   // Function to handle the API cart update
   const processApiCartUpdate = async (cartItem: any) => {
     const accessToken = localStorage.getItem('accessToken');
     if (!accessToken) return;
-    
+
     try {
       // At this point, the API cart should be empty or have items from the same bakery
       // Fetch current API cart to get the latest state
@@ -431,24 +431,24 @@ const CakeDetail = () => {
           'accept': '*/*'
         }
       });
-      
+
       if (!cartResponse.ok) {
         throw new Error(`Failed to fetch cart: ${cartResponse.status}`);
       }
-      
+
       const cartData = await cartResponse.json();
-      
+
       // Get existing cart items or initialize empty array
       let existingCartItems = [];
-      
+
       if (cartData.status_code === 200 && cartData.payload && cartData.payload.cartItems) {
         existingCartItems = cartData.payload.cartItems;
-        
+
         // Check if there are items from a different bakery
         const hasDifferentBakeryItems = existingCartItems.some(
           (item: any) => item.bakery_id && item.bakery_id !== cartItem.bakeryId
         );
-        
+
         if (hasDifferentBakeryItems) {
           // Need to delete cart first before adding new items
           console.log("Detected items from different bakery in API cart, deleting first");
@@ -459,23 +459,23 @@ const CakeDetail = () => {
               'Content-Type': 'application/json'
             }
           });
-          
+
           if (!deleteResponse.ok) {
             throw new Error(`Failed to delete cart: ${deleteResponse.status}`);
           }
-          
+
           // Reset existing items
           existingCartItems = [];
         }
       }
-      
+
       // Check if the same cake already exists in API cart
       const existingItemIndex = existingCartItems.findIndex(
         (item: any) => item.available_cake_id === cartItem.id
       );
-      
+
       let updatedCartItems;
-      
+
       if (existingItemIndex !== -1) {
         // Item exists, update quantity
         updatedCartItems = [...existingCartItems];
@@ -498,10 +498,10 @@ const CakeDetail = () => {
           custom_cake_id: null,
           bakery_id: cartItem.bakeryId || ""
         };
-        
+
         updatedCartItems = [...existingCartItems, newCartItem];
       }
-      
+
       // Prepare the complete cart payload with all items
       const cartPayload = {
         bakeryId: cartItem.bakeryId || "",

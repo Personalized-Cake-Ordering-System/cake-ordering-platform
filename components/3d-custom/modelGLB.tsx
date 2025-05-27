@@ -64,14 +64,14 @@ export function ModelGLB({ modelPath = '/cake3.glb', config, addToCart, editCart
                         break;
                     case 'frosting':
                     case 'icing':
-                    case 'buttercream':
-                        material.color.set(
-                            config.outerIcing === 'pink-vanilla' ? '#ffb6c1' :
-                                config.outerIcing === 'white-vanilla' ? '#ffffff' :
-                                    config.outerIcing === 'blue-vanilla' ? '#87ceeb' :
-                                        config.outerIcing === 'yellow-vanilla' ? '#ffd700' : '#ffffff'
-                        );
-                        break;
+                    // case 'buttercream':
+                    //     material.color.set(
+                    //         config.outerIcing === 'pink-vanilla' ? '#ffb6c1' :
+                    //             config.outerIcing === 'white-vanilla' ? '#ffffff' :
+                    //                 config.outerIcing === 'blue-vanilla' ? '#87ceeb' :
+                    //                     config.outerIcing === 'yellow-vanilla' ? '#ffd700' : '#ffffff'
+                    //     );
+                    //     break;
                     case 'board':
                     case 'base':
                         material.color.set(
@@ -189,12 +189,12 @@ export function ModelGLB({ modelPath = '/cake3.glb', config, addToCart, editCart
                         );
                     } else if (child.name === 'outerIcing') {
                         // Outer icing colors
-                        newMaterial.color.set(
-                            config.outerIcing === 'pink-vanilla' ? '#ffb6c1' :
-                                config.outerIcing === 'white-vanilla' ? '#ffffff' :
-                                    config.outerIcing === 'blue-vanilla' ? '#87ceeb' :
-                                        config.outerIcing === 'yellow-vanilla' ? '#ffd700' : '#ffffff'
-                        );
+                        // newMaterial.color.set(
+                        //     config.outerIcing === 'pink-vanilla' ? '#ffb6c1' :
+                        //         config.outerIcing === 'white-vanilla' ? '#ffffff' :
+                        //             config.outerIcing === 'blue-vanilla' ? '#87ceeb' :
+                        //                 config.outerIcing === 'yellow-vanilla' ? '#ffd700' : '#ffffff'
+                        // );
                     } else if (child.name === 'filling') {
                         // Filling colors
                         newMaterial.color.set(

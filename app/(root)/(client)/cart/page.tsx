@@ -90,23 +90,23 @@ const CartPage = () => {
     if (!apiCartItems || apiCartItems.length === 0) {
       return;
     }
-    
+
     // Get the bakery ID from the first item
     const bakeryId = apiCartItems[0].bakery_id;
-    
+
     if (!bakeryId) {
       return;
     }
-    
+
     // Get the local cart
     const localCart = useCart.getState();
-    
+
     // Set correct bakery ID in local storage
     if (localCart.currentBakeryId !== bakeryId) {
       console.log('Updating local bakeryId to match API:', bakeryId);
       // Clear cart and set new bakeryId
       localCart.clearCart();
-      
+
       // Map API cart items to local storage format and add each one
       apiCartItems.forEach(item => {
         const itemId = item.available_cake_id || item.custom_cake_id || `item-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
@@ -119,7 +119,7 @@ const CartPage = () => {
             size: "",
             sponge: "",
             filling: "",
-            outerIcing: "",
+            outerIcing: [""],
             icing: "",
             topping: null,
             candles: null,
@@ -139,7 +139,7 @@ const CartPage = () => {
           price: item.sub_total_price
         });
       });
-      
+
       console.log('Cart synchronized with API');
     }
   }
@@ -161,14 +161,14 @@ const CartPage = () => {
           'accept': '*/*'
         }
       });
-      
+
       const data = await response.json();
       console.log('Cart API Response:', data);
 
       if (data.status_code === 200 && data.payload) {
         const apiCartItems = data.payload.cartItems || [];
         setCartItems(apiCartItems);
-        
+
         // Sync local storage with API data
         syncCartWithAPI(apiCartItems);
       } else {
@@ -198,7 +198,7 @@ const CartPage = () => {
         const notice = JSON.parse(bakeryChangeNotice);
         setShowBakeryChangeNotice(true);
         setNewBakeryName(notice.bakeryName || 'new bakery');
-        
+
         // Remove the notice after showing it
         localStorage.removeItem('bakeryChangeNotice');
       } catch (e) {
@@ -237,7 +237,7 @@ const CartPage = () => {
       // First update local storage - use the correct ID
       const localCart = useCart.getState();
       const localItemId = item.available_cake_id || item.custom_cake_id || '';
-      
+
       if (localItemId) {
         // Find matching item in local storage - search by ID
         const localItem = localCart.items.find(i => i.id === localItemId);
@@ -259,19 +259,19 @@ const CartPage = () => {
           'accept': '*/*'
         }
       });
-      
+
       const cartData = await cartResponse.json();
-      
+
       // Get existing cart items or initialize empty array
       let existingCartItems: CartItem[] = [];
       if (cartData.status_code === 200 && cartData.payload && cartData.payload.cartItems) {
         existingCartItems = cartData.payload.cartItems;
       }
-      
+
       // Update the quantity of the specific item
       const updatedCartItems = existingCartItems.map(cartItem => {
-        if ((item.available_cake_id && cartItem.available_cake_id === item.available_cake_id) || 
-            (item.custom_cake_id && cartItem.custom_cake_id === item.custom_cake_id)) {
+        if ((item.available_cake_id && cartItem.available_cake_id === item.available_cake_id) ||
+          (item.custom_cake_id && cartItem.custom_cake_id === item.custom_cake_id)) {
           return {
             ...cartItem,
             quantity: newQuantity,
@@ -280,10 +280,10 @@ const CartPage = () => {
         }
         return cartItem;
       });
-      
+
       // Get bakeryId from the first cart item or use the item's bakery_id
       const bakeryId = (cartData.payload?.bakeryId || item.bakery_id || "");
-      
+
       // Prepare the complete cart payload with all updated items
       const cartPayload = {
         bakeryId: bakeryId,
@@ -342,7 +342,7 @@ const CartPage = () => {
       // First remove from local storage using the correct ID
       const localCart = useCart.getState();
       localCart.removeFromCart(itemId);
-      
+
       // If no match found with API ID, log for debugging
       if (localCart.items.some(i => (i.id === itemId))) {
         console.log('Failed to remove item from local storage', itemId);
@@ -355,24 +355,24 @@ const CartPage = () => {
           'accept': '*/*'
         }
       });
-      
+
       const cartData = await cartResponse.json();
-      
+
       // Get existing cart items or initialize empty array
       let existingCartItems: CartItem[] = [];
       if (cartData.status_code === 200 && cartData.payload && cartData.payload.cartItems) {
         existingCartItems = cartData.payload.cartItems;
       }
-      
+
       // Filter out the item to remove
-      const updatedCartItems = existingCartItems.filter(cartItem => 
-        !((item.available_cake_id && cartItem.available_cake_id === item.available_cake_id) || 
+      const updatedCartItems = existingCartItems.filter(cartItem =>
+        !((item.available_cake_id && cartItem.available_cake_id === item.available_cake_id) ||
           (item.custom_cake_id && cartItem.custom_cake_id === item.custom_cake_id))
       );
-      
+
       // Get bakeryId from the first cart item or use the item's bakery_id
       const bakeryId = (cartData.payload?.bakeryId || item.bakery_id || "");
-      
+
       // Prepare the complete cart payload with the filtered items
       const cartPayload = {
         bakeryId: bakeryId,
@@ -463,7 +463,7 @@ const CartPage = () => {
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       {/* Bakery Change Notice */}
       {showBakeryChangeNotice && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
@@ -480,7 +480,7 @@ const CartPage = () => {
                 </p>
               </div>
             </div>
-            <button 
+            <button
               onClick={dismissBakeryChangeNotice}
               className="text-amber-500 hover:text-amber-700"
             >

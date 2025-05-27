@@ -234,7 +234,7 @@ export function Controls() {
             {/* Outer Icing */}
             <div className="space-y-2">
                 <Label>Outer Icing</Label>
-                <Select value={config.outerIcing} onValueChange={(value) => setConfig({ ...config, outerIcing: value })}>
+                {/* <Select value={config.outerIcing} onValueChange={(value) => setConfig({ ...config, outerIcing: value })}>
                     <SelectTrigger>
                         <SelectValue placeholder="Select icing" />
                     </SelectTrigger>
@@ -244,7 +244,7 @@ export function Controls() {
                         <SelectItem value="blue-vanilla">Blue Vanilla</SelectItem>
                         <SelectItem value="yellow-vanilla">Yellow Vanilla</SelectItem>
                     </SelectContent>
-                </Select>
+                </Select> */}
             </div>
 
             {/* 3D View Controls */}

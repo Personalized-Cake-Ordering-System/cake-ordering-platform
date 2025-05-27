@@ -2,9 +2,9 @@ export type CakeConfig = {
     size: string;
     price: number;
     sponge: string;
-    outerIcing: string;
+    outerIcing: string[];
     filling: string;
-    icing: string ;
+    icing: string;
     topping: string | null;
     message: string;
     candles: string | null;

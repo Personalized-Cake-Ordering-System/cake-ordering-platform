@@ -91,7 +91,7 @@ const getInitialCakeConfig = (): CakeConfig => {
             size: '',
             price: 0,
             sponge: '',
-            outerIcing: '',
+            outerIcing: [],
             filling: '',
             icing: '',
             topping: null,
@@ -123,7 +123,7 @@ const getInitialCakeConfig = (): CakeConfig => {
         size: '',
         price: 0,
         sponge: '',
-        outerIcing: '',
+        outerIcing: [],
         filling: '',
         icing: '',
         topping: null,
@@ -160,25 +160,24 @@ const selectedVariants = {
 
 // Enhanced animation variants
 const containerVariants = {
-    hidden: { opacity: 0 },
+    hidden: { opacity: 1 },
     visible: {
         opacity: 1,
         transition: {
-            staggerChildren: 0.1,
-            delayChildren: 0.2
+            duration: 0,
+            staggerChildren: 0,
+            delayChildren: 0
         }
     }
 };
 
 const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
+    hidden: { y: 0, opacity: 1 },
     visible: {
         y: 0,
         opacity: 1,
         transition: {
-            type: "spring",
-            stiffness: 300,
-            damping: 24
+            duration: 0
         }
     }
 };
@@ -302,7 +301,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
             size: '',
             price: 0,
             sponge: '',
-            outerIcing: '',
+            outerIcing: [],
             filling: '',
             icing: '',
             topping: null,
@@ -568,20 +567,46 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
 
     // Handle option selection for outer icing (decoration)
     const handleDecorationSelect = (option: ApiItem) => {
-        // Find current outer icing to calculate price difference
-        const currentIcingId = config.outerIcing;
-        const currentIcing = decorationOptions.flatMap(group => group.items)
-            .find(item => item.id === currentIcingId);
+        // Check if the decoration is already selected
+        const isAlreadySelected = config.outerIcing.includes(option.id);
 
-        // Calculate price difference
-        const currentPrice = currentIcing?.price || 0;
-        const priceDifference = option.price - currentPrice;
+        if (isAlreadySelected) {
+            // Remove the decoration if it's already selected
+            setConfig(prev => ({
+                ...prev,
+                outerIcing: prev.outerIcing.filter(id => id !== option.id),
+                price: prev.price - option.price
+            }));
+        } else {
+            // Check if there's an existing decoration of the same type
+            const existingDecorationOfSameType = config.outerIcing.find(id => {
+                const existingDecoration = decorationOptions.flatMap(group => group.items)
+                    .find(item => item.id === id);
+                // Find the group that contains this decoration to get its type
+                const decorationGroup = decorationOptions.find(group =>
+                    group.items.some(item => item.id === id)
+                );
+                // Compare the group types instead of item types
+                return decorationGroup?.type === option.type;
+            });
 
-        setConfig(prev => ({
-            ...prev,
-            outerIcing: option.id,
-            price: prev.price + priceDifference
-        }));
+            // Calculate price difference
+            let priceDifference = option.price;
+            if (existingDecorationOfSameType) {
+                const existingDecoration = decorationOptions.flatMap(group => group.items)
+                    .find(item => item.id === existingDecorationOfSameType);
+                priceDifference = option.price - (existingDecoration?.price || 0);
+            }
+
+            // Update config
+            setConfig(prev => ({
+                ...prev,
+                outerIcing: existingDecorationOfSameType
+                    ? prev.outerIcing.map(id => id === existingDecorationOfSameType ? option.id : id)
+                    : [...prev.outerIcing, option.id],
+                price: prev.price + priceDifference
+            }));
+        }
 
         // Clear preview when selecting
         setPreviewDecoration(null);
@@ -1007,12 +1032,16 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                         part_option_id: getValidGuid(partOptions.find(group => group.type === 'Goo')?.items.find(item => item.id === config.goo)?.id)
                     }] : [])
                 ],
-                decoration_selections: [
-                    {
-                        decoration_type: decorationOptions.find(group => group.items.some(item => item.id === config.outerIcing))?.type || "OUTER_ICING",
-                        decoration_option_id: getValidGuid(decorationOptions.find(group => group.items.some(item => item.id === config.outerIcing))?.items.find(item => item.id === config.outerIcing)?.id)
-                    }
-                ],
+                decoration_selections: Array.isArray(config.outerIcing) ? config.outerIcing.map(id => {
+                    const decoration = decorationOptions.flatMap(group => group.items).find(item => item.id === id);
+                    const decorationGroup = decorationOptions.find(group =>
+                        group.items.some(item => item.id === id)
+                    );
+                    return {
+                        decoration_type: decorationGroup?.type.toUpperCase() || "OUTER_ICING",
+                        decoration_option_id: getValidGuid(decoration?.id)
+                    };
+                }) : [],
                 extra_selections: Array.isArray(config.extras) ? config.extras.filter(id => {
                     // Only include extras that actually exist in the extraOptions array
                     const option = extraOptions.flatMap(group => group.items).find(item => item.id === id);
@@ -1098,7 +1127,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                     file_url: cakeImageUrl || "/imagecake.jpg"
                 },
                 quantity: 1,
-                cake_note: `Delicious ${selectedSize} cake with ${selectedSponge?.name || 'Unknown'} sponge, filled with ${selectedFilling?.name || 'Unknown'}, iced with ${selectedIcing?.name || 'Unknown'}, and covered in ${selectedOuterIcing?.name || 'Unknown'} icing${config.goo ? `, topped with ${selectedGoo?.name || ''} drip` : ''}${Array.isArray(config.extras) && config.extras.length > 0 ? `. With ${config.extras.length} special extras added` : ''}.${config.message ? ` Personalized with "${config.message}"` : ''}`,
+                cake_note: `Delicious ${selectedSize} cake with ${selectedSponge?.name || 'Unknown'} sponge, filled with ${selectedFilling?.name || 'Unknown'}, iced with ${selectedIcing?.name || 'Unknown'}, and decorated with ${Array.isArray(config.outerIcing) ? getAllSelectedDecorations(config.outerIcing).map(d => d.name).join(', ') : 'no decorations'}${config.goo ? `, topped with ${selectedGoo?.name || ''} drip` : ''}${Array.isArray(config.extras) && config.extras.length > 0 ? `. With ${config.extras.length} special extras added` : ''}.${config.message ? ` Personalized with "${config.message}"` : ''}`,
                 sub_total_price: config.price,
                 total_price: config.price,
                 available_cake_id: null,
@@ -1152,7 +1181,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                 config: {
                     ...config,
                     name: `Custom ${selectedSize} Cake`,
-                    description: `Delicious ${selectedSize} cake with ${selectedSponge?.name || 'Unknown'} sponge, filled with ${selectedFilling?.name || 'Unknown'}, iced with ${selectedIcing?.name || 'Unknown'}, and covered in ${selectedOuterIcing?.name || 'Unknown'} icing${config.goo ? `, topped with ${selectedGoo?.name || ''} drip` : ''}${Array.isArray(config.extras) && config.extras.length > 0 ? `. With ${config.extras.length} special extras added` : ''}.${config.message ? ` Personalized with "${config.message}"` : ''}`,
+                    description: `Delicious ${selectedSize} cake with ${selectedSponge?.name || 'Unknown'} sponge, filled with ${selectedFilling?.name || 'Unknown'}, iced with ${selectedIcing?.name || 'Unknown'}, and decorated with ${Array.isArray(config.outerIcing) ? getAllSelectedDecorations(config.outerIcing).map(d => d.name).join(', ') : 'no decorations'}${config.goo ? `, topped with ${selectedGoo?.name || ''} drip` : ''}${Array.isArray(config.extras) && config.extras.length > 0 ? `. With ${config.extras.length} special extras added` : ''}.${config.message ? ` Personalized with "${config.message}"` : ''}`,
                     type: 'custom',
                     extras: Array.isArray(config.extras) ? config.extras : [],
                     imageUrl: cakeImageUrl // Add the captured image URL
@@ -1176,25 +1205,35 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
     };
 
     // Helper function to get a selected option
-    const getSelectedOption = (type: string, id: string | null): ApiItem | undefined => {
+    const getSelectedOption = (type: string, id: string | string[] | null): ApiItem | undefined => {
         if (!id) return undefined;
 
         if (type === 'Sponge' || type === 'Filling' || type === 'Size' || type === 'Goo' || type === 'Icing') {
             return partOptions.find(group => group.type === type)?.items
-                .find(item => item.id === id);
+                .find(item => typeof id === 'string' && item.id === id);
         }
 
         if (type === 'OuterIcing') {
-            return decorationOptions.flatMap(group => group.items)
-                .find(item => item.id === id);
+            const allDecorations = decorationOptions.flatMap(group => group.items);
+            // For outer icing, always return the first selected decoration for compatibility
+            if (Array.isArray(id)) {
+                return allDecorations.find(item => item.id === id[0]);
+            }
+            return allDecorations.find(item => item.id === id);
         }
 
         if (type === 'Candles' || type === 'CakeBoard') {
             return extraOptions.find(group => group.type === type)?.items
-                .find(item => item.id === id);
+                .find(item => typeof id === 'string' && item.id === id);
         }
 
         return undefined;
+    };
+
+    // Helper function to get all selected decorations
+    const getAllSelectedDecorations = (ids: string[]): ApiItem[] => {
+        const allDecorations = decorationOptions.flatMap(group => group.items);
+        return ids.map(id => allDecorations.find(item => item.id === id)).filter(Boolean) as ApiItem[];
     };
 
     // Format color from API to Tailwind class
@@ -2319,7 +2358,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                             <h3 className="font-bold mb-4 text-2xl bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
                                 KÍCH THƯỚC
                             </h3>
-                            <div className="grid grid-cols-1 gap-4">
+                            <div className="grid grid-cols-2 gap-4">
                                 {partOptions.find(group => group.type === 'Size')?.items.map((option) => (
                                     <motion.button
                                         key={option.id}
@@ -2343,6 +2382,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                                 {option.price.toLocaleString()} VND
                                             </div>
                                         </div>
+
                                         {config.size === option.name && (
                                             <motion.div
                                                 initial={{ scale: 0 }}
@@ -2490,7 +2530,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                             transition-all duration-300`}
                                     >
                                         <div className="w-full mb-3">
-                                            {option.image ? (
+                                            {/* {option.image ? (
                                                 <Image
                                                     src={option.image.file_url}
                                                     alt={option.name}
@@ -2502,7 +2542,10 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                                 <div
                                                     className={`w-full h-32 rounded-lg shadow-md transition-transform duration-300 ${convertColorToTailwind(option.color)}`}
                                                 />
-                                            )}
+                                            )} */}
+                                            <div
+                                                className={`w-full h-32 rounded-lg shadow-md transition-transform duration-300 ${convertColorToTailwind(option.color)}`}
+                                            />
                                         </div>
                                         <div className="text-left w-full">
                                             <div className="font-medium text-gray-900">{option.name}</div>
@@ -2607,14 +2650,14 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                         <motion.button
                                             key={option.id}
                                             variants={selectedVariants}
-                                            animate={config.outerIcing === option.id ? "selected" : "unselected"}
+                                            animate={Array.isArray(config.outerIcing) && config.outerIcing.includes(option.id) ? "selected" : "unselected"}
                                             whileHover={{ scale: 1.02 }}
                                             whileTap={{ scale: 0.98 }}
                                             onClick={() => handleDecorationSelect(option)}
                                             onMouseEnter={() => handleDecorationPreview(option.id)}
                                             onMouseLeave={clearDecorationPreview}
                                             className={`relative flex flex-col p-4 rounded-xl border-2
-                                                ${config.outerIcing === option.id
+                                                ${Array.isArray(config.outerIcing) && config.outerIcing.includes(option.id)
                                                     ? 'border-pink-500 bg-gradient-to-br from-pink-50 to-purple-50'
                                                     : previewDecoration === option.id
                                                         ? 'border-blue-400 bg-gradient-to-br from-blue-50 to-indigo-50'
@@ -2652,7 +2695,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                                     {option.price.toLocaleString()} VND
                                                 </div>
                                             </div>
-                                            {config.outerIcing === option.id && (
+                                            {Array.isArray(config.outerIcing) && config.outerIcing.includes(option.id) && (
                                                 <motion.div
                                                     initial={{ scale: 0 }}
                                                     animate={{ scale: 1 }}
@@ -2990,89 +3033,6 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
             animate={{ opacity: 1 }}
             className="min-h-screen relative overflow-hidden"
         >
-            {/* Enhanced animated background with premium aesthetics */}
-            <div className="fixed inset-0 -z-10">
-                {/* Primary gradient background with more vibrant colors */}
-                <div className="absolute inset-0 bg-gradient-to-br from-pink-50 via-purple-50 via-blue-50 to-indigo-50" />
-
-                {/* Secondary gradient overlay for depth */}
-                <div className="absolute inset-0 bg-gradient-to-tr from-rose-100/30 via-transparent to-violet-100/30" />
-
-                {/* Enhanced animated mesh gradient overlay */}
-                <motion.div
-                    className="absolute inset-0 opacity-40"
-                    animate={{
-                        background: [
-                            "radial-gradient(circle at 20% 50%, rgba(236, 72, 153, 0.4) 0%, transparent 60%), radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.4) 0%, transparent 60%), radial-gradient(circle at 40% 80%, rgba(59, 130, 246, 0.4) 0%, transparent 60%)",
-                            "radial-gradient(circle at 60% 20%, rgba(236, 72, 153, 0.4) 0%, transparent 60%), radial-gradient(circle at 20% 80%, rgba(139, 92, 246, 0.4) 0%, transparent 60%), radial-gradient(circle at 80% 60%, rgba(59, 130, 246, 0.4) 0%, transparent 60%)",
-                            "radial-gradient(circle at 80% 80%, rgba(236, 72, 153, 0.4) 0%, transparent 60%), radial-gradient(circle at 40% 40%, rgba(139, 92, 246, 0.4) 0%, transparent 60%), radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.4) 0%, transparent 60%)"
-                        ]
-                    }}
-                    transition={{
-                        duration: 12,
-                        repeat: Infinity,
-                        repeatType: "reverse",
-                        ease: "easeInOut"
-                    }}
-                />
-
-                {/* Enhanced floating orbs with better aesthetics */}
-                {Array.from({ length: 8 }).map((_, i) => (
-                    <motion.div
-                        key={`orb-${i}`}
-                        className="absolute rounded-full blur-2xl opacity-25"
-                        style={{
-                            left: `${Math.random() * 100}%`,
-                            top: `${Math.random() * 100}%`,
-                            width: `${Math.random() * 200 + 100}px`,
-                            height: `${Math.random() * 200 + 100}px`,
-                            background: i % 4 === 0
-                                ? 'linear-gradient(135deg, rgba(236, 72, 153, 0.6), rgba(219, 39, 119, 0.4))'
-                                : i % 4 === 1
-                                    ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.6), rgba(124, 58, 237, 0.4))'
-                                    : i % 4 === 2
-                                        ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.6), rgba(37, 99, 235, 0.4))'
-                                        : 'linear-gradient(135deg, rgba(251, 191, 36, 0.6), rgba(245, 158, 11, 0.4))',
-                        }}
-                        animate={{
-                            x: [0, 150, -75, 0],
-                            y: [0, -120, 60, 0],
-                            scale: [1, 1.4, 0.7, 1],
-                            rotate: [0, 180, 360],
-                        }}
-                        transition={{
-                            duration: 25 + i * 3,
-                            repeat: Infinity,
-                            ease: "easeInOut",
-                            delay: i * 1.5
-                        }}
-                    />
-                ))}
-
-                {/* Enhanced grid pattern overlay with subtle animation */}
-                <motion.div
-                    className="absolute inset-0 opacity-8"
-                    style={{
-                        backgroundImage: `
-                            linear-gradient(rgba(236, 72, 153, 0.15) 1px, transparent 1px),
-                            linear-gradient(90deg, rgba(139, 92, 246, 0.15) 1px, transparent 1px)
-                        `,
-                        backgroundSize: '60px 60px'
-                    }}
-                    animate={{
-                        backgroundPosition: ['0px 0px', '60px 60px', '0px 0px']
-                    }}
-                    transition={{
-                        duration: 20,
-                        repeat: Infinity,
-                        ease: "linear"
-                    }}
-                />
-
-                {/* Additional decorative elements */}
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/5 to-transparent" />
-            </div>
-
             {/* Enhanced global styles */}
             <style jsx global>{`
                 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Dancing+Script:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
@@ -3513,11 +3473,10 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
                                                 key={config.price}
                                                 initial={{ scale: 1.2, opacity: 0 }}
                                                 animate={{ scale: 1, opacity: 1 }}
-                                                className="text-4xl font-bold text-gradient-gold font-poppins"
+                                                className="text-2xl font-bold text-gradient-gold font-poppins"
                                             >
                                                 {config.price.toLocaleString()} VND
                                             </motion.div>
-                                            <div className="text-sm text-gray-600 font-medium">Giá tổng cộng</div>
                                         </div>
                                     </div>
                                     <motion.button

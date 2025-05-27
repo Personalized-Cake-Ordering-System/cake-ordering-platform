@@ -12,7 +12,7 @@ const defaultConfig: CakeConfig = {
     size: '',
     price: 95.99,
     sponge: 'vanilla',
-    outerIcing: 'pink-vanilla',
+    outerIcing: [],
     filling: 'white-vanilla',
     icing: '',
     topping: null,
