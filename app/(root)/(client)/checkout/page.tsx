@@ -1096,7 +1096,7 @@ const CheckoutPage = () => {
           {shippingInfo && (
             <div className="text-xs text-muted-foreground pl-2">
               <p>Khoảng cách: {shippingInfo.shipping_distance.toFixed(1)} km</p>
-              <p>Thời gian dự kiến: {formatDeliveryTime(shippingInfo.shipping_time, shippingInfo.shipping_distance)}</p>
+              {/* <p>Thời gian dự kiến: {formatDeliveryTime(shippingInfo.shipping_time, shippingInfo.shipping_distance)}</p> */}
             </div>
           )}
         </div>
@@ -1443,7 +1443,7 @@ const CheckoutPage = () => {
         <Button variant="ghost" size="sm" asChild className="mb-4">
           <Link href="/cart" className="flex items-center text-muted-foreground hover:text-primary">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Cart
+            Quay lại giỏ hàng
           </Link>
         </Button>
         <h1 className="text-3xl font-bold"></h1>
@@ -1463,7 +1463,7 @@ const CheckoutPage = () => {
                   <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-white mr-3">
                     1
                   </div>
-                  <h2 className="text-xl font-bold">Delivery Information</h2>
+                  <h2 className="text-xl font-bold">Thông tin giao hàng</h2>
                 </div>
 
                 {/* Address Selection Option */}
@@ -2167,14 +2167,14 @@ const CheckoutPage = () => {
                     size="lg"
                     className="w-full md:w-auto"
                     disabled={isProcessing}
-onClick={() => {
+                    onClick={() => {
                       // No special handling needed since validation is now conditional
                     }}
                   >
                     {isProcessing ? (
                       <>
                         <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent"></div>
-                        Processing...
+                        Đang xử lý...
                       </>
                     ) : (
                       `Hoàn thành đơn hàng`
@@ -2196,7 +2196,7 @@ onClick={() => {
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold">Thông tin đơn hàng</h2>
                 <Badge variant="outline" className="px-2 py-0.5">
-                  {cartItems.length} {cartItems.length === 1 ? 'Item' : 'Items'}
+                  {cartItems.length} {cartItems.length === 1 ? 'Sản phẩm' : 'Sản phẩm'}
                 </Badge>
               </div>
 
@@ -2208,7 +2208,7 @@ onClick={() => {
                 >
                   <CollapsibleTrigger asChild>
                     <Button variant="outline" className="w-full flex justify-between">
-                      <span>View Order Details</span>
+                      <span>Xem chi tiết đơn hàng</span>
                       {isOrderSummaryOpen ? (
                         <ChevronUp className="h-4 w-4" />
                       ) : (

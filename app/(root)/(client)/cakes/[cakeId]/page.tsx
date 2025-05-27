@@ -530,7 +530,7 @@ const CakeDetail = () => {
       const data = await response.json();
 
       if (data.status_code === 200) {
-        toast.success('Added to cart successfully');
+        toast.success('Thêm vào giỏ hàng thành công!');
         router.push('/cart');
       } else {
         toast.error(data.errors?.[0] || 'Failed to add to cart');
