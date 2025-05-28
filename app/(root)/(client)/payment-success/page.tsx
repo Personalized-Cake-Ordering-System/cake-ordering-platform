@@ -1,4 +1,3 @@
-
 'use client'
 
 import { useEffect, useState } from 'react';
@@ -115,16 +114,16 @@ const PaymentSuccessPage = () => {
                     <div className="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-4">
                         <CheckCircle className="h-12 w-12 text-green-500" />
                     </div>
-                    <h1 className="text-3xl font-bold mb-2">Payment Successful!</h1>
+                    <h1 className="text-3xl font-bold mb-2">Thanh toán thành công!</h1>
                     <p className="text-muted-foreground">
-                        Thank you for your order. Your payment has been processed successfully.
+                        Cảm ơn bạn đã đặt hàng. Thanh toán của bạn đã được xử lý thành công.
                     </p>
                 </motion.div>
 
                 {orderDetails && (
                     <motion.div variants={itemVariants} className="mb-8">
                         <div className="bg-muted/30 p-4 rounded-lg inline-block">
-                            <p className="text-sm text-muted-foreground">Order Code:</p>
+                            <p className="text-sm text-muted-foreground">Mã đơn hàng:</p>
                             <p className="font-mono font-medium">{orderDetails.orderInfo.orderCode}</p>
                         </div>
                     </motion.div>
@@ -137,7 +136,7 @@ const PaymentSuccessPage = () => {
                         size="lg"
                     >
                         <Home className="mr-2 h-4 w-4" />
-                        Continue Shopping
+                        Tiếp tục mua sắm
                     </Button>
                     <Button
                         onClick={handleViewOrders}
@@ -146,7 +145,7 @@ const PaymentSuccessPage = () => {
                         size="lg"
                     >
                         <ShoppingBag className="mr-2 h-4 w-4" />
-                        View Orders
+                        Xem đơn hàng
                     </Button>
                 </motion.div>
             </Card>

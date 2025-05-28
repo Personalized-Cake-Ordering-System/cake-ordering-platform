@@ -842,6 +842,34 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
             default:
                 return 'bg-gray-500/10 dark:bg-gray-500/20 text-gray-500 dark:text-gray-400';
         }
+    } ;
+
+    // Add this function to get Vietnamese status text
+    const getStatusText = (status: string) => {
+        switch (status) {
+            case 'COMPLETED':
+                return 'Hoàn thành';
+            case 'PROCESSING':
+                return 'Đang xử lý';
+            case 'WAITING_BAKERY_CONFIRM':
+                return 'Chờ xác nhận';
+            case 'SHIPPING':
+                return 'Đang giao hàng';
+            case 'SHIPPING_COMPLETED':
+                return 'Giao hàng hoàn tất';
+            case 'PICKUP':
+                return 'Nhận tại cửa hàng';
+            case 'READY_FOR_PICKUP':
+                return 'Sẵn sàng nhận hàng';
+            case 'REPORT_PENDING':
+                return 'Đang xử lý khiếu nại';
+            case 'FAULTY':
+                return 'Đơn hàng lỗi';
+            case 'CANCELED':
+                return 'Đã hủy';
+            default:
+                return status;
+        }
     };
 
     // fetch cake details by api call available_cakes/{cakeId}
@@ -1450,7 +1478,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                                         <CardTitle className="text-2xl font-bold text-gray-900 dark:text-gray-100">Đơn hàng #{order.order_code}</CardTitle>
                                     </div>
                                     <Badge className={`${getStatusColor(order.order_status)} px-4 py-1 rounded-full font-medium`}>
-                                        {order.order_status.charAt(0).toUpperCase() + order.order_status.slice(1)}
+                                        {getStatusText(order.order_status)}
                                     </Badge>
                                 </div>
                             </CardHeader>
@@ -1655,12 +1683,12 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                                             {order.shipping_type === 'DELIVERY' ? 'Giao hàng' : 'Nhận tại cửa hàng'}
                                         </p>
                                     </div>
-                                    {/* <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-3">
                                         <Clock className="h-5 w-5 text-custom-teal dark:text-custom-teal/90" />
                                         <p className="text-sm text-gray-600 dark:text-gray-400">
                                             Thời gian giao hàng dự kiến: {formatDeliveryTime(order.shipping_time, order.shipping_distance)}
                                         </p>
-                                    </div> */}
+                                    </div> 
                                     <div className="flex items-center gap-3">
                                         <MapPin className="h-5 w-5 text-custom-teal dark:text-custom-teal/90" />
                                         <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -1694,10 +1722,10 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                                         <span className="text-gray-600 dark:text-gray-400">Địa chỉ:</span>
                                         <span className="font-medium text-custom-teal dark:text-custom-teal/90">{order.bakery.address}</span>
                                     </p>
-                                    {/* <p className="text-sm flex items-center gap-2">
+                                    <p className="text-sm flex items-center gap-2">
                                         <span className="text-gray-600 dark:text-gray-400">ID tiệm bánh:</span>
                                         <span className="font-medium text-custom-teal dark:text-custom-teal/90">{order.bakery.id}</span>
-                                    </p> */}
+                                    </p>
                                 </div>
                             </CardContent>
                         </Card>

@@ -1191,7 +1191,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
             // Add the item to the cart state
             addToCart(cartItem);
 
-            toast.success('Cake added to cart successfully!');
+            toast.success('Thêm vào giỏ hàng thành công!');
             console.log('Order process completed successfully');
             router.push('/cart');
         } catch (error) {

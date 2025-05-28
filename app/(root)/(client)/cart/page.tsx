@@ -148,7 +148,7 @@ const CartPage = () => {
   const fetchCart = React.useCallback(async () => {
     const accessToken = localStorage.getItem('accessToken');
     if (!accessToken) {
-      setError('Please login to view your cart');
+      setError('Vui lòng đăng nhập để xem giỏ hàng');
       setLoading(false);
       return;
     }
@@ -177,7 +177,7 @@ const CartPage = () => {
     } catch (err) {
       console.error('Error fetching cart:', err);
       if (err instanceof Error && err.message.includes('401')) {
-        setError('Please login to view your cart');
+        setError('Vui lòng đăng nhập để xem giỏ hàng');
       } else {
         setError('Failed to fetch cart items. Please try again later.');
       }
@@ -222,7 +222,7 @@ const CartPage = () => {
 
     const accessToken = localStorage.getItem('accessToken');
     if (!accessToken) {
-      toast.error('Please login to update cart');
+      toast.error('Vui lòng đăng nhập để cập nhật giỏ hàng');
       return;
     }
 
@@ -314,28 +314,28 @@ const CartPage = () => {
       if (data.status_code === 200) {
         // After API success, fetch cart to ensure local storage and UI match API data
         await fetchCart();
-        toast.success('Cart updated successfully');
+        toast.success('Cập nhật giỏ hàng thành công');
       } else {
         console.error('Failed to update cart:', data);
-        toast.error(data.errors?.[0] || 'Failed to update cart');
+        toast.error(data.errors?.[0] || 'Cập nhật giỏ hàng thất bại');
       }
     } catch (error) {
       console.error('Error updating cart:', error);
-      toast.error('Failed to update cart');
+      toast.error('Cập nhật giỏ hàng thất bại');
     }
   };
 
   const handleRemoveItem = async (item: CartItem) => {
     const accessToken = localStorage.getItem('accessToken');
     if (!accessToken) {
-      toast.error('Please login to remove items from cart');
+      toast.error('Vui lòng đăng nhập để xóa sản phẩm khỏi giỏ hàng');
       return;
     }
 
     try {
       const itemId = item.available_cake_id || item.custom_cake_id;
       if (!itemId) {
-        toast.error('Invalid item ID');
+        toast.error('ID sản phẩm không hợp lệ');
         return;
       }
 
@@ -403,14 +403,14 @@ const CartPage = () => {
       if (data.status_code === 200) {
         // After API success, fetch cart to ensure local storage and UI match API data
         await fetchCart();
-        toast.success('Item removed from cart successfully');
+        toast.success('Xóa sản phẩm khỏi giỏ hàng thành công');
       } else {
         console.error('Failed to remove item:', data);
-        toast.error(data.errors?.[0] || 'Failed to remove item from cart');
+        toast.error(data.errors?.[0] || 'Xóa sản phẩm khỏi giỏ hàng thất bại');
       }
     } catch (error) {
       console.error('Error removing item from cart:', error);
-      toast.error('Failed to remove item from cart');
+      toast.error('Xóa sản phẩm khỏi giỏ hàng thất bại');
     }
   };
 
