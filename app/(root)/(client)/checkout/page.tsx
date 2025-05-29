@@ -349,7 +349,7 @@ const CheckoutPage = () => {
       console.log('Order Lat:', orderLat);
       console.log('Order Lng:', orderLng);
       const response = await axios.get(
-        `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/shippings?bakeryLat=${bakeryLat}&bakeryLng=${bakeryLng}&orderLat=${orderLat}&orderLng=${orderLng}`,
+        `https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/shippings?bakeryLat=${bakeryLat}&bakeryLng=${bakeryLng}&orderLat=${orderLat}&orderLng=${orderLng}`,
         {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
@@ -420,7 +420,7 @@ const CheckoutPage = () => {
       const customerId = payload.id;
 
       const response = await axios.get(
-        `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/customers/${customerId}`,
+        `https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/customers/${customerId}`,
         {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
@@ -698,7 +698,7 @@ const CheckoutPage = () => {
 
       try {
         console.log('Fetching bakery details:', bakeryId);
-        const response = await axios.get(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/bakeries/${bakeryId}`, {
+        const response = await axios.get(`https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/bakeries/${bakeryId}`, {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
             'accept': '*/*'
@@ -771,7 +771,7 @@ const CheckoutPage = () => {
       const customerId = payload.id;
 
       const response = await fetch(
-        `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/customers/${customerId}/vouchers?isApplied=false&pageIndex=0&pageSize=10`,
+        `https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/customers/${customerId}/vouchers?isApplied=false&pageIndex=0&pageSize=10`,
         {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
@@ -1122,7 +1122,7 @@ const CheckoutPage = () => {
       
       // Make the API call to move the order to the next state
       const response = await axios.put(
-        `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/orders/${orderId}/move-to-next`,
+        `https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/orders/${orderId}/move-to-next`,
         formData,
         {
           headers: {

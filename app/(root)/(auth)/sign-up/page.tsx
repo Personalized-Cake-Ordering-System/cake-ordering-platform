@@ -17,7 +17,7 @@ const SignUpPage = () => {
     const toastId = toast.loading("Creating your account...");
 
     try {
-      const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/customers', {
+      const response = await fetch('https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/customers', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -108,7 +108,7 @@ export default function WalletPage() {
 
             // First fetch the wallet balance
             const balanceResponse = await fetch(
-                `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/wallets/${walletId}/transactions`,
+                `https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/wallets/${walletId}/transactions`,
                 {
                     headers: {
                         'Authorization': `Bearer ${accessToken}`,
@@ -122,7 +122,7 @@ export default function WalletPage() {
 
             // Then fetch transactions
             const response = await fetch(
-                `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/wallets/${walletId}/transactions?pageIndex=${page}&pageSize=${pageSize}`,
+                `https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/wallets/${walletId}/transactions?pageIndex=${page}&pageSize=${pageSize}`,
                 {
                     headers: {
                         'Authorization': `Bearer ${accessToken}`,

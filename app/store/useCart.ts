@@ -51,7 +51,7 @@ const deleteCartFromAPI = async (): Promise<boolean> => {
             return true;
         }
 
-        const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/carts', {
+        const response = await fetch('https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/carts', {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${accessToken}`,

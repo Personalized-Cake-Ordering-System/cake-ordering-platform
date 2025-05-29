@@ -27,7 +27,7 @@ interface JwtPayload {
     id: string;
 }
 
-const API_BASE_URL = 'https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api';
+const API_BASE_URL = 'https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api';
 
 export class NotificationService {
     private static getCustomerId(): string | null {

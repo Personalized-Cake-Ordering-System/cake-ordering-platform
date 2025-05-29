@@ -155,7 +155,7 @@ const CartPage = () => {
 
     try {
       console.log('Fetching cart data...');
-      const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/carts', {
+      const response = await fetch('https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/carts', {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'accept': '*/*'
@@ -253,7 +253,7 @@ const CartPage = () => {
       }
 
       // Then fetch current cart from API to get all existing items
-      const cartResponse = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/carts', {
+      const cartResponse = await fetch('https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/carts', {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'accept': '*/*'
@@ -300,7 +300,7 @@ const CartPage = () => {
       };
 
       // Update the cart with all items
-      const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/carts', {
+      const response = await fetch('https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/carts', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -349,7 +349,7 @@ const CartPage = () => {
       }
 
       // Then fetch current cart from API to get all existing items
-      const cartResponse = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/carts', {
+      const cartResponse = await fetch('https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/carts', {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'accept': '*/*'
@@ -389,7 +389,7 @@ const CartPage = () => {
       };
 
       // Update the cart with the filtered items
-      const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/carts', {
+      const response = await fetch('https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/carts', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

@@ -161,7 +161,7 @@ const CakeDetail = () => {
   useEffect(() => {
     const fetchCakeData = async () => {
       try {
-        const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/available_cakes/${cakeId}`);
+        const response = await fetch(`https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/available_cakes/${cakeId}`);
         const data: ApiResponse = await response.json();
         console.log('Cake Data Response:', data);
 
@@ -191,7 +191,7 @@ const CakeDetail = () => {
       const accessToken = localStorage.getItem('accessToken');
       if (!accessToken) return;
 
-      const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/customers/${customerId}`, {
+      const response = await fetch(`https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/customers/${customerId}`, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'accept': '*/*'
@@ -228,7 +228,7 @@ const CakeDetail = () => {
       const accessToken = localStorage.getItem('accessToken');
       if (!accessToken) return;
 
-      const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/files/${imageId}`, {
+      const response = await fetch(`https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/files/${imageId}`, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'accept': '*/*'
@@ -425,7 +425,7 @@ const CakeDetail = () => {
     try {
       // At this point, the API cart should be empty or have items from the same bakery
       // Fetch current API cart to get the latest state
-      const cartResponse = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/carts', {
+      const cartResponse = await fetch('https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/carts', {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'accept': '*/*'
@@ -452,7 +452,7 @@ const CakeDetail = () => {
         if (hasDifferentBakeryItems) {
           // Need to delete cart first before adding new items
           console.log("Detected items from different bakery in API cart, deleting first");
-          const deleteResponse = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/carts', {
+          const deleteResponse = await fetch('https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/carts', {
             method: 'DELETE',
             headers: {
               'Authorization': `Bearer ${accessToken}`,
@@ -518,7 +518,7 @@ const CakeDetail = () => {
       };
 
       // Update the cart with all items
-      const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/carts', {
+      const response = await fetch('https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/carts', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

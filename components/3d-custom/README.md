@@ -1,8 +1,8 @@
   curl -X 'GET' \
-    'https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/decoration_options?pageIndex=0&pageSize=10' \
+    'https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/decoration_options?pageIndex=0&pageSize=10' \
     -H 'accept: */*'
   Request URL
-  https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/decoration_options?pageIndex=0&pageSize=10
+  https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/decoration_options?pageIndex=0&pageSize=10
   Server response
   Code	Details
   200	

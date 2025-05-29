@@ -54,7 +54,7 @@ const FeedbackPage = () => {
                 }
 
                 // Fetch existing feedback if any
-                const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/cake_reviews', {
+                const response = await fetch('https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/cake_reviews', {
                     headers: {
                         'Authorization': `Bearer ${accessToken}`
                     }
@@ -104,7 +104,7 @@ const FeedbackPage = () => {
                 const formData = new FormData();
                 formData.append('file', imageFile);
 
-                const uploadResponse = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/files', {
+                const uploadResponse = await fetch('https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/files', {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${accessToken}`
@@ -120,7 +120,7 @@ const FeedbackPage = () => {
                 imageId = uploadData.payload.id;
             }
 
-            const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/cake_reviews', {
+            const response = await fetch('https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/cake_reviews', {
                 method: isEditing ? 'PUT' : 'POST',
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
@@ -181,7 +181,7 @@ const FeedbackPage = () => {
                 return;
             }
 
-            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/cake_reviews/${feedback.id}`, {
+            const response = await fetch(`https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/cake_reviews/${feedback.id}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${accessToken}`

@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/select";
 
 import { StoreFilters } from "@/components/shared/client/stores/store-filter";
-import { StoreFilterTags } from "@/components/shared/client/stores/store-filter-tag";
 import { useStoreFilters } from "@/hooks/use-store-filter";
 import { getBakeries } from "@/features/barkeries/actions/barkeries-action";
 import { IBakery } from "@/features/barkeries/types/barkeries-type";

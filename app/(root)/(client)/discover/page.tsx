@@ -31,7 +31,7 @@ const DiscoverPage = () => {
     useEffect(() => {
         const fetchCakes = async () => {
             try {
-                const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/available_cakes');
+                const response = await fetch('https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/available_cakes');
                 const data = await response.json();
                 if (data.status_code === 200) {
                     setFeaturedCakes(data.payload);
@@ -106,7 +106,7 @@ const DiscoverPage = () => {
                 }]
             };
 
-            const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/carts', {
+            const response = await fetch('https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/carts', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

@@ -20,6 +20,15 @@ export interface IIdentityCardFile {
   is_deleted: boolean;
 }
 
+export interface IBakeryMetric {
+  rating_average: number;
+  total_revenue: number;
+  app_revenue: number;
+  orders_count: number;
+  customers_count: number;
+  average_order_value: number;
+}
+
 export interface IBakery {
   id: string;
   bakery_name: string;
@@ -54,8 +63,8 @@ export interface IBakery {
   updated_at: string | null;
   updated_by: string | null;
   is_deleted: boolean;
+  metric?: IBakeryMetric;
 }
-
 
 export interface IStore {
   id: string;

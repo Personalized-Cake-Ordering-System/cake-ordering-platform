@@ -89,7 +89,7 @@ async function uploadFile(
     formData.append("formFile", blob, fileName) ;
     
     // Make the API request to upload the image
-    const response = await fetch("https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/files", {
+    const response = await fetch("https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/files", {
       method: "POST",
       body: formData,
     }) ;
@@ -555,7 +555,7 @@ const BakerySignUpPage = () => {
       // Submit bakery registration
       const toastId = toast.loading("Đang xử lý thông tin và đăng ký cửa hàng...") ;
       
-      const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/bakeries', {
+      const response = await fetch('https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/bakeries', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

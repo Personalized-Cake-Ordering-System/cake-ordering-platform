@@ -139,7 +139,7 @@ const FeedbackForm = ({ orderId, orderDetailId, availableCakeId, bakeryId }: Fee
                 const formData = new FormData();
                 formData.append('formFile', imageFile);
 
-                const uploadResponse = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/files', {
+                const uploadResponse = await fetch('https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/files', {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${accessToken}`
@@ -166,7 +166,7 @@ const FeedbackForm = ({ orderId, orderDetailId, availableCakeId, bakeryId }: Fee
                 review_type: "AVAILABLE_CAKE_REVIEW"
             });
 
-            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/reviews`, {
+            const response = await fetch(`https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/reviews`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
@@ -697,7 +697,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                 return;
             }
 
-            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/orders/${orderId}`, {
+            const response = await fetch(`https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/orders/${orderId}`, {
                 headers: {
                     'Authorization': `Bearer ${accessToken}`
                 }
@@ -880,7 +880,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                 throw new Error('Access token not found');
             }
 
-            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/available_cakes/${cakeId}`, {
+            const response = await fetch(`https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/available_cakes/${cakeId}`, {
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
                     'accept': '*/*'
@@ -936,7 +936,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                 return;
             }
 
-            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/orders/${orderId}/cancel`, {
+            const response = await fetch(`https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/orders/${orderId}/cancel`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
@@ -970,7 +970,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                 return;
             }
 
-            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/orders/${orderId}/move-to-next`, {
+            const response = await fetch(`https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/orders/${orderId}/move-to-next`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
@@ -1029,7 +1029,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                 }))
             };
 
-            const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/orders', {
+            const response = await fetch('https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/orders', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
@@ -1105,7 +1105,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                 formData.set('formFile', files[i]);
 
                 const response = await axios.post(
-                    'https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/files',
+                    'https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/files',
                     formData,
                     {
                         headers: {
@@ -1156,7 +1156,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
             };
 
             const response = await axios.post(
-                'https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/reports',
+                'https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/reports',
                 reportData,
                 {
                     headers: {
@@ -1188,7 +1188,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                 throw new Error('Access token not found');
             }
 
-            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/files/${imageId}`, {
+            const response = await fetch(`https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/files/${imageId}`, {
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
                     'accept': '*/*'

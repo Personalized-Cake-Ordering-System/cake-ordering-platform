@@ -56,7 +56,7 @@ export default function PromotionsPage() {
         if (accessToken) {
           const decodedToken = decodeJWT(accessToken);
           if (decodedToken?.id) {
-            let url = `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/customers/${decodedToken.id}/vouchers?pageIndex=${currentPage}&pageSize=${pageSize}`;
+            let url = `https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/customers/${decodedToken.id}/vouchers?pageIndex=${currentPage}&pageSize=${pageSize}`;
             
             if (filterApplied !== null) {
               url += `&isApplied=${filterApplied}`;

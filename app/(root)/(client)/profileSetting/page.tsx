@@ -66,7 +66,7 @@ export default function ProfileSettings() {
                     console.log("Customer ID from token:", customerId);
 
                     const response = await fetch(
-                        `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/customers/${customerId}`,
+                        `https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/customers/${customerId}`,
                         {
                             headers: {
                                 "Authorization": `Bearer ${token}`
@@ -132,7 +132,7 @@ export default function ProfileSettings() {
             const customerId = tokenPayload.id;
 
             const response = await fetch(
-                `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/customers/${customerId}`,
+                `https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/customers/${customerId}`,
                 {
                     method: "PUT",
                     headers: {

@@ -57,6 +57,17 @@ interface BakeryData {
   updated_at?: string | null ;
   updated_by?: string | null ;
   is_deleted?: boolean ;
+  cake_description?: string ;
+  price_description?: string ;
+  bakery_description?: string ;
+  metric?: {
+    rating_average: number;
+    total_revenue: number;
+    app_revenue: number;
+    orders_count: number;
+    customers_count: number;
+    average_order_value: number;
+  };
 }
 
 interface Product {
@@ -84,6 +95,14 @@ interface StoreInfo {
   cake_description: string ;
   price_description: string ;
   bakery_description: string ;
+  metric?: {
+    rating_average: number;
+    total_revenue: number;
+    app_revenue: number;
+    orders_count: number;
+    customers_count: number;
+    average_order_value: number;
+  };
 }
 
 interface AvailableCake {
@@ -276,9 +295,17 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
         status: bakery.status,
         createdAt: new Date(bakery.created_at).toLocaleDateString(),
         taxCode: bakery.tax_code,
-        cake_description: "Chuyên cung cấp các loại bánh kem tươi, bánh sinh nhật và bánh theo yêu cầu với nguyên liệu chất lượng cao.",
-        price_description: "Giá cả hợp lý từ 150.000đ, tùy theo kích thước và thiết kế bánh.",
-        bakery_description: "BreadTalk là tiệm bánh gia đình với hơn 5 năm kinh nghiệm trong việc làm bánh và phục vụ khách hàng khu vực trung tâm Sài Gòn."
+        cake_description: bakery.cake_description || "Chuyên cung cấp các loại bánh kem tươi, bánh sinh nhật và bánh theo yêu cầu với nguyên liệu chất lượng cao.",
+        price_description: bakery.price_description || "Giá cả hợp lý từ 150.000đ, tùy theo kích thước và thiết kế bánh.",
+        bakery_description: bakery.bakery_description || "BreadTalk là tiệm bánh gia đình với hơn 5 năm kinh nghiệm trong việc làm bánh và phục vụ khách hàng khu vực trung tâm Sài Gòn.",
+        metric: bakery.metric ? {
+          rating_average: Math.round(bakery.metric.rating_average * 10) / 10, // Round to 1 decimal place
+          total_revenue: bakery.metric.total_revenue,
+          app_revenue: bakery.metric.app_revenue,
+          orders_count: bakery.metric.orders_count,
+          customers_count: bakery.metric.customers_count,
+          average_order_value: bakery.metric.average_order_value
+        } : undefined
       };
 
       setStoreInfo(storeData);
@@ -292,7 +319,7 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
   useEffect(() => {
     const fetchCakes = async () => {
       try {
-        const response = await axios.get<ApiResponse>(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/bakeries/${bakery.id}/available_cakes`, {
+        const response = await axios.get<ApiResponse>(`https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/bakeries/${bakery.id}/available_cakes`, {
           params: {
             'page-index': pagination.currentPage,
             'page-size': pagination.pageSize,
@@ -324,7 +351,7 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
     try {
       setIsReviewsLoading(true) ;
       const response = await axios.get<ReviewApiResponse>(
-        `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/bakeries/${bakery.id}`,
+        `https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/bakeries/${bakery.id}`,
         {
           params: {
             'page-index': reviewPagination.currentPage,
@@ -355,7 +382,7 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
                 }
 
                 const customerResponse = await axios.get(
-                  `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/customers/${review.customer_id}`,
+                  `https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/customers/${review.customer_id}`,
                   {
                     headers: {
                       'Authorization': `Bearer ${accessToken}`,
@@ -380,7 +407,7 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
             if (review.image_id) {
               try {
                 const imageResponse = await axios.get(
-                  `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/files/${review.image_id}`
+                  `https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/files/${review.image_id}`
                 ) ;
                 if (imageResponse.data.status_code === 200) {
                   imageUrl = imageResponse.data.payload.file_url ;
@@ -474,7 +501,7 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
       const filePreview = uploadedFiles.length > 0 ? uploadedFiles[0].preview : null;
 
       const response = await axios.post(
-        `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/reviews`,
+        `https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/reviews`,
         {
           rating: userRating,
           content: userReview,
@@ -536,7 +563,7 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
 
     try {
       const response = await axios.post(
-        `https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/reviews/${selectedReviewId}/reports`,
+        `https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/reviews/${selectedReviewId}/reports`,
         {
           reason: reportReason
         }
@@ -568,7 +595,7 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
       formData.set('formFile', files[0]);
 
       const response = await axios.post(
-        'https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/files',
+        'https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/files',
         formData,
         {
           headers: {
@@ -619,7 +646,7 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
       } ;
 
       const response = await axios.post(
-        'https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/reports',
+        'https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/reports',
         reportData,
         {
           headers: {

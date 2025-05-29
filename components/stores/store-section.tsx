@@ -14,11 +14,10 @@ import {
 import { stores } from "@/components/shared/client/home/data" 
 import { StoreCard } from "@/components/shared/client/stores/store-card" 
 import { StoreFilters } from "@/components/shared/client/stores/store-filter" 
-import { StoreFilterTags } from "@/components/shared/client/stores/store-filter-tag" 
-import { useStoreFilters } from "@/hooks/use-store-filter" 
 import React from "react" 
 import { ApiListResponse } from "@/lib/api/api-handler/generic" 
 import { IBakery } from "@/features/barkeries/types/barkeries-type" 
+import { useStoreFilters } from "@/hooks/use-store-filter";
 // Danh sách các loại bánh cho filter
 const cakeCategories = [
   "Bánh mì" ,
@@ -42,8 +41,8 @@ const StoreSection = ({ barkeriesPromise }: StoreSectionProps) => {
     activeFiltersCount ,
     setIsFilterOpen ,
     setSortBy ,
-    setSearchQuery ,
-  } = useStoreFilters() 
+      setSearchQuery ,
+    } = useStoreFilters() 
 
     // const store = barkeriesPromise.data 
     
@@ -122,7 +121,6 @@ const StoreSection = ({ barkeriesPromise }: StoreSectionProps) => {
           </div>
 
           <div className="flex-1">
-            <StoreFilterTags />
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {barkeriesPromise.data?.data?.map((store: IBakery) => (
                 <StoreCard key={store.id} bakery={store} />

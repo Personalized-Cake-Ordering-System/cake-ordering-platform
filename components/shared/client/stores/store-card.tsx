@@ -106,7 +106,9 @@ export const StoreCard = ({ bakery, isFeatured = false }: StoreCardProps) => {
             <div className="flex items-center bg-yellow-100 dark:bg-yellow-900/30 px-2 py-1 rounded-full">
               <Star className="h-4 w-4 text-yellow-500 mr-1 fill-yellow-500" />
               <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                4.5
+                {bakery.metric && typeof bakery.metric.rating_average === 'number'
+                  ? Math.ceil(bakery.metric.rating_average * 10) / 10
+                  : '4.5'}
               </span>
             </div>
           </div>

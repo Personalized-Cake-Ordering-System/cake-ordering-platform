@@ -84,7 +84,7 @@ const OrderHistoryPage = () => {
                     return;
                 }
 
-                const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/customers/${decodedToken.id}/orders?pageIndex=${currentPage - 1}&pageSize=${itemsPerPage}`, {
+                const response = await fetch(`https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/customers/${decodedToken.id}/orders?pageIndex=${currentPage - 1}&pageSize=${itemsPerPage}`, {
                     headers: {
                         'Authorization': `Bearer ${accessToken}`,
                         'accept': '*/*'

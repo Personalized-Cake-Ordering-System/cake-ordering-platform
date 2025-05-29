@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api';
+const API_URL = 'https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api';
 
 export const voucherService = {
     async getVouchers(bakeryId: string, accessToken: string) {

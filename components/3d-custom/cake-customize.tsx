@@ -332,7 +332,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
         try {
             setIsLoading(true);
             setError(null);
-            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/decoration_options?bakeryId=${storeId}`);
+            const response = await fetch(`https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/decoration_options?bakeryId=${storeId}`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -358,7 +358,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
         try {
             setIsLoading(true);
             setError(null);
-            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/part_options?bakeryId=${storeId}`);
+            const response = await fetch(`https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/part_options?bakeryId=${storeId}`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -397,7 +397,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
         try {
             setIsLoading(true);
             setError(null);
-            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/message_options?bakeryId=${storeId}`);
+            const response = await fetch(`https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/message_options?bakeryId=${storeId}`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -423,7 +423,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
         try {
             setIsLoading(true);
             setError(null);
-            const response = await fetch(`https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/extra_options?bakeryId=${storeId}`);
+            const response = await fetch(`https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/extra_options?bakeryId=${storeId}`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -1058,7 +1058,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
 
             // Call the API to create the custom cake
             console.log('Making API request to create custom cake...');
-            const response = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/custom_cakes', {
+            const response = await fetch('https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/custom_cakes', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1091,7 +1091,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
 
             // Get current cart from API first to preserve existing items
             console.log('Fetching current cart to preserve existing items...');
-            const updatedCartResponse = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/carts', {
+            const updatedCartResponse = await fetch('https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/carts', {
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
                     'accept': '*/*'
@@ -1153,7 +1153,7 @@ const CakeCustomizer = ({ storeId }: { storeId: string }) => {
             console.log('Adding to cart with data:', cartData);
 
             // Make the API call to add to cart
-            const cartResponse = await fetch('https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/api/carts', {
+            const cartResponse = await fetch('https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/carts', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
