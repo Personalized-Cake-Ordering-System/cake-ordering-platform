@@ -413,9 +413,23 @@ const MultiCakes = () => {
                         {/* Rating stars - new element */}
                         <div className="flex items-center mt-3">
                           {[...Array(5)].map((_, i) => (
-                            <Star key={i} className="w-4 h-4 fill-amber-300 text-amber-300" />
+                            <Star 
+                              key={i} 
+                              className={`w-4 h-4 ${
+                                !cake.metric?.rating_average || cake.metric?.rating_average === 0
+                                  ? 'fill-amber-300 text-amber-300' // Default 5 stars for new cakes
+                                  : i < Math.round(cake.metric.rating_average)
+                                    ? 'fill-amber-300 text-amber-300'
+                                    : 'fill-gray-200 text-gray-200 dark:fill-gray-700 dark:text-gray-700'
+                              }`} 
+                            />
                           ))}
-                          <span className="text-xs text-gray-500 ml-2">(5.0)</span>
+                          <span className="text-xs text-gray-500 ml-2">
+                            {!cake.metric?.rating_average || cake.metric?.rating_average === 0
+                              ? '(Chưa có đánh giá)'
+                              : `(${cake.metric.rating_average.toFixed(1)})`
+                            }
+                          </span>
                         </div>
                       </CardContent>
 

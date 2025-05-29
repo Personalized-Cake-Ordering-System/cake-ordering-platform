@@ -299,7 +299,7 @@ export default function StoreDetailPage({ bakery }: { bakery: BakeryData }) {
         price_description: bakery.price_description || "Giá cả hợp lý từ 150.000đ, tùy theo kích thước và thiết kế bánh.",
         bakery_description: bakery.bakery_description || "BreadTalk là tiệm bánh gia đình với hơn 5 năm kinh nghiệm trong việc làm bánh và phục vụ khách hàng khu vực trung tâm Sài Gòn.",
         metric: bakery.metric ? {
-          rating_average: Math.round(bakery.metric.rating_average * 10) / 10, // Round to 1 decimal place
+          rating_average: Number(bakery.metric.rating_average.toFixed(1)),
           total_revenue: bakery.metric.total_revenue,
           app_revenue: bakery.metric.app_revenue,
           orders_count: bakery.metric.orders_count,

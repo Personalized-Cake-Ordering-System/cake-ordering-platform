@@ -96,7 +96,7 @@ const HomePage = async () => {
                   </div>
                 }
                 name={bakery.bakery_name}
-                rating={4.5}
+                rating={bakery.metric?.rating_average ? Number(bakery.metric.rating_average.toFixed(1)) : 4.5}
                 speciality={bakery.bakery_name}
               />
             ))}
