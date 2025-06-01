@@ -441,8 +441,8 @@ const MultiCakes = () => {
                           size="sm"
                           className="rounded-full bg-rose-400 hover:bg-rose-500 transition-all px-4 py-1 text-xs"
                         >
-                          <ShoppingCart className="h-3.5 w-3.5 mr-1" />
-                          Thêm Vào Giỏ
+                          <EyeIcon className="h-3.5 w-3.5 mr-1" />
+                          Xem Chi Tiết
                         </Button>
                       </CardFooter>
                     </Card>

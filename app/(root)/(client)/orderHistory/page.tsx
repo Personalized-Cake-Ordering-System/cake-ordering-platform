@@ -52,6 +52,8 @@ interface Order {
     pickup_time: string;
     payment_type: string;
     canceled_reason?: string;
+    voucher_code?: string;
+    discount_amount?: number;
 }
 
 type SortOption = 'newest' | 'oldest' | 'highest' | 'lowest' | 'status';
@@ -420,6 +422,21 @@ const OrderHistoryPage = () => {
                                                                 <p className="text-sm text-muted-foreground">{formatVND(order.total_product_price)}</p>
                                                             </div>
                                                         </div>
+                                                        {order.voucher_code && (
+                                                          <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-green-50 transition-colors">
+                                                            <div className="bg-green-100 p-2 rounded-full">
+                                                              <span className="text-green-600 font-bold">%</span>
+                                                            </div>
+                                                            <div>
+                                                              <p className="text-sm font-medium">
+                                                                Mã khuyến mãi: <span className="font-semibold">{order.voucher_code}</span>
+                                                              </p>
+                                                              <p className="text-sm text-green-600">
+                                                                Giảm giá: -{formatVND(order.discount_amount ?? 0)}
+                                                              </p>
+                                                            </div>
+                                                          </div>
+                                                        )}
                                                         <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted/50 transition-colors">
                                                             <div className="bg-primary/10 p-2 rounded-full">
                                                                 <Truck className="h-4 w-4 text-primary" />

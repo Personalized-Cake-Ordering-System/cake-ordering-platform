@@ -16,61 +16,22 @@ import { useEffect } from "react" ;
 import { type CarouselApi } from "@/components/ui/carousel" ;
 
 interface BannerSlide {
-  id: number ;
-  imageUrl: string ;
-  label: string ;
-  title: string ;
-  subtitle: string ;
-  price: string ;
-  priceLabel: string ;
-  buttonText: string ;
-  buttonUrl: string ;
+  id: string;
+  imageUrl: string;
+  label: string;
+  title: string;
+  subtitle: string;
+  price: string;
+  priceLabel: string;
+  buttonText: string;
+  buttonUrl: string;
 }
 
 interface MainBannerProps {
-  slides?: BannerSlide[] ;
+  slides?: BannerSlide[];
 }
 
-const defaultSlides: BannerSlide[] = [
-  {
-    id: 1 ,
-    imageUrl:
-      "https://images.unsplash.com/photo-1630144252987-8733b6ac2ab8?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NDZ8fGNha2UlMjBzdG9yZXxlbnwwfHwwfHx8MA%3D%3D" ,
-    label: "Cửa hàng nổi bật tháng 2" ,
-    title: "Tiệm Bánh Hạnh Phúc" ,
-    subtitle: "Chuyên bánh kem sinh nhật và bánh cưới" ,
-    price: "320.000đ" ,
-    priceLabel: "Giá chỉ từ" ,
-    buttonText: "XEM CỬA HÀNG" ,
-    buttonUrl: "/stores/tiem-banh-hanh-phuc" ,
-  } ,
-  {
-    id: 2 ,
-    imageUrl:
-      "https://images.unsplash.com/photo-1562440499-64c9a111f713?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8N3x8Y2FrZXxlbnwwfHwwfHx8MA%3D%3D" ,
-    label: "Cửa hàng yêu thích" ,
-    title: "Paris Bakery" ,
-    subtitle: "Bánh ngọt Pháp chính hiệu" ,
-    price: "280.000đ" ,
-    priceLabel: "Giá chỉ từ" ,
-    buttonText: "XEM CỬA HÀNG" ,
-    buttonUrl: "/stores/paris-bakery" ,
-  } ,
-  {
-    id: 3 ,
-    imageUrl:
-      "https://images.unsplash.com/photo-1489790925940-daac6dcc7c7d?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mzl8fGNha2UlMjBzdG9yZXxlbnwwfHwwfHx8MA%3D%3D" ,
-    label: "Khuyến mãi tháng này" ,
-    title: "Cheesecake Factory" ,
-    subtitle: "Bánh phô mai thơm ngon" ,
-    price: "350.000đ" ,
-    priceLabel: "Giá chỉ từ" ,
-    buttonText: "XEM CỬA HÀNG" ,
-    buttonUrl: "/stores/cheesecake-factory" ,
-  } ,
-] ;
-
-const MainBanner = ({ slides = defaultSlides }: MainBannerProps) => {
+const MainBanner = ({ slides = [] }: MainBannerProps) => {
   const [api , setApi] = useState<CarouselApi>() ;
   const [current , setCurrent] = useState(0) ;
 
@@ -99,6 +60,10 @@ const MainBanner = ({ slides = defaultSlides }: MainBannerProps) => {
     } ,
     [api]
   ) ;
+
+  if (slides.length === 0) {
+    return null;
+  }
 
   return (
     <div className="h-full relative rounded-lg overflow-hidden shadow-md bg-gradient-to-br from-pink-50 to-teal-50 dark:from-pink-900/30 dark:to-teal-900/30">

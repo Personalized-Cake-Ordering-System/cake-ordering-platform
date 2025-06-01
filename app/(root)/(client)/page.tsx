@@ -22,12 +22,25 @@ const HomePage = async () => {
   // Filter bakeries to only show confirmed ones
   const confirmedBakeries = featuredBakeries?.filter(bakery => bakery.status === "CONFIRMED") || [] ;
 
+  // Transform bakeries data for banner slides
+  const bannerSlides = confirmedBakeries.slice(0, 3).map(bakery => ({
+    id: bakery.id,
+    imageUrl: bakery.shop_image_files[0]?.file_url || "/placeholder-bakery.jpg",
+    label: "Cửa hàng nổi bật",
+    title: bakery.bakery_name,
+    subtitle: bakery.bakery_description || "Chuyên cung cấp các loại bánh chất lượng cao",
+    price: "150.000đ",
+    priceLabel: "Giá chỉ từ",
+    buttonText: "XEM CỬA HÀNG",
+    buttonUrl: `/stores/${bakery.id}`,
+  }));
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 to-white dark:from-gray-950 dark:to-gray-900">
       <main className="flex-1 container mx-auto px-4 py-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           <div className="md:col-span-2 relative overflow-hidden rounded-xl shadow-lg border border-gray-200 dark:border-gray-800">
-            <MainBanner />
+            <MainBanner slides={bannerSlides} />
           </div>
 
           <div className="space-y-6 flex flex-col h-full">
@@ -90,6 +103,7 @@ const HomePage = async () => {
             {confirmedBakeries.map((bakery) => (
               <StoreItem
                 key={bakery.id}
+                id={bakery.id}
                 icon={
                   <div className="bg-custom-pink/30 dark:bg-custom-pink/30 p-3 rounded-full">
                     <Store className="h-6 w-6 text-custom-teal dark:text-custom-teal" />

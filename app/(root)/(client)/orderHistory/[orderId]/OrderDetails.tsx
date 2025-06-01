@@ -92,6 +92,8 @@ interface Order {
         transaction_date: string;
         account_number: string;
     };
+    voucher_code?: string;
+    discount_amount?: number;
 }
 
 interface OrderDetailsProps {
@@ -769,7 +771,9 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                     gate_way: orderData.transaction.gate_way,
                     transaction_date: orderData.transaction.transaction_date,
                     account_number: orderData.transaction.account_number
-                } : undefined
+                } : undefined,
+                voucher_code: orderData.voucher_code,
+                discount_amount: orderData.discount_amount
             });
             setLoading(false);
         } catch (err) {
@@ -1549,6 +1553,12 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                                                 <span className="text-gray-600 dark:text-gray-400">Tạm tính</span>
                                                 <span className="text-gray-800 dark:text-gray-200">{formatVND(order.total_product_price)}</span>
                                             </div>
+                                            {order.voucher_code && (
+                                              <div className="flex justify-between text-sm text-green-600">
+                                                <span>Mã khuyến mãi: <span className="font-semibold">{order.voucher_code}</span></span>
+                                                <span>-{formatVND(order.discount_amount ?? 0)}</span>
+                                              </div>
+                                            )}
                                             <div className="flex justify-between text-sm">
                                                 <span className="text-gray-600 dark:text-gray-400">Phí vận chuyển</span>
                                                 <span className="text-gray-800 dark:text-gray-200">{formatVND(order.shipping_fee)}</span>
@@ -1721,10 +1731,6 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                                     <p className="text-sm flex items-center gap-2">
                                         <span className="text-gray-600 dark:text-gray-400">Địa chỉ:</span>
                                         <span className="font-medium text-custom-teal dark:text-custom-teal/90">{order.bakery.address}</span>
-                                    </p>
-                                    <p className="text-sm flex items-center gap-2">
-                                        <span className="text-gray-600 dark:text-gray-400">ID tiệm bánh:</span>
-                                        <span className="font-medium text-custom-teal dark:text-custom-teal/90">{order.bakery.id}</span>
                                     </p>
                                 </div>
                             </CardContent>
