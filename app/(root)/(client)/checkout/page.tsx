@@ -1182,7 +1182,7 @@ const CheckoutPage = () => {
       if (geocodeResult) {
         const accessToken = localStorage.getItem('accessToken');
         if (!accessToken) {
-          toast.error('Please login to continue');
+          toast.error('Vui lòng đăng nhập để tiếp tục');
           setIsProcessing(false);
           return;
         }
@@ -1192,7 +1192,7 @@ const CheckoutPage = () => {
           const bakeryId = cartResponse.payload.bakeryId;
 
           if (!bakeryId) {
-            toast.error('Unable to determine bakery information');
+            toast.error('Không thể xác định thông tin cửa hàng');
             setIsProcessing(false);
             return;
           }

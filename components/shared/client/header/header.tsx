@@ -1,4 +1,3 @@
-
 "use client" ;
 
 import React , { useEffect , useState } from "react" ;
@@ -33,6 +32,7 @@ import { ModeToggleAnimate } from "@/components/shared/custom-ui/mode-toggle-ani
 import { cn } from "@/lib/utils" ;
 import { NotificationDropdown } from "@/components/shared/notification/notification-dropdown" ;
 import { useCart } from "@/app/store/useCart" ;
+import { useWishlist } from "@/app/store/useWishlist" ;
 
 interface BadgeProps {
   count: number ;
@@ -76,7 +76,9 @@ const Header = () => {
   const router = useRouter() ;
   const [isLoggedIn , setIsLoggedIn] = useState(false) ;
   const { items } = useCart() ;
+  const { items: wishlistItems } = useWishlist() ;
   const cartCount = items.length ;
+  const wishlistCount = wishlistItems.length ;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -91,7 +93,6 @@ const Header = () => {
   } ;
 
   const messageCount = 1 ;
-  const wishlistCount = 1 ;
 
   const navLinks: NavItemType[] = [
     { href: "/" , label: "Trang chủ" } ,
@@ -206,7 +207,7 @@ const Header = () => {
                     <NotificationDropdown />
                     <Link href="/wishlist" className="relative group">
                       <Heart className="h-6 w-6 text-gray-800 dark:text-gray-300 group-hover:text-custom-teal dark:group-hover:text-custom-teal transition-colors duration-200" />
-                      {/* <NotificationBadge count={wishlistCount} /> */}
+                      <NotificationBadge count={wishlistCount} />
                     </Link>
                     <Link href="/cart" className="relative group p-1 hover:bg-gray-100 dark:hover:bg-gray-800/50 rounded-full transition-all">
                       <div className="relative">

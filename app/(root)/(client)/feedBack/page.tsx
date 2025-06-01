@@ -41,7 +41,7 @@ const FeedbackPage = () => {
             try {
                 const accessToken = localStorage.getItem('accessToken');
                 if (!accessToken) {
-                    setError('Please login to view feedback');
+                    setError('Vui lòng đăng nhập để xem đánh giá');
                     setLoading(false);
                     return;
                 }
@@ -94,7 +94,7 @@ const FeedbackPage = () => {
         try {
             const accessToken = localStorage.getItem('accessToken');
             if (!accessToken) {
-                toast.error('Please login to submit feedback');
+                toast.error('Vui lòng đăng nhập để gửi đánh giá');
                 return;
             }
 
@@ -137,8 +137,8 @@ const FeedbackPage = () => {
             });
 
             if (response.ok) {
-                toast.success(isEditing ? 'Feedback updated successfully!' : 'Feedback submitted successfully!', {
-                    description: 'Thank you for sharing your experience with us.',
+                toast.success(isEditing ? 'Cập nhật đánh giá thành công!' : 'Gửi đánh giá thành công!', {
+                    description: 'Cảm ơn bạn đã chia sẻ trải nghiệm với chúng tôi.',
                     duration: 3000,
                     position: 'top-center',
                     style: {
@@ -155,8 +155,8 @@ const FeedbackPage = () => {
                 throw new Error('Failed to submit feedback');
             }
         } catch (err) {
-            toast.error('Failed to submit feedback', {
-                description: 'Please try again later.',
+            toast.error('Không thể gửi đánh giá', {
+                description: 'Vui lòng thử lại sau.',
                 duration: 3000,
                 position: 'top-center',
                 style: {
@@ -177,7 +177,7 @@ const FeedbackPage = () => {
         try {
             const accessToken = localStorage.getItem('accessToken');
             if (!accessToken) {
-                toast.error('Please login to delete feedback');
+                toast.error('Vui lòng đăng nhập để xóa đánh giá');
                 return;
             }
 
@@ -189,13 +189,13 @@ const FeedbackPage = () => {
             });
 
             if (response.ok) {
-                toast.success('Feedback deleted successfully');
+                toast.success('Xóa đánh giá thành công');
                 router.push('/orderHistory');
             } else {
                 throw new Error('Failed to delete feedback');
             }
         } catch (err) {
-            toast.error('Failed to delete feedback');
+            toast.error('Không thể xóa đánh giá');
         }
     };
 

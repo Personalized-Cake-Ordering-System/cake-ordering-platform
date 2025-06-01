@@ -15,7 +15,7 @@ const WishlistPage = () => {
 
     const handleRemoveFromWishlist = (id: string) => {
         removeFromWishlist(id);
-        toast.success('Removed from wishlist');
+        toast.success('Đã xóa khỏi danh sách yêu thích');
     };
 
     const container = {

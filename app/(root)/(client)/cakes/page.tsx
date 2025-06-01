@@ -113,7 +113,7 @@ const MultiCakes = () => {
 
     if (isInWishlist) {
       removeFromWishlist(cake.id);
-      toast.success('Removed from wishlist');
+      toast.success('Đã xóa khỏi danh sách yêu thích');
     } else {
       addToWishlist({
         id: cake.id,
@@ -121,7 +121,7 @@ const MultiCakes = () => {
         price: cake.available_cake_price,
         image: cake.available_cake_image_files?.[0]?.file_url || '/placeholder-cake.jpg',
       });
-      toast.success('Added to wishlist');
+      toast.success('Đã thêm vào danh sách yêu thích');
     }
   };
 

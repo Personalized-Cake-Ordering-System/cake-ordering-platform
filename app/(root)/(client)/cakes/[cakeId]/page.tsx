@@ -278,7 +278,7 @@ const CakeDetail = () => {
     try {
       const accessToken = localStorage.getItem('accessToken');
       if (!accessToken) {
-        toast.error('Please login to add items to cart');
+        toast.error('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng');
         router.push('/sign-in');
         return;
       }
@@ -315,7 +315,7 @@ const CakeDetail = () => {
 
       // Check if the bakeryId is valid
       if (!cartItem.bakeryId) {
-        toast.error('This item cannot be added to cart: missing bakery information');
+        toast.error('Không thể thêm sản phẩm này vào giỏ hàng: thiếu thông tin cửa hàng');
         return;
       }
 
@@ -355,7 +355,7 @@ const CakeDetail = () => {
       const added = addToCart(cartItem);
 
       if (!added) {
-        toast.error('Could not add item to cart. Please try again.');
+        toast.error('Không thể thêm sản phẩm vào giỏ hàng. Vui lòng thử lại.');
         return;
       }
 
@@ -364,7 +364,7 @@ const CakeDetail = () => {
 
     } catch (error) {
       console.error('Error adding to cart:', error);
-      toast.error('Failed to add to cart');
+      toast.error('Không thể thêm vào giỏ hàng');
     }
   };
 
@@ -380,7 +380,7 @@ const CakeDetail = () => {
       const changeBakeryResult = await changeBakery(cartItem.bakeryId, true);
 
       if (!changeBakeryResult) {
-        toast.error('Failed to change bakery. Please try again.');
+        toast.error('Không thể thay đổi cửa hàng. Vui lòng thử lại.');
         closeBakerySwitchModal();
         return;
       }
@@ -391,7 +391,7 @@ const CakeDetail = () => {
       const added = addToCart(cartItem);
 
       if (!added) {
-        toast.error('Failed to add item after bakery switch');
+        toast.error('Không thể thêm sản phẩm sau khi chuyển cửa hàng');
         closeBakerySwitchModal();
         return;
       }
@@ -409,7 +409,7 @@ const CakeDetail = () => {
 
     } catch (error) {
       console.error('Error handling bakery switch:', error);
-      toast.error('Failed to switch bakery');
+      toast.error('Không thể chuyển cửa hàng');
 
       // Make sure modal is closed even on error
       const { closeBakerySwitchModal } = useCart.getState();
@@ -533,11 +533,11 @@ const CakeDetail = () => {
         toast.success('Thêm vào giỏ hàng thành công!');
         router.push('/cart');
       } else {
-        toast.error(data.errors?.[0] || 'Failed to add to cart');
+        toast.error(data.errors?.[0] || 'Không thể thêm vào giỏ hàng');
       }
     } catch (error) {
       console.error('Error during API cart update:', error);
-      toast.error('Failed to update cart on server');
+      toast.error('Không thể cập nhật giỏ hàng trên máy chủ');
     }
   };
 
@@ -549,7 +549,7 @@ const CakeDetail = () => {
 
     if (isInWishlist) {
       removeFromWishlist(cakeData.id);
-      toast.success('Removed from wishlist');
+      toast.success('Đã xóa khỏi danh sách yêu thích');
     } else {
       addToWishlist({
         id: cakeData.id,
@@ -557,7 +557,7 @@ const CakeDetail = () => {
         price: cakeData?.available_cake_price || 0,
         image: cakeData.available_cake_image_files?.[0]?.file_url || '/placeholder-cake.jpg',
       });
-      toast.success('Added to wishlist');
+      toast.success('Đã thêm vào danh sách yêu thích');
     }
   };
 
