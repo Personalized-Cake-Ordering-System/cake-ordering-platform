@@ -159,8 +159,10 @@ const MultiCakes = () => {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.4, duration: 0.8 }}
             className="text-5xl md:text-7xl font-serif font-bold mb-6 text-gray-800 dark:text-white"
+            style={{ letterSpacing: 'normal', wordSpacing: 'normal', fontFamily: 'Poppins, Inter, Arial, sans-serif' }}
           >
-            <span className="text-rose-500 dark:text-rose-300">Thế Giới</span> Bánh Ngọt
+            <span className="text-rose-500 dark:text-rose-300">Thế Giới</span>
+            <span className="text-gray-800 dark:text-white"> Bánh Ngọt</span>
           </motion.h1>
           
           <motion.p
@@ -288,6 +290,7 @@ const MultiCakes = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             className="text-3xl font-serif font-bold text-gray-700 dark:text-white mb-10 text-center"
+            style={{ letterSpacing: 'normal', wordSpacing: 'normal', fontFamily: 'Poppins, Inter, Arial, sans-serif' }}
           >
             {selectedCategory ? getCakeTypeDisplayName(selectedCategory) : 'Tất Cả Sản Phẩm'}
           </motion.h2>

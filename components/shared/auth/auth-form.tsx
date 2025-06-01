@@ -76,12 +76,12 @@ const AuthForm = <T extends FieldValues>({
     <div className="flex flex-col gap-6 max-w-md mx-auto p-6 bg-white dark:bg-gray-800 shadow-lg rounded-xl">
       <div className="space-y-2 text-center">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          {isSignIn ? "Welcome back to CusCake" : "Create your CusCake account"}
+          {isSignIn ? "Chào mừng quay lại với CusCake" : "Tạo tài khoản CusCake của bạn"}
         </h1>
         <p className="text-gray-600 dark:text-gray-300">
           {isSignIn
-            ? "Sign in to access your account and place orders"
-            : "Join us to order delicious custom cakes and treats"}
+            ? "Đăng nhập để truy cập tài khoản và đặt hàng"
+            : "Tham gia với chúng tôi để đặt bánh và món ngọt theo yêu cầu"}
         </p>
       </div>
 
@@ -126,19 +126,19 @@ const AuthForm = <T extends FieldValues>({
             className="w-full bg-custom-teal hover:bg-custom-pink text-white py-2 rounded-md transition-colors dark:bg-custom-teal dark:hover:bg-custom-pink"
             disabled={isLoading}
           >
-            {isLoading ? "Processing..." : (isSignIn ? "Sign In" : "Sign Up")}
+            {isLoading ? "Đang xử lý..." : (isSignIn ? "Đăng nhập" : "Đăng ký")}
           </Button>
         </form>
       </Form>
 
       <div className="text-center border-t pt-4 border-gray-200 dark:border-gray-700">
         <p className="text-gray-600 dark:text-gray-300 text-sm">
-          {isSignIn ? "Don't have an account? " : "Already have an account? "}
+          {isSignIn ? "Chưa có tài khoản? " : "Đã có tài khoản? "}
           <Link
             href={isSignIn ? "/sign-up" : "/sign-in"}
             className="font-medium text-custom-teal hover:text-custom-pink transition-colors"
           >
-            {isSignIn ? "Sign up now" : "Sign in"}
+            {isSignIn ? "Đăng ký ngay" : "Đăng nhập"}
           </Link>
         </p>
 

@@ -473,10 +473,9 @@ const CartPage = () => {
             <div className="flex">
               <AlertCircle className="h-5 w-5 text-amber-500 mr-3 mt-0.5" />
               <div>
-                <p className="text-amber-800 font-medium">Your cart has been updated</p>
+                <p className="text-amber-800 font-medium">Giỏ hàng của bạn đã được cập nhật</p>
                 <p className="text-amber-700 text-sm">
-                  Items from your previous cart have been removed because you added a product from a different bakery ({newBakeryName}).
-                  Items can only be ordered from one bakery at a time.
+                  Các sản phẩm từ giỏ hàng trước đã bị xóa vì bạn đã thêm sản phẩm từ tiệm bánh khác ({newBakeryName}). Bạn chỉ có thể đặt hàng từ một tiệm bánh trong một lần.
                 </p>
               </div>
             </div>
