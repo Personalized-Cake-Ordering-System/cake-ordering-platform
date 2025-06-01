@@ -23,7 +23,7 @@ const SignalRProvider = ({ children }: { children: React.ReactNode }) => {
     const customerId = tokenPayload.id;
     console.log("customerId", customerId);
     const newConnection = new signalR.HubConnectionBuilder()
-      .withUrl("https://cuscake-ahabbhexbvgebrhh.southeastasia-01.azurewebsites.net/signalR-hub", { withCredentials: false })
+      .withUrl("https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/signalR-hub", { withCredentials: false })
       .withAutomaticReconnect()
       .build();
 
