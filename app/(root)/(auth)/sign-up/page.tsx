@@ -14,7 +14,7 @@ const SignUpPage = () => {
 
   const signUp = async (params: SignUpParams) => {
     setIsLoading(true);
-    const toastId = toast.loading("Creating your account...");
+    const toastId = toast.loading("Đang tạo tài khoản của bạn...");
 
     try {
       const response = await fetch('https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/customers', {
@@ -29,7 +29,7 @@ const SignUpPage = () => {
 
       if (data.status_code === 201) {
         toast.update(toastId, {
-          render: "Account created successfully! Please sign in.",
+          render: "Tạo tài khoản thành công! Vui lòng đăng nhập.",
           type: "success",
           isLoading: false,
           autoClose: 3000,
@@ -37,7 +37,7 @@ const SignUpPage = () => {
         return { success: true };
       } else {
         toast.update(toastId, {
-          render: 'Registration failed: ' + (data.errors?.join(', ') || 'Unknown error'),
+          render: 'Đăng ký thất bại: ' + (data.errors?.join(', ') || 'Lỗi không xác định'),
           type: "error",
           isLoading: false,
           autoClose: 3000,
@@ -46,12 +46,12 @@ const SignUpPage = () => {
       }
     } catch (error) {
       toast.update(toastId, {
-        render: 'Error during registration: ' + (error as Error).message,
+        render: 'Lỗi trong quá trình đăng ký: ' + (error as Error).message,
         type: "error",
         isLoading: false,
         autoClose: 3000,
       });
-      return { success: false, error: 'Registration error' };
+      return { success: false, error: 'Lỗi đăng ký' };
     } finally {
       setIsLoading(false);
     }

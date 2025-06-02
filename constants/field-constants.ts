@@ -1,11 +1,11 @@
 export const FIELD_NAMES = {
-    name: "Full name",
+    name: "Họ và tên",
     email: "Email",
-    password: "Password",
-    phone: "Phone number" ,
-    address: "Address" ,
-    latitude: "Latitude" ,
-    longitude: "Longitude" ,
+    password: "Mật khẩu",
+    phone: "Số điện thoại",
+    address: "Địa chỉ",
+    latitude: "Vĩ độ",
+    longitude: "Kinh độ",
   };
   
   export const FIELD_TYPES = {
