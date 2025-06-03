@@ -91,13 +91,6 @@ const SignInPage = () => {
           }}
           onSubmit={signIn}
           isLoading={isLoading}
-          title="Chào mừng quay lại với CusCake"
-          description="Đăng nhập để truy cập tài khoản và đặt hàng"
-          emailLabel="Email"
-          passwordLabel="Mật khẩu"
-          submitLabel="Đăng nhập"
-          footerText="Chưa có tài khoản?"
-          footerLinkText="Đăng ký ngay"
         />
       </div>
     </>

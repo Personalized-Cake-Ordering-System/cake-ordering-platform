@@ -73,6 +73,7 @@ interface Order {
             created_at: string;
         };
     }[];
+    order_supports?: IOrderSupport[];
     customer: {
         name: string;
         email: string;
@@ -95,6 +96,23 @@ interface Order {
     voucher_code?: string;
     discount_amount?: number;
 }
+
+ interface IOrderSupport {
+    content: string;
+    file_id: string;
+    file: null;
+    bakery_id: string;
+    bakery: null;
+    customer_id: string;
+    customer: null;
+    order_id: string;
+    order: null;
+    id: string;
+    created_at: string;
+    created_by: string;
+    updated_at: null;
+    updated_by: null;
+  }
 
 interface OrderDetailsProps {
     orderId: string;
@@ -682,7 +700,8 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
     const [uploadedFiles, setUploadedFiles] = useState<Array<{ id: string, name: string }>>([]);
     const [isUploading, setIsUploading] = useState(false);
     const [reviewImage, setReviewImage] = useState<string | null>(null);
-
+    const [supportImages, setSupportImages] = useState<{ [key: string]: string }>({});
+console.log("vinh log image", supportImages);
     const fetchOrder = useCallback(async () => {
         try {
             const accessToken = localStorage.getItem('accessToken');
@@ -742,6 +761,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                 latitude: orderData.latitude,
                 longitude: orderData.longitude,
                 paid_at: orderData.paid_at,
+                order_supports: orderData.order_supports,
                 order_details: orderData.order_details.map((detail: any) => ({
                     id: detail.id,
                     quantity: detail.quantity,
@@ -1219,6 +1239,54 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
         }
     }, [order]);
 
+    const fetchSupportImages = async (orderSupports: IOrderSupport[]) => {
+      try {
+        const accessToken = localStorage.getItem('accessToken');
+        if (!accessToken) {
+          throw new Error('Access token not found');
+        }
+        const imagePromises = orderSupports
+          .filter((support) => support.file_id)
+          .map(async (support) => {
+            const response = await fetch(
+              `https://cus-cake-api-eubghehthseug2g3.eastasia-01.azurewebsites.net/api/files/${support.file_id}`,
+              {
+                headers: {
+                  'Authorization': `Bearer ${accessToken}`,
+                  'accept': '*/*'
+                }
+              }
+            );
+
+            if (!response.ok) {
+              throw new Error('Failed to fetch support image');
+            }
+
+            const data = await response.json();
+            if (data.status_code === 200 && data.payload.file_url) {
+              return { [support.id]: data.payload.file_url };
+            }
+
+            return null;
+          });
+
+        const images = await Promise.all(imagePromises);
+        const imagesMap = images
+          .filter((img): img is { [key: string]: string } => img !== null)
+          .reduce((acc, curr) => ({ ...acc, ...curr }), {});
+        
+        setSupportImages(imagesMap);
+      } catch (err) {
+        console.error('Error fetching support images:', err);
+      }
+    };
+    console.log("vinh log", order);
+    useEffect(() => {
+      if (order?.order_supports && order.order_supports.length > 0) {
+        fetchSupportImages(order.order_supports);
+      }
+    }, [order]);
+
     if (loading) {
         return (
             <div className="container mx-auto px-4 py-8">
@@ -1475,6 +1543,7 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Main Order Information */}
                     <div className="lg:col-span-2 space-y-6">
+                        {/* Card sản phẩm đã đặt */}
                         <Card className="border-none shadow-lg hover:shadow-2xl transition-shadow duration-300">
                             <CardHeader className="bg-gradient-to-r from-custom-teal/10 to-custom-pink/10 dark:from-custom-teal/20 dark:to-custom-pink/20 p-6 rounded-t-lg">
                                 <div className="flex justify-between items-center">
@@ -1586,75 +1655,44 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                             </CardContent>
                         </Card>
 
-                        {/* Add this section after the order details card */}
-                        {order?.order_details[0]?.review && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.5 }}
-                            >
-                                <Card className="border-none shadow-lg hover:shadow-2xl transition-all duration-300 mt-6 bg-gradient-to-br from-white to-custom-pink/10 dark:from-gray-800 dark:to-custom-pink/30">
-                                    <CardHeader className="p-6 bg-gradient-to-r from-custom-teal to-custom-pink dark:from-custom-teal/90 dark:to-custom-pink/90 rounded-t-lg">
-                                        <div className="flex items-center justify-between">
-                                            <CardTitle className="text-lg font-bold text-white">Đánh giá của bạn</CardTitle>
-                                            <div className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-full">
-                                                <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                                                <span className="text-white text-sm font-medium">
-                                                    {order.order_details[0].review?.rating || 0}/5
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent className="p-6 bg-white dark:bg-gray-800">
-                                        <div className="space-y-6">
-                                            <div className="flex items-center gap-2">
-                                                <div className="flex">
-                                                    {[...Array(5)].map((_, index) => (
-                                                        <Star
-                                                            key={index}
-                                                            className={`h-6 w-6 transition-all duration-200 ${index < (order.order_details[0].review?.rating || 0)
-                                                                ? 'text-yellow-400 fill-yellow-400'
-                                                                : 'text-gray-200'
-                                                                }`}
-                                                        />
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                                                <p className="text-gray-700 leading-relaxed">
-                                                    {order.order_details[0].review?.content}
-                                                </p>
-                                            </div>
-
-                                            {reviewImage && (
-                                                <motion.div
-                                                    initial={{ opacity: 0, scale: 0.95 }}
-                                                    animate={{ opacity: 1, scale: 1 }}
-                                                    transition={{ duration: 0.3 }}
-                                                    className="relative h-64 w-full rounded-xl overflow-hidden shadow-lg"
-                                                >
-                                                    <Image
-                                                        src={reviewImage}
-                                                        alt="Review image"
-                                                        fill
-                                                        className="object-cover transition-transform duration-300 hover:scale-105"
-                                                    />
-                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-                                                </motion.div>
-                                            )}
-
-                                            <div className="flex items-center gap-2 text-sm text-gray-500">
-                                                <Calendar className="h-4 w-4" />
-                                                <span>
-                                                    Đánh giá vào: {format(new Date(order.order_details[0].review?.created_at || ''), 'dd/MM/yyyy HH:mm')}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </motion.div>
+                        {/* Block ảnh hỗ trợ KH/tiệm bánh */}
+                        {order?.order_supports && order.order_supports.length > 0 && (
+                          <Card className="mt-2 shadow-xl border-none bg-gradient-to-br from-white to-blue-50 dark:from-gray-800 dark:to-blue-900/30">
+                            <CardHeader className="p-6 border-b border-blue-100 dark:border-blue-900/40">
+                              <CardTitle className="text-xl font-bold text-blue-700 dark:text-blue-300 flex items-center gap-2">
+                                <Flag className="w-5 h-5 text-blue-400" />
+                                Ảnh hỗ trợ từ khách hàng/tiệm bánh
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-6">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {order.order_supports.map((support) =>
+                                  support.file_id && supportImages[support.id] ? (
+                                    <div
+                                      key={support.id}
+                                      className="relative rounded-xl overflow-hidden shadow-md group border border-blue-100 dark:border-blue-900/40 min-h-64"
+                                    >
+                                      <Image
+                                        src={supportImages[support.id]}
+                                        alt="Support image"
+                                        fill
+                                        className="object-cover w-full h-64 group-hover:scale-105 transition-transform duration-300"
+                                        style={{ minHeight: 256 }}
+                                        priority
+                                      />
+                                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+                                      <div className="absolute bottom-4 left-4 text-white text-sm bg-black/40 px-3 py-1 rounded-lg flex items-center gap-2">
+                                        <Calendar className="h-4 w-4" />
+                                        {format(new Date(support.created_at), 'dd/MM/yyyy HH:mm')}
+                                      </div>
+                                    </div>
+                                  ) : null
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
                         )}
+
                     </div>
 
                     {/* Customer and Delivery Information */}
@@ -1769,17 +1807,48 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                         <div className="flex justify-end gap-2">
                             <Button
                                 variant="outline"
-                                className="mt-4 bg-gradient-to-r from-custom-teal to-custom-pink text-white hover:from-custom-teal/90 hover:to-custom-pink/90 dark:hover:from-custom-teal/80 dark:hover:to-custom-pink/80"
+                                className={`
+                                  mt-4
+                                  border-2 border-teal-400
+                                  bg-white
+                                  text-teal-600
+                                  font-semibold
+                                  rounded-full
+                                  px-6 py-2
+                                  shadow-sm
+                                  hover:bg-teal-50
+                                  hover:border-teal-500
+                                  hover:text-teal-700
+                                  transition
+                                  disabled:bg-white
+                                  disabled:text-gray-400
+                                  disabled:border-gray-200
+                                `}
                                 onClick={() => setIsFeedbackModalOpen(true)}
+                                // disabled={/* điều kiện disabled nếu có */}
                             >
                                 Gửi Phản Hồi
                             </Button>
                             <Button
                                 variant="outline"
-                                className="mt-4 bg-gradient-to-r from-red-500 to-pink-500 text-white hover:from-red-600 hover:to-pink-600 dark:hover:from-red-500/90 dark:hover:to-pink-500/90"
+                                className={`
+                                  mt-4
+                                  bg-gradient-to-r from-red-500 to-pink-500
+                                  text-white
+                                  font-semibold
+                                  rounded-full
+                                  px-6 py-2
+                                  shadow-sm
+                                  hover:from-red-600 hover:to-pink-600
+                                  hover:shadow-md
+                                  flex items-center
+                                  gap-2
+                                  border-0
+                                  transition
+                                `}
                                 onClick={() => setStoreReportDialogOpen(true)}
                             >
-                                <Flag className="w-4 h-4 mr-2" />
+                                <Flag className="w-4 h-4" />
                                 Báo Cáo
                             </Button>
                         </div>
@@ -1957,6 +2026,8 @@ export default function OrderDetails({ orderId }: OrderDetailsProps) {
                         </div>
                     </DialogContent>
                 </Dialog>
+
+    
             </motion.div>
         </div>
     );
